@@ -24,45 +24,51 @@ gvm-cli
 #Text File Analysis output
 
 HOST: 192.168.1.15
+
 DEVICE TYPE: Windows Host
+
 SEVERITY: CRITICAL
+
 SCORE: 10
+
 Risk Findings
+
 SMB exposed
+
 RDP exposed
 
 #JSON File Analysis output
 
 {
+
   "host": "192.168.1.15",
+  
   "device_type": "Windows Host",
+  
   "severity": "CRITICAL",
+  
   "score": 10,
+  
   "findings": "SMB exposed\nRDP exposed"
+  
 }
-
-<h2>Greenbone Integration</h2>
-
-NetSniper supports optional integration with Greenbone Vulnerability Management (GVM).
-
-High-risk hosts identified during local analysis can be automatically imported into Greenbone as scan targets, enabling deeper vulnerability assessment workflows.
-
-This allows NetSniper to function as:
-
-- A fast reconnaissance engine
-- A triage system for vulnerability scanners
 
 <h2>Output Structure</h2>
 
 All scans generate timestamped outputs:
 
 ~/netsniper/
+
 ├── scans/
+
 ├── targets/
+
 ├── reports/
+
 └── analysis_YYYYMMDD-HHMMSS.json
 
-⚠️ Disclaimer
+
+<h2>⚠️ Disclaimer</h2>
 
 NetSniper is intended for:
 
