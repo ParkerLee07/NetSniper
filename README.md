@@ -1,20 +1,34 @@
-<h1>NetSniper</h1>
+# 🛡️ NetSniper
+
+![NetSniper](https://img.shields.io/badge/NetSniper-Network%20Intelligence-red?style=for-the-badge)
+![Bash](https://img.shields.io/badge/Bash-CLI%20Tool-green?style=for-the-badge)
+![Status](https://img.shields.io/badge/Status-Active-blue?style=for-the-badge)
+
+## Network Reconnaissance & Exposure Intelligence Engine
+
+---
+
+# 📌 DESCRIPTION
+
 NetSniper is a Bash-based network reconnaissance and exposure intelligence engine designed to transform raw scan data into structured, actionable security insights. Instead of simply presenting nmap output, NetSniper performs device fingerprinting, risk scoring, and vulnerability-oriented analysis to prioritize real-world exposure across a network.
 
-The tool follows a modular pipeline approach—discovery, scanning, analysis, and reporting—producing both human-readable reports and machine-readable JSON outputs for further automation or integration.
+The tool processes scan data through a modular pipeline to convert raw network information into structured intelligence that can be used for security analysis, reporting, or automation.
 
-NetSniper also supports optional integration with Greenbone Vulnerability Management (GVM). High-risk targets identified during local scanning can be automatically imported into Greenbone as scan tasks, enabling deeper vulnerability assessment workflows while keeping NetSniper focused on fast reconnaissance and exposure intelligence.
+NetSniper also supports optional integration with Greenbone Vulnerability Management (GVM). High-risk targets identified during local scanning can be automatically imported into Greenbone as scan tasks for deeper vulnerability assessment.
 
-<h2>INSTALLATION</h2>
+---
 
+# ⚙️ INSTALLATION
+
+```bash
 git clone https://github.com/parkerlee07/netsniper.git
 cd netsniper
 chmod +x netsniper.sh
-
+```
 #Install dependencies
-
+```
 sudo apt install nmap jq
-
+```
 #Optional (for Greenbone integration)
 
 gvm-cli
