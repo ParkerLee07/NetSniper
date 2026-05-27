@@ -30,9 +30,12 @@ chmod +x netsniper.sh
 sudo apt install nmap jq
 ```
 #Optional (for Greenbone integration)
-
-gvm-cli
-
+```
+sudo apt install gvm
+sudo gvm-setup
+sudo gvm-check-setup
+sudo gvm-start
+```
 <h2>Example Outputs</h2>
 
 #Text File Analysis output
