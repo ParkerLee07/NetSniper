@@ -7,7 +7,7 @@ NetSniper also supports optional integration with Greenbone Vulnerability Manage
 
 <h2>INSTALLATION</h2>
 
-git clone https://github.com/YOUR_USERNAME/netsniper.git
+git clone https://github.com/parkerlee07/netsniper.git
 cd netsniper
 chmod +x netsniper.sh
 
