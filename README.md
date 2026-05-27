@@ -36,6 +36,8 @@ sudo gvm-setup
 sudo gvm-check-setup
 sudo gvm-start
 ```
+![Demo](./images/startup.gif)
+
 ## 📁 OUTPUT STRUCTURE
 
 All scans generate timestamped outputs:
