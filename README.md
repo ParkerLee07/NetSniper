@@ -88,3 +88,9 @@ This tool must only be used on systems for which you have explicit authorization
 
 The author assumes no responsibility for misuse, damage, or illegal activity resulting from the use of this software.
 
+## ☕ Support Development
+
+If NetSniper is useful in your security workflow, you can support continued development here:
+
+- Buy Me a Coffee: https://buymeacoffee.com/
+
