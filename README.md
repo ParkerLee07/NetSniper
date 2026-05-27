@@ -37,7 +37,7 @@ sudo gvm-check-setup
 sudo gvm-start
 ```
 <p align="center">
-  <img src="netsniper/images/startup.gif" alt="NetSniper Demo">
+  <img src="Images/Startup.gif" alt="NetSniper Demo">
 </p>
 
 ## 📁 OUTPUT STRUCTURE
