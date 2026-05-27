@@ -36,62 +36,55 @@ sudo gvm-setup
 sudo gvm-check-setup
 sudo gvm-start
 ```
-<h2>Example Outputs</h2>
-
-#Text File Analysis output
-
-HOST: 192.168.1.15
-
-DEVICE TYPE: Windows Host
-
-SEVERITY: CRITICAL
-
-SCORE: 10
-
-Risk Findings
-
-SMB exposed
-
-RDP exposed
-
-#JSON File Analysis output
-
-{
-
-  "host": "192.168.1.15",
-  
-  "device_type": "Windows Host",
-  
-  "severity": "CRITICAL",
-  
-  "score": 10,
-  
-  "findings": "SMB exposed\nRDP exposed"
-  
-}
-
-<h2>Output Structure</h2>
+## 📁 OUTPUT STRUCTURE
 
 All scans generate timestamped outputs:
 
+```text
 ~/netsniper/
-
 ├── scans/
-
 ├── targets/
-
 ├── reports/
-
 └── analysis_YYYYMMDD-HHMMSS.json
+```
+
+## 🧾 TEXT FILE ANALYSIS OUTPUT
+
+Each host is analyzed and scored based on exposed services.
+
+```text
+HOST: 192.168.1.15
+DEVICE TYPE: Windows Host
+SEVERITY: CRITICAL
+SCORE: 10
+
+Risk Findings:
+SMB exposed
+RDP exposed
+```
+## 📦 JSON FILE ANALYSIS OUTPUT
+
+Machine-readable output for automation and pipelines.
+
+```json
+{
+  "host": "192.168.1.15",
+  "device_type": "Windows Host",
+  "severity": "CRITICAL",
+  "score": 10,
+  "findings": [
+    "SMB exposed",
+    "RDP exposed"
+  ]
+}
+```
 
 
-<h2>⚠️ Disclaimer</h2>
+## ⚠️ DISCLAIMER
 
-NetSniper is intended for:
+NetSniper is provided for educational and authorized security testing purposes only.
 
-+ Authorized security testing
-+ Lab environments
-+ Defensive security research
+This tool must only be used on systems for which you have explicit authorization.
 
-Do not use against systems without explicit permission.
+The author assumes no responsibility for misuse, damage, or illegal activity resulting from the use of this software.
 
