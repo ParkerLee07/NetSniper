@@ -5,7 +5,7 @@
 # License: MIT
 
 # =========================
-# NETSNIPER ENGINE v1.0
+# NETSNIPER ENGINE v1.1
 # =========================
 
 set -Eeuo pipefail
@@ -15,6 +15,12 @@ trap 'echo -e "\n[ERROR] Failed at line $LINENO while executing $BASH_COMMAND"' 
 command -v nmap >/dev/null 2>&1 || { echo "nmap required"; exit 1; }
 command -v jq >/dev/null 2>&1 || { echo "jq required"; exit 1; }
 command -v gvm-cli >/dev/null 2>&1 || echo "[!] gvm-cli not installed (Greenbone disabled)"
+
+NETSNIPER_VERSION="v1.1"
+
+# High-value exposure ports scanned by NetSniper v1.1
+RISK_PORTS="21,22,23,80,81,161,389,443,445,554,631,636,1433,1521,1900,2375,2376,3268,3306,3389,5000,5432,5555,5601,5900,5985,5986,6379,6443,7547,8080,8081,8443,9000,9200,10250,27017,37777,9100"
+HIGH_RISK_REGEX="21/open|22/open|23/open|80/open|81/open|161/open|389/open|443/open|445/open|554/open|631/open|636/open|1433/open|1521/open|1900/open|2375/open|2376/open|3268/open|3306/open|3389/open|5000/open|5432/open|5555/open|5601/open|5900/open|5985/open|5986/open|6379/open|6443/open|7547/open|8080/open|8081/open|8443/open|9000/open|9200/open|10250/open|27017/open|37777/open|9100/open"
 
 # Colors
 RED='\033[1;31m'
@@ -65,8 +71,6 @@ CONFIG_FILE="$CONFIG_DIR/netsniper.conf"
 # External services
 SOCK="/run/gvmd/gvmd.sock"
 
-
-
 # =========================
 # FUNCTIONS
 # =========================
@@ -86,7 +90,6 @@ init_workspace() {
 
 boot_screen() {
 
-
 clear
 
 # =========================
@@ -105,7 +108,6 @@ sleep 0.3
 
 # =========================
 # PHASE 2: CURTAIN DROP
-# (clear line-by-line)
 # =========================
 
 tput civis  # hide cursor
@@ -135,15 +137,11 @@ echo -e "${RESET}"
 
 echo ""
 
-# =========================
-# STARTUP TEXT
-# =========================
-
 messages=(
-"[SYS] Initializing NetSniper engine..."
+"[SYS] Initializing NetSniper engine $NETSNIPER_VERSION..."
 "[NET] Preparing discovery modules..."
-"[SCAN] Loading scan pipeline..."
-"[ANALYSIS] Activating risk engine..."
+"[SCAN] Loading expanded v1.1 port intelligence..."
+"[ANALYSIS] Activating structured risk engine..."
 "[OK] System ready"
 )
 
@@ -199,13 +197,11 @@ run_discovery() {
 
     mkdir -p "$DISCOVERY_DIR" "$TARGET_DIR"
 
-    # Run nmap silently in background
     nmap -PR -sn "$NET" -oG "$DISCOVERY_DIR/live.gnmap" \
         > /dev/null 2>&1 &
-    
+
     PID=$!
 
-    # Spinner animation
     spin='|/-\'
     i=0
 
@@ -233,29 +229,28 @@ run_scan() {
 
     mkdir -p "$SCAN_DIR"
 
-    echo -e "${PURPLE}[2]${RESET} Running fast scan..."
+    echo -e "${PURPLE}[2]${RESET} Running NetSniper $NETSNIPER_VERSION exposure scan..."
+    INFO "Scanning expanded high-risk port set: $RISK_PORTS"
 
-nmap -F -sV -T4 -iL "$TARGET_DIR/hosts.txt" -oA "$SCAN_DIR/fast_scan" \
-    > /dev/null 2>&1 &
+    nmap -sV -T4 -p "$RISK_PORTS" -iL "$TARGET_DIR/hosts.txt" -oA "$SCAN_DIR/fast_scan" \
+        > /dev/null 2>&1 &
 
-PID=$!
+    PID=$!
 
-spin='|/-\'
-i=0
+    spin='|/-\'
+    i=0
 
-while kill -0 $PID 2>/dev/null; do
-    i=$(( (i+1) %4 ))
-    printf "\r[%c] Scanning hosts..." "${spin:$i:1}"
-    sleep 0.1
-done
+    while kill -0 $PID 2>/dev/null; do
+        i=$(( (i+1) %4 ))
+        printf "\r[%c] Scanning hosts..." "${spin:$i:1}"
+        sleep 0.1
+    done
 
-wait $PID
+    wait $PID
 
-printf "\r"
+    printf "\r"
 
-echo -e "${GREEN}[+] Scan complete${RESET}"
-
-
+    echo -e "${GREEN}[+] Scan completed${RESET}"
 }
 
 extract_high_risk() {
@@ -269,7 +264,7 @@ extract_high_risk() {
         return
     fi
 
-    grep -E "22/open|80/open|443/open|445/open|554/open|631/open|9100/open|3389/open" "$INPUT" \
+    grep -E "$HIGH_RISK_REGEX" "$INPUT" \
     | awk '{print $2}' \
     | sort -u > "$OUTPUT"
 
@@ -376,7 +371,6 @@ load_config() {
 
     read -p "Target network (e.g. 192.168.1.0/24): " NET
 
-    # Save config
     mkdir -p "$CONFIG_DIR"
     cat > "$CONFIG_FILE" <<EOF
 USER="$USER"
@@ -388,7 +382,7 @@ EOF
 }
 
 check_dirs() {
-    for dir in "$BASE" "$DISCOVERY_DIR" "$TARGET_DIR" "$SCAN_DIR" "$REPORT_DIR"; do
+    for dir in "$BASE" "$DISCOVERY_DIR" "$TARGET_DIR" "$SCAN_DIR" "$REPORT_DIR" "$ANALYSIS_DIR" "$CONFIG_DIR"; do
         if [ ! -d "$dir" ]; then
             echo "[-] Missing required directory: $dir"
             echo "[*] Create it or check your installation."
@@ -397,14 +391,11 @@ check_dirs() {
     done
 }
 
-
-
-
 run_full_pipeline() {
 
     echo ""
     echo "=============================="
-    echo "   NETSNIPER PIPELINE"
+    echo "   NETSNIPER PIPELINE $NETSNIPER_VERSION"
     echo "=============================="
 
     INFO "Stage 1/4 - Discovery"
@@ -420,7 +411,6 @@ run_full_pipeline() {
     generate_report || return 1
 
     SUCCESS "Pipeline complete"
-
 }
 
 show_targets() {
@@ -428,9 +418,60 @@ show_targets() {
     cat "$TARGET_DIR/high_risk.txt" 2>/dev/null
 }
 
+add_finding() {
+    local id="$1"
+    local name="$2"
+    local service="$3"
+    local port="$4"
+    local weight="$5"
+    local evidence="$6"
+
+    SCORE=$((SCORE + weight))
+
+    FINDINGS_JSON=$(echo "$FINDINGS_JSON" | jq -c \
+        --arg id "$id" \
+        --arg name "$name" \
+        --arg service "$service" \
+        --argjson port "$port" \
+        --argjson score "$weight" \
+        --arg evidence "$evidence" \
+        '. += [{
+            id: $id,
+            name: $name,
+            service: $service,
+            port: $port,
+            score: $score,
+            evidence: $evidence
+        }]')
+}
+
+classify_device() {
+    local line="$1"
+
+    DEVICE_TYPE="Unknown"
+
+    if [[ "$line" == *"445/open"* && "$line" == *"3389/open"* ]]; then
+        DEVICE_TYPE="Windows Host"
+    elif [[ "$line" == *"2375/open"* || "$line" == *"2376/open"* || "$line" == *"5000/open"* || "$line" == *"6443/open"* || "$line" == *"10250/open"* || "$line" == *"8081/open"* || "$line" == *"9000/open"* || "$line" == *"5601/open"* ]]; then
+        DEVICE_TYPE="DevOps / Infrastructure Host"
+    elif [[ "$line" == *"1433/open"* || "$line" == *"1521/open"* || "$line" == *"3306/open"* || "$line" == *"5432/open"* || "$line" == *"6379/open"* || "$line" == *"9200/open"* || "$line" == *"27017/open"* ]]; then
+        DEVICE_TYPE="Database / Data Service"
+    elif [[ "$line" == *"389/open"* || "$line" == *"636/open"* || "$line" == *"3268/open"* ]]; then
+        DEVICE_TYPE="Directory Service Host"
+    elif [[ "$line" == *"9100/open"* || "$line" == *"631/open"* ]]; then
+        DEVICE_TYPE="Network Printer"
+    elif [[ "$line" == *"554/open"* || "$line" == *"37777/open"* || "$line" == *"7547/open"* || "$line" == *"5555/open"* || "$line" == *"1900/open"* ]]; then
+        DEVICE_TYPE="IoT / Camera / Embedded Device"
+    elif [[ "$line" == *"22/open"* && "$line" == *"80/open"* ]]; then
+        DEVICE_TYPE="Linux/Web Server"
+    elif [[ "$line" == *"80/open"* || "$line" == *"443/open"* || "$line" == *"8080/open"* || "$line" == *"8443/open"* ]]; then
+        DEVICE_TYPE="Web Server"
+    fi
+}
+
 analyze_hosts() {
 
-    echo -e "${PURPLE}[*] Running exposure analysis...${RESET}"
+    echo -e "${PURPLE}[*] Running NetSniper $NETSNIPER_VERSION exposure analysis...${RESET}"
 
     INPUT="$SCAN_DIR/fast_scan.gnmap"
 
@@ -441,96 +482,211 @@ analyze_hosts() {
 
     TIMESTAMP=$(date +%Y%m%d-%H%M%S)
 
-	ANALYSIS_FILE="$TARGET_DIR/analysis_$TIMESTAMP.txt"
-	
-	JSON_FILE="$TARGET_DIR/analysis_$TIMESTAMP.json"
+    ANALYSIS_FILE="$TARGET_DIR/analysis_$TIMESTAMP.txt"
+    JSON_FILE="$TARGET_DIR/analysis_$TIMESTAMP.json"
 
-	echo "[]" > "$JSON_FILE"
     > "$JSON_FILE.tmp"
     > "$ANALYSIS_FILE"
+
     {
-    echo "========================================="
-    echo "         NETSNIPER ANALYSIS"
-    echo "========================================="
-    echo "Timestamp: $TIMESTAMP"
-    echo "Network: $NET"
-    echo "Scan File: $INPUT"
-    echo "========================================="
-    echo ""
-} >> "$ANALYSIS_FILE"
-    
+        echo "========================================="
+        echo "         NETSNIPER ANALYSIS $NETSNIPER_VERSION"
+        echo "========================================="
+        echo "Timestamp: $TIMESTAMP"
+        echo "Network: $NET"
+        echo "Scan File: $INPUT"
+        echo "Output Schema: AegisCore-ready structured JSON"
+        echo "========================================="
+        echo ""
+    } >> "$ANALYSIS_FILE"
 
     while read -r line; do
 
         HOST=$(echo "$line" | awk '{print $2}')
 
         SCORE=0
-        FINDINGS=""
-        DEVICE_TYPE="Unknown"
+        FINDINGS_JSON="[]"
+        classify_device "$line"
 
         # -------------------------
-        # Exposure Checks
+        # Critical / High-Risk Remote Access
         # -------------------------
 
-        if [[ "$line" == *"445/open"* ]]; then
-            SCORE=$((SCORE + 5))
-            FINDINGS+="SMB exposed\n"
-        fi
-
-        if [[ "$line" == *"3389/open"* ]]; then
-            SCORE=$((SCORE + 5))
-            FINDINGS+="RDP exposed\n"
-        fi
-
-        if [[ "$line" == *"23/open"* ]]; then
-            SCORE=$((SCORE + 10))
-            FINDINGS+="Telnet exposed\n"
-        fi
-
-        if [[ "$line" == *"554/open"* ]]; then
-            SCORE=$((SCORE + 3))
-            FINDINGS+="RTSP camera/service exposed\n"
-        fi
-
-        if [[ "$line" == *"9100/open"* ]]; then
-            SCORE=$((SCORE + 1))
-            FINDINGS+="Printer service exposed\n"
-        fi
-
-        if [[ "$line" == *"631/open"* ]]; then
-            SCORE=$((SCORE + 1))
-            FINDINGS+="IPP printing service exposed\n"
+        if [[ "$line" == *"21/open"* ]]; then
+            add_finding "FTP_EXPOSED" "FTP exposed" "ftp" 21 6 "Port 21 open"
         fi
 
         if [[ "$line" == *"22/open"* ]]; then
-            SCORE=$((SCORE + 2))
-            FINDINGS+="SSH exposed\n"
+            add_finding "SSH_EXPOSED" "SSH exposed" "ssh" 22 3 "Port 22 open"
         fi
-        
+
+        if [[ "$line" == *"23/open"* ]]; then
+            add_finding "TELNET_EXPOSED" "Telnet exposed" "telnet" 23 10 "Port 23 open"
+        fi
+
+        if [[ "$line" == *"445/open"* ]]; then
+            add_finding "SMB_EXPOSED" "SMB exposed" "smb" 445 8 "Port 445 open"
+        fi
+
+        if [[ "$line" == *"3389/open"* ]]; then
+            add_finding "RDP_EXPOSED" "RDP exposed" "rdp" 3389 8 "Port 3389 open"
+        fi
+
+        if [[ "$line" == *"5900/open"* ]]; then
+            add_finding "VNC_EXPOSED" "VNC exposed" "vnc" 5900 8 "Port 5900 open"
+        fi
+
+        if [[ "$line" == *"5985/open"* ]]; then
+            add_finding "WINRM_HTTP_EXPOSED" "WinRM HTTP exposed" "winrm" 5985 7 "Port 5985 open"
+        fi
+
+        if [[ "$line" == *"5986/open"* ]]; then
+            add_finding "WINRM_HTTPS_EXPOSED" "WinRM HTTPS exposed" "winrm" 5986 7 "Port 5986 open"
+        fi
+
         # -------------------------
-	# Device Classification
-	# -------------------------
+        # Directory / Enumeration Services
+        # -------------------------
 
-	if [[ "$line" == *"445/open"* && "$line" == *"3389/open"* ]]; then
-	    DEVICE_TYPE="Windows Host"
-	fi
+        if [[ "$line" == *"161/open"* ]]; then
+            add_finding "SNMP_EXPOSED" "SNMP exposed" "snmp" 161 5 "Port 161 open"
+        fi
 
-	if [[ "$line" == *"22/open"* && "$line" == *"80/open"* ]]; then
-	    DEVICE_TYPE="Linux/Web Server"
-	fi
+        if [[ "$line" == *"389/open"* ]]; then
+            add_finding "LDAP_EXPOSED" "LDAP exposed" "ldap" 389 5 "Port 389 open"
+        fi
 
-	if [[ "$line" == *"9100/open"* || "$line" == *"631/open"* ]]; then
-	    DEVICE_TYPE="Network Printer"
-	fi
+        if [[ "$line" == *"636/open"* ]]; then
+            add_finding "LDAPS_EXPOSED" "LDAPS exposed" "ldaps" 636 4 "Port 636 open"
+        fi
 
-	if [[ "$line" == *"554/open"* ]]; then
-	    DEVICE_TYPE="IP Camera / RTSP Device"
-	fi
+        if [[ "$line" == *"3268/open"* ]]; then
+            add_finding "GLOBAL_CATALOG_EXPOSED" "Active Directory Global Catalog exposed" "ldap-gc" 3268 5 "Port 3268 open"
+        fi
 
-	if [[ "$line" == *"80/open"* && "$line" == *"443/open"* ]]; then
-	    DEVICE_TYPE="Web Server"
-	fi
-        
+        # -------------------------
+        # Database / Data Services
+        # -------------------------
+
+        if [[ "$line" == *"1433/open"* ]]; then
+            add_finding "MSSQL_EXPOSED" "Microsoft SQL Server exposed" "mssql" 1433 6 "Port 1433 open"
+        fi
+
+        if [[ "$line" == *"1521/open"* ]]; then
+            add_finding "ORACLE_DB_EXPOSED" "Oracle database exposed" "oracle" 1521 6 "Port 1521 open"
+        fi
+
+        if [[ "$line" == *"3306/open"* ]]; then
+            add_finding "MYSQL_EXPOSED" "MySQL exposed" "mysql" 3306 6 "Port 3306 open"
+        fi
+
+        if [[ "$line" == *"5432/open"* ]]; then
+            add_finding "POSTGRES_EXPOSED" "PostgreSQL exposed" "postgresql" 5432 6 "Port 5432 open"
+        fi
+
+        if [[ "$line" == *"6379/open"* ]]; then
+            add_finding "REDIS_EXPOSED" "Redis exposed" "redis" 6379 9 "Port 6379 open"
+        fi
+
+        if [[ "$line" == *"9200/open"* ]]; then
+            add_finding "ELASTICSEARCH_EXPOSED" "Elasticsearch exposed" "elasticsearch" 9200 9 "Port 9200 open"
+        fi
+
+        if [[ "$line" == *"27017/open"* ]]; then
+            add_finding "MONGODB_EXPOSED" "MongoDB exposed" "mongodb" 27017 9 "Port 27017 open"
+        fi
+
+        # -------------------------
+        # DevOps / Cloud / Container Infrastructure
+        # -------------------------
+
+        if [[ "$line" == *"2375/open"* ]]; then
+            add_finding "DOCKER_API_EXPOSED" "Docker API exposed without TLS" "docker" 2375 10 "Port 2375 open"
+        fi
+
+        if [[ "$line" == *"2376/open"* ]]; then
+            add_finding "DOCKER_TLS_API_EXPOSED" "Docker TLS API exposed" "docker" 2376 7 "Port 2376 open"
+        fi
+
+        if [[ "$line" == *"5000/open"* ]]; then
+            add_finding "DOCKER_REGISTRY_EXPOSED" "Docker registry exposed" "docker-registry" 5000 7 "Port 5000 open"
+        fi
+
+        if [[ "$line" == *"6443/open"* ]]; then
+            add_finding "KUBERNETES_API_EXPOSED" "Kubernetes API exposed" "kubernetes" 6443 10 "Port 6443 open"
+        fi
+
+        if [[ "$line" == *"10250/open"* ]]; then
+            add_finding "KUBELET_EXPOSED" "Kubernetes kubelet exposed" "kubelet" 10250 10 "Port 10250 open"
+        fi
+
+        if [[ "$line" == *"8081/open"* ]]; then
+            add_finding "JENKINS_OR_DEVOPS_UI_EXPOSED" "Jenkins or DevOps web UI exposed" "jenkins/devops-ui" 8081 6 "Port 8081 open"
+        fi
+
+        if [[ "$line" == *"9000/open"* ]]; then
+            add_finding "PORTAINER_EXPOSED" "Portainer or container management UI exposed" "portainer" 9000 7 "Port 9000 open"
+        fi
+
+        if [[ "$line" == *"5601/open"* ]]; then
+            add_finding "KIBANA_EXPOSED" "Kibana exposed" "kibana" 5601 7 "Port 5601 open"
+        fi
+
+        # -------------------------
+        # Web / Admin Panels
+        # -------------------------
+
+        if [[ "$line" == *"80/open"* ]]; then
+            add_finding "HTTP_EXPOSED" "HTTP service exposed" "http" 80 2 "Port 80 open"
+        fi
+
+        if [[ "$line" == *"443/open"* ]]; then
+            add_finding "HTTPS_EXPOSED" "HTTPS service exposed" "https" 443 2 "Port 443 open"
+        fi
+
+        if [[ "$line" == *"81/open"* ]]; then
+            add_finding "ALT_HTTP_PANEL_EXPOSED" "Alternate HTTP admin panel exposed" "http-alt" 81 4 "Port 81 open"
+        fi
+
+        if [[ "$line" == *"8080/open"* ]]; then
+            add_finding "HTTP_ALT_EXPOSED" "Alternate HTTP service or admin panel exposed" "http-alt" 8080 4 "Port 8080 open"
+        fi
+
+        if [[ "$line" == *"8443/open"* ]]; then
+            add_finding "HTTPS_ALT_EXPOSED" "Alternate HTTPS service or admin panel exposed" "https-alt" 8443 4 "Port 8443 open"
+        fi
+
+        # -------------------------
+        # IoT / Camera / Embedded / Printer Services
+        # -------------------------
+
+        if [[ "$line" == *"554/open"* ]]; then
+            add_finding "RTSP_EXPOSED" "RTSP camera/service exposed" "rtsp" 554 3 "Port 554 open"
+        fi
+
+        if [[ "$line" == *"37777/open"* ]]; then
+            add_finding "DAHUA_DVR_EXPOSED" "Dahua DVR/camera service exposed" "dahua-dvr" 37777 7 "Port 37777 open"
+        fi
+
+        if [[ "$line" == *"7547/open"* ]]; then
+            add_finding "TR069_EXPOSED" "TR-069 router management service exposed" "tr-069" 7547 7 "Port 7547 open"
+        fi
+
+        if [[ "$line" == *"5555/open"* ]]; then
+            add_finding "ADB_EXPOSED" "Android Debug Bridge exposed" "adb" 5555 8 "Port 5555 open"
+        fi
+
+        if [[ "$line" == *"1900/open"* ]]; then
+            add_finding "UPNP_EXPOSED" "UPnP exposed" "upnp" 1900 4 "Port 1900 open"
+        fi
+
+        if [[ "$line" == *"9100/open"* ]]; then
+            add_finding "PRINTER_9100_EXPOSED" "Printer RAW service exposed" "printer" 9100 2 "Port 9100 open"
+        fi
+
+        if [[ "$line" == *"631/open"* ]]; then
+            add_finding "IPP_EXPOSED" "IPP printing service exposed" "ipp" 631 2 "Port 631 open"
+        fi
 
         # -------------------------
         # Severity Classification
@@ -538,25 +694,40 @@ analyze_hosts() {
 
         if [ "$SCORE" -ge 10 ]; then
             SEVERITY="CRITICAL"
-        elif [ "$SCORE" -ge 6 ]; then
+        elif [ "$SCORE" -ge 7 ]; then
             SEVERITY="HIGH"
-        elif [ "$SCORE" -ge 3 ]; then
+        elif [ "$SCORE" -ge 4 ]; then
             SEVERITY="MEDIUM"
-        else
+        elif [ "$SCORE" -ge 1 ]; then
             SEVERITY="LOW"
+        else
+            SEVERITY="INFO"
         fi
-        
-        jq -n \
-	  --arg host "$HOST" \
-	  --arg device "$DEVICE_TYPE" \
-	  --arg severity "$SEVERITY" \
-	  --arg score "$SCORE" \
-	  --arg findings "$FINDINGS" \
-	  '{host: $host, device_type: $device, severity: $severity, score: ($score|tonumber), findings: $findings}' \
-	>> "$JSON_FILE.tmp"
-	
+
         # -------------------------
-        # Save Results
+        # JSON Output
+        # -------------------------
+
+        jq -n \
+            --arg host "$HOST" \
+            --arg device "$DEVICE_TYPE" \
+            --arg severity "$SEVERITY" \
+            --argjson score "$SCORE" \
+            --arg version "$NETSNIPER_VERSION" \
+            --arg timestamp "$TIMESTAMP" \
+            --argjson findings "$FINDINGS_JSON" \
+            '{
+                host: $host,
+                device_type: $device,
+                severity: $severity,
+                score: $score,
+                scanner_version: $version,
+                timestamp: $timestamp,
+                findings: $findings
+            }' >> "$JSON_FILE.tmp"
+
+        # -------------------------
+        # TXT Output
         # -------------------------
 
         {
@@ -564,17 +735,25 @@ analyze_hosts() {
             echo "SCORE: $SCORE"
             echo "DEVICE TYPE: $DEVICE_TYPE"
             echo "SEVERITY: $SEVERITY"
-            echo -e "FINDINGS:\n$FINDINGS"
+            echo "FINDINGS:"
+
+            if [ "$(echo "$FINDINGS_JSON" | jq 'length')" -eq 0 ]; then
+                echo "- No high-risk exposure findings matched."
+            else
+                echo "$FINDINGS_JSON" | jq -r '.[] | "- [" + .id + "] " + .name + " | Port: " + (.port|tostring) + " | Score: " + (.score|tostring) + " | Evidence: " + .evidence'
+            fi
+
             echo "-----------------------------------"
         } >> "$ANALYSIS_FILE"
 
     done < <(grep "Ports:" "$INPUT")
-    jq -s '.' "$JSON_FILE.tmp" > "$JSON_FILE"
-	rm "$JSON_FILE.tmp"
 
-echo -e "${GREEN}[+] Analysis complete${RESET}"
-echo -e "${YELLOW}[*] TXT Report:${RESET} $ANALYSIS_FILE"
-echo -e "${YELLOW}[*] JSON Report:${RESET} $JSON_FILE"
+    jq -s '.' "$JSON_FILE.tmp" > "$JSON_FILE"
+    rm "$JSON_FILE.tmp"
+
+    echo -e "${GREEN}[+] Analysis complete${RESET}"
+    echo -e "${YELLOW}[*] TXT Report:${RESET} $ANALYSIS_FILE"
+    echo -e "${YELLOW}[*] JSON Report:${RESET} $JSON_FILE"
 }
 
 generate_report() {
@@ -591,10 +770,6 @@ generate_report() {
     HIGH_RISK_FILE="$TARGET_DIR/high_risk.txt"
     SCAN_FILE="$SCAN_DIR/fast_scan.gnmap"
 
-    # -------------------------
-    # Validate required files
-    # -------------------------
-
     if [ ! -f "$HOSTS_FILE" ]; then
         echo -e "${RED}[-] hosts.txt not found${RESET}"
         return
@@ -605,10 +780,6 @@ generate_report() {
         return
     fi
 
-    # -------------------------
-    # Count statistics
-    # -------------------------
-
     HOST_COUNT=$(wc -l < "$HOSTS_FILE")
 
     if [ -f "$HIGH_RISK_FILE" ]; then
@@ -617,46 +788,35 @@ generate_report() {
         HIGH_RISK_COUNT=0
     fi
 
-    # -------------------------
-    # Open port summary
-    # -------------------------
-
     PORT_SUMMARY=$(grep -oE '[0-9]+/open' "$SCAN_FILE" \
         | sort \
         | uniq -c \
         | sort -nr)
-     
-# -------------------------
-# Host-by-host breakdown
-# -------------------------
 
-HOST_DETAILS=""
+    HOST_DETAILS=""
 
-while read -r line; do
+    while read -r line; do
 
-    HOST=$(echo "$line" | awk '{print $2}')
+        HOST=$(echo "$line" | awk '{print $2}')
 
-    PORTS=$(echo "$line" \
-        | grep -oE '[0-9]+/open/[^,]+' || true)
+        PORTS=$(echo "$line" \
+            | grep -oE '[0-9]+/open/[^,]+' || true)
 
-    FORMATTED_PORTS=$(echo "$PORTS" \
-        | sed 's#/tcp##g' \
-        | sed 's#//.*##g')
+        FORMATTED_PORTS=$(echo "$PORTS" \
+            | sed 's#/tcp##g' \
+            | sed 's#//.*##g')
 
-    HOST_DETAILS+="
+        HOST_DETAILS+="
 ### $HOST
 
 $FORMATTED_PORTS
 
 "
 
-done < <(grep "Ports:" "$SCAN_FILE")
-    # -------------------------
-    # Generate markdown report
-    # -------------------------
+    done < <(grep "Ports:" "$SCAN_FILE")
 
     cat > "$REPORT_FILE" <<EOF
-# NETSNIPER REPORT
+# NETSNIPER REPORT $NETSNIPER_VERSION
 
 Generated: $TIMESTAMP
 
@@ -669,6 +829,8 @@ Target Network: $NET
 Hosts Discovered: $HOST_COUNT
 
 High Risk Hosts: $HIGH_RISK_COUNT
+
+Scanner Version: $NETSNIPER_VERSION
 
 ---
 
@@ -705,7 +867,6 @@ EOF
 # =========================
 # MENU LOOP
 # =========================
-#Loading Config & Directory
 
 boot_screen
 init_workspace
@@ -715,13 +876,14 @@ load_config
 : "${USER:?Missing USER}"
 : "${PASS:?Missing PASS}"
 : "${NET:?Missing NET}"
+
 while true; do
 echo ""
 echo "================================"
-echo "        NETSNIPER v1.0"
+echo "        NETSNIPER $NETSNIPER_VERSION"
 echo "================================"
 echo "  1) Discover Hosts"
-echo "  2) Fast Scan"
+echo "  2) Exposure Scan"
 echo "  3) Extract High Risk"
 echo "  4) Import to Greenbone"
 echo "  5) Run FULL Pipeline"
@@ -732,17 +894,17 @@ echo "  0) Exit"
 echo "================================"
 
     read -p "netsniper> " opt
-    
+
     case $opt in
         1) run_discovery ;;
         2) run_scan ;;
         3) extract_high_risk ;;
         4) import_greenbone ;;
-	5) run_full_pipeline ;;
-	6) show_targets ;;
-	7) generate_report ;;
-	8) analyze_hosts ;;
-	0) echo "Goodbye"; exit 0 ;;
+        5) run_full_pipeline ;;
+        6) show_targets ;;
+        7) generate_report ;;
+        8) analyze_hosts ;;
+        0) echo "Goodbye"; exit 0 ;;
         *) echo "Invalid option" ;;
     esac
 done
