@@ -21,8 +21,8 @@ NetSniper also supports optional integration with Greenbone Vulnerability Manage
 # ⚙️ INSTALLATION
 
 ```bash
-git clone https://github.com/parkerlee07/netsniper.git
-cd netsniper
+git clone https://github.com/parkerlee07/NetSniper.git
+cd NetSniper
 chmod +x netsniper.sh
 ```
 #Install dependencies
@@ -45,11 +45,14 @@ sudo gvm-start
 All scans generate timestamped outputs:
 
 ```text
-~/netsniper/
+~/NetSniper/
+├── discovery/
 ├── scans/
 ├── targets/
 ├── reports/
-└── analysis_YYYYMMDD-HHMMSS.json
+├── analysis/
+├── config/
+└── netsniper.conf
 ```
 
 ## 🧾 TEXT FILE ANALYSIS OUTPUT
@@ -72,14 +75,22 @@ Machine-readable output for automation and pipelines.
 
 ```json
 {
-  "host": "192.168.1.15",
-  "device_type": "Windows Host",
-  "severity": "CRITICAL",
-  "score": 10,
-  "findings": [
-    "SMB exposed",
-    "RDP exposed"
-  ]
+    "host": "192.168.1.10",
+    "device_type": "Windows Server",
+    "severity": "High",
+    "score": 87,
+    "scanner_version": "v1.2",
+    "timestamp": "2026-05-29T18:00:00Z",
+    "findings": [
+        {
+            "id": "SMB-001",
+            "name": "SMB Signing Disabled",
+            "service": "SMB",
+            "port": 445,
+            "score": 9,
+            "evidence": "Message signing not required"
+        }
+    ]
 }
 ```
 
