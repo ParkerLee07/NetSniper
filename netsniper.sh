@@ -50,7 +50,7 @@ WARN() {
 # PATH CONFIGURATION
 # =========================
 
-BASE="${NETSNIPER_BASE:-$HOME/netsniper}"
+BASE="${NETSNIPER_BASE:-$HOME/NetSniper}"
 
 DISCOVERY_DIR="$BASE/discovery"
 TARGET_DIR="$BASE/targets"
