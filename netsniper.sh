@@ -62,7 +62,7 @@ CONFIG_DIR="$BASE/config"
 CONFIG_FILE="$CONFIG_DIR/netsniper.conf"
 SOCK="/run/gvmd/gvmd.sock"
 
-SCANNER_VERSION="v1.2"
+SCANNER_VERSION="v1.3"
 
 # TrueAegis-aligned scan ports.
 # These are the ports NetSniper can reliably identify from nmap grepable output.
@@ -504,12 +504,12 @@ analyze_hosts() {
         has_port 8081 && add_finding "JENKINS_EXPOSED" "Jenkins or alternate web service exposed" "jenkins" 8081 8 "Port 8081 open"
         has_port 8443 && add_finding "HTTPS_ALT_EXPOSED" "Alternate HTTPS service exposed" "https-alt" 8443 3 "Port 8443 open"
         has_port 8888 && add_finding "HTTP_ALT_EXPOSED" "Alternate HTTP service exposed" "http-alt" 8888 3 "Port 8888 open"
-        has_port 9000 && add_finding "PORTAINER_EXPOSED" "Portainer service exposed" "portainer" 9000 8 "Port 9000 open"
+        has_port 9000 && add_finding "PORTAINER_CANDIDATE" "Possible Portainer or alternate TCP 9000 service" "portainer-candidate" 9000 2 "Port 9000 open; Portainer fingerprint validation required"
         has_port 9090 && add_finding "PROMETHEUS_EXPOSED" "Prometheus service exposed" "prometheus" 9090 6 "Port 9090 open"
         has_port 9100 && add_finding "PRINTER_9100_EXPOSED" "Raw printer service exposed" "printer-raw" 9100 4 "Port 9100 open"
         has_port 9200 && add_finding "ELASTICSEARCH_EXPOSED" "Elasticsearch service exposed" "elasticsearch" 9200 8 "Port 9200 open"
         has_port 9300 && add_finding "ELASTICSEARCH_TRANSPORT_EXPOSED" "Elasticsearch transport service exposed" "elasticsearch-transport" 9300 7 "Port 9300 open"
-        has_port 9443 && add_finding "PORTAINER_HTTPS_EXPOSED" "Portainer HTTPS service exposed" "portainer-https" 9443 8 "Port 9443 open"
+        has_port 9443 && add_finding "PORTAINER_CANDIDATE" "Possible Portainer or alternate HTTPS 9443 service" "portainer-candidate" 9443 3 "Port 9443 open; Portainer fingerprint validation required"
         has_port 10250 && add_finding "KUBELET_EXPOSED" "Kubelet service exposed" "kubelet" 10250 10 "Port 10250 open"
         has_port 10255 && add_finding "KUBELET_READONLY_EXPOSED" "Kubelet read-only service exposed" "kubelet-readonly" 10255 9 "Port 10255 open"
         has_port 27017 && add_finding "MONGODB_EXPOSED" "MongoDB service exposed" "mongodb" 27017 8 "Port 27017 open"
@@ -524,8 +524,7 @@ analyze_hosts() {
             DEVICE_TYPE="Likely Active Directory / Domain Controller"
         elif has_port 6443 || has_port 10250 || has_port 10255; then
             DEVICE_TYPE="Kubernetes Infrastructure"
-        elif has_port 2375 || has_port 2376 || has_port 9000 || has_port 9443; then
-            DEVICE_TYPE="Container Infrastructure"
+        elif has_port 2375 || has_port 2376; then DEVICE_TYPE="Container Infrastructure"
         elif has_port 445 || has_port 3389 || has_port 139; then
             DEVICE_TYPE="Windows Host"
         elif has_port 1433 || has_port 1521 || has_port 3306 || has_port 5432 || has_port 6379 || has_port 9200 || has_port 27017; then
@@ -716,7 +715,7 @@ load_config
 while true; do
     echo ""
     echo "================================"
-    echo "        NETSNIPER v1.2"
+    echo "        NETSNIPER v1.3"
     echo "================================"
     echo "  1) Discover Hosts"
     echo "  2) TrueAegis-Aligned Scan"
