@@ -84,7 +84,7 @@ Machine-readable output for automation and pipelines.
     "device_type": "Windows Server",
     "severity": "High",
     "score": 87,
-    "scanner_version": "v1.2",
+    "scanner_version": "v1.3",
     "timestamp": "2026-05-29T18:00:00Z",
     "findings": [
         {
