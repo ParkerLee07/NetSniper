@@ -88,7 +88,7 @@ Machine-readable output for automation and pipelines.
     "timestamp": "2026-05-29T18:00:00Z",
     "findings": [
         {
-            "id": "SMB-001",
+            "id": "SMB-EXPOSED",
             "name": "SMB Signing Disabled",
             "service": "SMB",
             "port": 445,
