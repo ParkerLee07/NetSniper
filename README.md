@@ -36,6 +36,11 @@ sudo gvm-setup
 sudo gvm-check-setup
 sudo gvm-start
 ```
+# Quick Start
+
+```
+./netsniper.sh
+```
 <p align="center">
   <img src="Images/Startup.gif" alt="NetSniper Demo">
 </p>
