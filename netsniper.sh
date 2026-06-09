@@ -5,7 +5,7 @@
 # License: MIT
 
 # =========================
-# NETSNIPER ENGINE v1.2
+# NETSNIPER ENGINE v1.3
 # TrueAegis-compatible telemetry output
 # =========================
 
