@@ -1,0 +1,26 @@
+# Runtime credentials
+config/
+*.conf
+*.env
+.env
+secrets.*
+credentials.*
+
+# Scan output
+discovery/
+targets/
+scans/
+reports/
+analysis/
+*.gnmap
+*.nmap
+*.xml
+
+# Temporary backups
+*.bak-*
+
+# Editor files
+.DS_Store
+.vscode/
+.idea/
+*.swp
