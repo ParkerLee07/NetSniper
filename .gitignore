@@ -24,3 +24,11 @@ analysis/
 .vscode/
 .idea/
 *.swp
+
+# DeltaAegis telemetry bundles and local release artifacts
+runs/
+backups/
+*.before-*
+*.tmp
+*.pyc
+__pycache__/

@@ -1,116 +1,100 @@
-# 🛡️ NetSniper
+# NetSniper
 
-![NetSniper](https://img.shields.io/badge/NetSniper-Network%20Intelligence-red?style=for-the-badge)
-![Bash](https://img.shields.io/badge/Bash-CLI%20Tool-green?style=for-the-badge)
-![Status](https://img.shields.io/badge/Status-Active-blue?style=for-the-badge)
+**Network reconnaissance and exposure-intelligence sensor for authorized security assessments.**
 
-## Network Reconnaissance & Exposure Intelligence Engine
+NetSniper is a Bash-based network discovery and service-enumeration pipeline. It performs host discovery, scans a curated set of security-relevant TCP ports, classifies likely device types, scores exposed services, and writes structured analysis files for downstream tooling.
 
----
+NetSniper is also the active network sensor for **DeltaAegis**. Each completed full-pipeline run creates an immutable telemetry bundle containing raw Nmap XML, discovery evidence, neighbor-table enrichment, interpreted findings, and a versioned manifest.
 
-# 📌 DESCRIPTION
+## Features
 
-NetSniper is a Bash-based network reconnaissance and exposure intelligence engine designed to transform raw scan data into structured, actionable security insights. Instead of simply presenting nmap output, NetSniper performs device fingerprinting, risk scoring, and vulnerability-oriented analysis to prioritize real-world exposure across a network.
+- Local-subnet host discovery with Nmap.
+- Curated TCP service scanning aligned with TrueAegis validation workflows.
+- Device classification and exposure scoring.
+- Structured JSON analysis output for automation.
+- Optional Greenbone integration for deeper assessment.
+- Immutable `netsniper-run-v2` telemetry bundles for DeltaAegis.
+- Exact monitored-port profile fingerprinting to prevent false historical deltas after scan-profile changes.
+- Archived discovery XML and neighbor-table telemetry for MAC-backed identity correlation.
 
-The tool processes scan data through a modular pipeline to convert raw network information into structured intelligence that can be used for security analysis, reporting, or automation.
-
-NetSniper also supports optional integration with Greenbone Vulnerability Management (GVM). High-risk targets identified during local scanning can be automatically imported into Greenbone as scan tasks for deeper vulnerability assessment.
-
----
-
-# ⚙️ INSTALLATION
+## Requirements
 
 ```bash
-git clone https://github.com/parkerlee07/NetSniper.git
+sudo apt update
+sudo apt install nmap jq -y
+```
+
+Optional Greenbone integration requires a configured GVM installation and `gvm-cli`.
+
+## Installation
+
+```bash
+git clone https://github.com/ParkerLee07/NetSniper.git
 cd NetSniper
 chmod +x netsniper.sh
-```
-#Install dependencies
-```
-sudo apt install nmap jq
-```
-#Optional (for Greenbone integration)
-```
-sudo apt install gvm
-sudo gvm-setup
-sudo gvm-check-setup
-sudo gvm-start
-```
-# Quick Start
-
-```
 ./netsniper.sh
 ```
-<p align="center">
-  <img src="Images/Startup.gif" alt="NetSniper Demo">
-</p>
 
-## 📁 OUTPUT STRUCTURE
+## Pipeline
 
-All scans generate timestamped outputs:
+```text
+Discovery
+  ↓
+Curated service scan
+  ↓
+Relevant-host extraction
+  ↓
+Exposure analysis
+  ↓
+Report generation
+  ↓
+Immutable DeltaAegis telemetry bundle
+```
+
+## Runtime Outputs
+
+Runtime output is intentionally excluded from Git.
 
 ```text
 ~/NetSniper/
-├── discovery/
-├── scans/
-├── targets/
-├── reports/
-├── analysis/
-├── config/
-└── netsniper.conf
+├── discovery/                 # latest discovery evidence
+├── scans/                     # latest service-scan evidence
+├── targets/                   # latest analysis files
+├── reports/                   # generated reports
+├── runs/                      # immutable DeltaAegis telemetry bundles
+└── config/                    # local runtime configuration
 ```
 
-## 🧾 TEXT FILE ANALYSIS OUTPUT
+A finalized `runs/<scan_id>/manifest.json` file marks a telemetry bundle as ready for downstream ingestion.
 
-Each host is analyzed and scored based on exposed services.
+## DeltaAegis Telemetry Contract
+
+Current immutable bundles use:
 
 ```text
-HOST: 192.168.1.15
-DEVICE TYPE: Windows Host
-SEVERITY: CRITICAL
-SCORE: 10
-
-Risk Findings:
-SMB exposed
-RDP exposed
-```
-## 📦 JSON FILE ANALYSIS OUTPUT
-
-Machine-readable output for automation and pipelines.
-
-```json
-{
-    "host": "192.168.1.10",
-    "device_type": "Windows Server",
-    "severity": "High",
-    "score": 87,
-    "scanner_version": "v1.3",
-    "timestamp": "2026-05-29T18:00:00Z",
-    "findings": [
-        {
-            "id": "SMB-EXPOSED",
-            "name": "SMB Signing Disabled",
-            "service": "SMB",
-            "port": 445,
-            "score": 9,
-            "evidence": "Message signing not required"
-        }
-    ]
-}
+netsniper-run-v2
 ```
 
+The versioned manifest records:
 
-## ⚠️ DISCLAIMER
+- Exact monitored TCP ports.
+- SHA-256 scan-profile fingerprint.
+- NetSniper and Nmap versions.
+- Target subnet.
+- Discovery interface.
+- Scan timestamps and host counts.
+- Paths to archived discovery XML, service XML, findings JSON, and neighbor telemetry.
 
-NetSniper is provided for educational and authorized security testing purposes only.
+See [`Docs/deltaaegis-integration.md`](Docs/deltaaegis-integration.md).
 
-This tool must only be used on systems for which you have explicit authorization.
+## Scope and Limitations
 
-The author assumes no responsibility for misuse, damage, or illegal activity resulting from the use of this software.
+NetSniper is a focused sensor, not a full SIEM and not an exploit framework. It reports observations from its configured TCP profile. It does not claim to scan every possible TCP or UDP port.
 
-## ☕ Support Development
+## Authorized Use Only
 
-If NetSniper is useful in your security workflow, you can support continued development here:
+NetSniper is provided for educational use and authorized security testing. Use it only on systems and networks for which you have explicit permission.
 
-- Buy Me a Coffee: https://buymeacoffee.com/
+## License
 
+MIT License. See [`LICENSE`](LICENSE).
