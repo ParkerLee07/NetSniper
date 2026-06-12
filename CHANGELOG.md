@@ -31,3 +31,24 @@ NetSniper v1.3 improves exposure accuracy, reduces false positives, and strength
 NetSniper remains a standalone network reconnaissance and exposure-intelligence engine. TrueAegis integration is optional and provides additional validation, remediation guidance, and reporting capabilities.
 
 NetSniper is intended for authorized security assessments only. Use the tool only on systems and networks where you have explicit permission.
+
+## [v1.3.1] - 2026-06-12
+
+### Added
+- Immutable `netsniper-run-v2` telemetry bundles for DeltaAegis ingestion.
+- Archived discovery XML and neighbor-table telemetry for MAC-backed identity correlation.
+- Exact monitored-port profile fingerprints and versioned telemetry manifests.
+- Discovery interface, scan timing, Nmap version, and host-count metadata.
+- LDAP `389/tcp` coverage for Active Directory classification.
+
+### Fixed
+- Prevented `8080/tcp` from incorrectly matching `80/tcp` and similar substring collisions.
+- Prevented stale scan outputs from being reused after failed Nmap executions.
+- Required successful Nmap XML completion before downstream analysis and archival.
+- Restored relevant-host extraction inside the full pipeline.
+- Treated an empty relevant-host result as a valid outcome.
+- Replaced executable config sourcing with non-executable parsing.
+- Made Greenbone credentials optional and protected saved configuration permissions.
+
+### Compatibility
+- Preserved the existing legacy analysis JSON format consumed by TrueAegis.

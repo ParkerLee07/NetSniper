@@ -1,0 +1,17 @@
+name: NetSniper CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  shell-validation:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install ShellCheck
+        run: sudo apt-get update && sudo apt-get install -y shellcheck
+      - name: Validate Bash syntax
+        run: bash -n netsniper.sh
+      - name: Run ShellCheck warnings and errors
+        run: shellcheck -x --severity=warning netsniper.sh

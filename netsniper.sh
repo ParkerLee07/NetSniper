@@ -5,7 +5,8 @@
 # License: MIT
 
 # =========================
-# NETSNIPER ENGINE v1.3
+# NETSNIPER ENGINE v1.3.1
+# NETSNIPER_HARDENING_V131
 # TrueAegis-compatible telemetry output
 # =========================
 
@@ -15,11 +16,11 @@ trap 'echo -e "\n[ERROR] Failed at line $LINENO while executing $BASH_COMMAND"' 
 
 command -v nmap >/dev/null 2>&1 || { echo "nmap required"; exit 1; }
 command -v jq >/dev/null 2>&1 || { echo "jq required"; exit 1; }
+command -v base64 >/dev/null 2>&1 || { echo "base64 required"; exit 1; }
 command -v gvm-cli >/dev/null 2>&1 || echo "[!] gvm-cli not installed (Greenbone disabled)"
 
 # Colors
 RED='\033[1;31m'
-BRIGHT_RED='\033[1;3;91m'
 RESET='\033[0m'
 PURPLE='\033[1;35m'
 YELLOW='\033[1;33m'
@@ -60,15 +61,16 @@ ANALYSIS_DIR="$BASE/analysis"
 CONFIG_DIR="$BASE/config"
 
 CONFIG_FILE="$CONFIG_DIR/netsniper.conf"
+RUN_DIR="$BASE/runs"
 SOCK="/run/gvmd/gvmd.sock"
 
-SCANNER_VERSION="v1.3"
+SCANNER_VERSION="v1.3.1"
 
 # TrueAegis-aligned scan ports.
 # These are the ports NetSniper can reliably identify from nmap grepable output.
-TRUEAEGIS_PORTS="21,22,23,25,53,80,88,110,139,143,443,445,465,554,587,631,993,995,1433,1521,1900,2375,2376,3000,3306,3389,5000,5432,5555,5601,5900,6379,6443,7547,8000,8080,8081,8443,8888,9000,9090,9100,9200,9300,9443,10250,10255,27017,3268,3269"
+TRUEAEGIS_PORTS="21,22,23,25,53,80,88,389,110,139,143,443,445,465,554,587,631,993,995,1433,1521,1900,2375,2376,3000,3306,3389,5000,5432,5555,5601,5900,6379,6443,7547,8000,8080,8081,8443,8888,9000,9090,9100,9200,9300,9443,10250,10255,27017,3268,3269"
 
-HIGH_RISK_PATTERN="21/open|22/open|23/open|25/open|53/open|80/open|88/open|110/open|139/open|143/open|443/open|445/open|465/open|554/open|587/open|631/open|993/open|995/open|1433/open|1521/open|1900/open|2375/open|2376/open|3000/open|3306/open|3389/open|5000/open|5432/open|5555/open|5601/open|5900/open|6379/open|6443/open|7547/open|8000/open|8080/open|8081/open|8443/open|8888/open|9000/open|9090/open|9100/open|9200/open|9300/open|9443/open|10250/open|10255/open|27017/open|3268/open|3269/open"
+HIGH_RISK_PATTERN="21/open|22/open|23/open|25/open|53/open|80/open|88/open|389/open|110/open|139/open|143/open|443/open|445/open|465/open|554/open|587/open|631/open|993/open|995/open|1433/open|1521/open|1900/open|2375/open|2376/open|3000/open|3306/open|3389/open|5000/open|5432/open|5555/open|5601/open|5900/open|6379/open|6443/open|7547/open|8000/open|8080/open|8081/open|8443/open|8888/open|9000/open|9090/open|9100/open|9200/open|9300/open|9443/open|10250/open|10255/open|27017/open|3268/open|3269/open"
 
 # =========================
 # FUNCTIONS
@@ -142,17 +144,27 @@ boot_screen() {
 
 gvm_call() {
     local xml="$1"
-
     local out
+
+    if ! command -v gvm-cli >/dev/null 2>&1; then
+        echo "[-] gvm-cli is not installed"
+        return 1
+    fi
+
+    if [ -z "${GREENBONE_USER:-}" ] || [ -z "${GREENBONE_PASS:-}" ]; then
+        echo "[-] Greenbone credentials are not configured"
+        return 1
+    fi
+
     out=$(gvm-cli \
-        --gmp-username "$USER" \
-        --gmp-password "$PASS" \
+        --gmp-username "$GREENBONE_USER" \
+        --gmp-password "$GREENBONE_PASS" \
         socket \
         --socketpath "$SOCK" \
         --xml "$xml") || {
-            echo "[-] gvm-cli failed"
-            return 1
-        }
+        echo "[-] gvm-cli failed"
+        return 1
+    }
 
     echo "$out"
 }
@@ -179,27 +191,46 @@ run_with_spinner() {
 
 run_discovery() {
     echo -e "${RED}[1]${RESET} Discovering hosts on $NET..."
-
     mkdir -p "$DISCOVERY_DIR" "$TARGET_DIR"
 
-    nmap -PR -sn "$NET" -oG "$DISCOVERY_DIR/live.gnmap" \
-        > /dev/null 2>&1 &
+    # Remove previous outputs first so a failed scan cannot reuse stale evidence.
+    rm -f \
+        "$DISCOVERY_DIR/live.gnmap" \
+        "$DISCOVERY_DIR/live.nmap" \
+        "$DISCOVERY_DIR/live.xml" \
+        "$TARGET_DIR/hosts.txt"
 
+    # -oA preserves grepable, normal and XML discovery evidence.
+    nmap -PR -sn "$NET" -oA "$DISCOVERY_DIR/live" \
+        > /dev/null 2>&1 &
     PID=$!
 
     spin='|/-\'
     i=0
-
-    while kill -0 $PID 2>/dev/null; do
+    while kill -0 "$PID" 2>/dev/null; do
         i=$(( (i+1) %4 ))
         printf "\r[%c] Scanning network..." "${spin:$i:1}"
         sleep 0.1
     done
 
-    wait $PID
+    if ! wait "$PID"; then
+        printf "\r"
+        echo -e "${RED}[-] Discovery scan failed.${RESET}"
+        return 1
+    fi
     printf "\r"
 
+    if [ ! -s "$DISCOVERY_DIR/live.gnmap" ]; then
+        echo -e "${RED}[-] Discovery output was not created.${RESET}"
+        return 1
+    fi
+
     awk '/Up$/{print $2}' "$DISCOVERY_DIR/live.gnmap" > "$TARGET_DIR/hosts.txt"
+
+    if [ ! -s "$TARGET_DIR/hosts.txt" ]; then
+        echo -e "${YELLOW}[!] Discovery completed, but no live hosts were found.${RESET}"
+        return 1
+    fi
 
     echo -e "${GREEN}[+] Discovery complete${RESET}"
 }
@@ -207,30 +238,50 @@ run_discovery() {
 run_scan() {
     if [ ! -s "$TARGET_DIR/hosts.txt" ]; then
         echo -e "${RED}[-] No hosts found. Run discovery first.${RESET}"
-        return
+        return 1
     fi
 
     mkdir -p "$SCAN_DIR"
 
+    # Remove previous outputs first so a failed scan cannot reuse stale evidence.
+    rm -f \
+        "$SCAN_DIR/fast_scan.gnmap" \
+        "$SCAN_DIR/fast_scan.nmap" \
+        "$SCAN_DIR/fast_scan.xml"
+
     echo -e "${PURPLE}[2]${RESET} Running TrueAegis-aligned scan..."
     echo -e "${YELLOW}[*] Ports:${RESET} $TRUEAEGIS_PORTS"
 
-    nmap -sV -T4 -p "$TRUEAEGIS_PORTS" -iL "$TARGET_DIR/hosts.txt" -oA "$SCAN_DIR/fast_scan" \
+    nmap -sV -T4 -p "$TRUEAEGIS_PORTS" \
+        -iL "$TARGET_DIR/hosts.txt" \
+        -oA "$SCAN_DIR/fast_scan" \
         > /dev/null 2>&1 &
-
     PID=$!
 
     spin='|/-\'
     i=0
-
-    while kill -0 $PID 2>/dev/null; do
+    while kill -0 "$PID" 2>/dev/null; do
         i=$(( (i+1) %4 ))
         printf "\r[%c] Scanning hosts..." "${spin:$i:1}"
         sleep 0.1
     done
 
-    wait $PID
+    if ! wait "$PID"; then
+        printf "\r"
+        echo -e "${RED}[-] Service scan failed.${RESET}"
+        return 1
+    fi
     printf "\r"
+
+    if [ ! -s "$SCAN_DIR/fast_scan.gnmap" ] || [ ! -s "$SCAN_DIR/fast_scan.xml" ]; then
+        echo -e "${RED}[-] Service scan evidence is missing or empty.${RESET}"
+        return 1
+    fi
+
+    if ! grep -qE '<finished[^>]+exit="success"' "$SCAN_DIR/fast_scan.xml"; then
+        echo -e "${RED}[-] Nmap XML did not report a successful completion.${RESET}"
+        return 1
+    fi
 
     echo -e "${GREEN}[+] Scan complete${RESET}"
 }
@@ -243,12 +294,19 @@ extract_high_risk() {
 
     if [ ! -f "$INPUT" ]; then
         echo -e "${RED}[-] Scan file not found. Run scan first.${RESET}"
-        return
+        return 1
     fi
 
-    grep -E "$HIGH_RISK_PATTERN" "$INPUT" \
-        | awk '{print $2}' \
+    # Use token boundaries so 8080/open cannot be mistaken for 80/open.
+    awk -v pattern="(^|[[:space:],])(${HIGH_RISK_PATTERN})/" \
+        '$0 ~ pattern {print $2}' \
+        "$INPUT" \
         | sort -u > "$OUTPUT"
+
+    if [ ! -s "$OUTPUT" ]; then
+        echo -e "${YELLOW}[!] No TrueAegis-relevant hosts found.${RESET}"
+        return 0
+    fi
 
     echo -e "${GREEN}[+] TrueAegis-relevant hosts:${RESET}"
     cat "$OUTPUT"
@@ -265,21 +323,30 @@ import_greenbone() {
 
     INPUT="$TARGET_DIR/high_risk.txt"
 
+    if ! command -v gvm-cli >/dev/null 2>&1; then
+        echo -e "${RED}[-] gvm-cli is not installed.${RESET}"
+        return 1
+    fi
+
+    if [ -z "${GREENBONE_USER:-}" ] || [ -z "${GREENBONE_PASS:-}" ]; then
+        echo -e "${RED}[-] Greenbone credentials are not configured.${RESET}"
+        return 1
+    fi
+
     if [ ! -s "$INPUT" ]; then
         echo -e "${RED}[-] No high-risk hosts found.${RESET}"
-        return
+        return 1
     fi
 
     if [ ! -S "$SOCK" ]; then
         echo -e "${RED}[-] Greenbone socket not found.${RESET}"
-        return
+        return 1
     fi
 
     HOSTS=$(tr '\n' ',' < "$INPUT" | sed 's/,$//')
     NAME=$(generate_target_name)
 
     echo "[*] Creating target: $NAME"
-
     XML="<create_target>
     <name>$NAME</name>
     <hosts>$HOSTS</hosts>
@@ -291,7 +358,7 @@ import_greenbone() {
 
     if [ -z "$TARGET_ID" ]; then
         echo "[-] Failed to create target"
-        return
+        return 1
     fi
 
     echo "[+] Target ID: $TARGET_ID"
@@ -309,52 +376,129 @@ import_greenbone() {
 
     if [ -z "$TASK_ID" ]; then
         echo "[-] Failed to create task"
-        return
+        return 1
     fi
 
     echo "[+] Task ID: $TASK_ID"
     echo "[*] Starting scan..."
 
     gvm-cli \
-        --gmp-username "$USER" \
-        --gmp-password "$PASS" \
+        --gmp-username "$GREENBONE_USER" \
+        --gmp-password "$GREENBONE_PASS" \
         socket \
         --socketpath "$SOCK" \
-        --xml "<start_task task_id='$TASK_ID'/>"
+        --xml "<start_task task_id='$TASK_ID'/>" \
+        >/dev/null
 
     echo -e "${GREEN}[+] Scan launched successfully${RESET}"
 }
 
+b64_encode() {
+    printf '%s' "$1" | base64 | tr -d '\n'
+}
+
+b64_decode() {
+    printf '%s' "$1" | base64 --decode 2>/dev/null
+}
+
+read_config_value() {
+    local key="$1"
+
+    awk -F= -v key="$key" '
+        $1 == key {
+            print substr($0, index($0, "=") + 1)
+            exit
+        }
+    ' "$CONFIG_FILE"
+}
+
+load_saved_config() {
+    local format
+    local net_b64
+    local user_b64
+    local pass_b64
+
+    format=$(read_config_value "CONFIG_FORMAT")
+    if [ "$format" != "NETSNIPER_CONFIG_V2" ]; then
+        return 1
+    fi
+
+    net_b64=$(read_config_value "NET_B64")
+    user_b64=$(read_config_value "GREENBONE_USER_B64")
+    pass_b64=$(read_config_value "GREENBONE_PASS_B64")
+
+    if [ -z "$net_b64" ]; then
+        return 1
+    fi
+
+    NET=$(b64_decode "$net_b64") || return 1
+    GREENBONE_USER=$(b64_decode "$user_b64") || return 1
+    GREENBONE_PASS=$(b64_decode "$pass_b64") || return 1
+}
+
+save_config() {
+    local net_b64
+    local user_b64
+    local pass_b64
+
+    mkdir -p "$CONFIG_DIR"
+    umask 077
+
+    net_b64=$(b64_encode "$NET")
+    user_b64=$(b64_encode "$GREENBONE_USER")
+    pass_b64=$(b64_encode "$GREENBONE_PASS")
+
+    cat > "$CONFIG_FILE" <<EOF
+CONFIG_FORMAT=NETSNIPER_CONFIG_V2
+NET_B64=$net_b64
+GREENBONE_USER_B64=$user_b64
+GREENBONE_PASS_B64=$pass_b64
+EOF
+
+    chmod 600 "$CONFIG_FILE"
+    echo "[+] Config saved to $CONFIG_FILE"
+    echo "[!] Credentials are permission-protected and Base64-encoded, not encrypted."
+}
+
 load_config() {
+    local use_saved
+    local configure_greenbone
+
+    NET=""
+    GREENBONE_USER=""
+    GREENBONE_PASS=""
+
     if [ -f "$CONFIG_FILE" ]; then
         echo "[*] Found saved config."
+        read -r -p "Use saved config? (y/n): " use_saved
 
-        source "$CONFIG_FILE"
+        if [[ "$use_saved" =~ ^[Yy]$ ]]; then
+            if load_saved_config; then
+                echo "[+] Using saved configuration"
+                return 0
+            fi
 
-        read -p "Use saved config? (y/n): " use_saved
-
-        if [[ "$use_saved" == "y" ]]; then
-            echo "[+] Using saved configuration"
-            return
+            echo "[!] Existing config is legacy or invalid. Reconfiguration is required."
         fi
     fi
 
-    echo "[*] First-time setup"
+    echo "[*] NetSniper setup"
+    read -r -p "Target network (e.g. 192.168.1.0/24): " NET
 
-    read -p "Greenbone username: " USER
-    read -s -p "Greenbone password: " PASS
-    echo ""
+    if [ -z "$NET" ]; then
+        echo "[-] Target network cannot be empty."
+        return 1
+    fi
 
-    read -p "Target network (e.g. 192.168.1.0/24): " NET
+    read -r -p "Configure optional Greenbone integration? (y/n): " configure_greenbone
 
-    mkdir -p "$CONFIG_DIR"
-    cat > "$CONFIG_FILE" <<EOF
-USER="$USER"
-PASS="$PASS"
-NET="$NET"
-EOF
+    if [[ "$configure_greenbone" =~ ^[Yy]$ ]]; then
+        read -r -p "Greenbone username: " GREENBONE_USER
+        read -r -s -p "Greenbone password: " GREENBONE_PASS
+        echo ""
+    fi
 
-    echo "[+] Config saved to $CONFIG_FILE"
+    save_config
 }
 
 check_dirs() {
@@ -367,23 +511,171 @@ check_dirs() {
     done
 }
 
+# NETSNIPER_RUN_BUNDLE_V1
+# NETSNIPER_NEIGHBOR_TELEMETRY_V1
+latest_analysis_file() {
+    find "$TARGET_DIR" -maxdepth 1 -type f -name 'analysis_*.json' -printf '%T@ %p\n' \
+        | sort -nr \
+        | head -n 1 \
+        | cut -d' ' -f2-
+}
+
+latest_analysis_text_file() {
+    find "$TARGET_DIR" -maxdepth 1 -type f -name 'analysis_*.txt' -printf '%T@ %p\n' \
+        | sort -nr \
+        | head -n 1 \
+        | cut -d' ' -f2-
+}
+
+# NETSNIPER_MANIFEST_V2
+archive_deltaaegis_bundle() {
+    local run_id bundle_dir manifest_tmp analysis_json analysis_txt
+    local archived_at neighbors_captured_at discovered_count relevant_count service_hosts_up
+    local profile_ports_json profile_hash nmap_version discovery_interface
+    local service_started_epoch service_completed_epoch service_started_at service_completed_at
+
+    if [ ! -s "$DISCOVERY_DIR/live.xml" ]; then
+        echo -e "${RED}[-] Discovery XML is missing; refusing to archive telemetry.${RESET}"
+        return 1
+    fi
+    if [ ! -s "$SCAN_DIR/fast_scan.xml" ]; then
+        echo -e "${RED}[-] Service XML is missing; refusing to archive telemetry.${RESET}"
+        return 1
+    fi
+    if ! grep -qE '<finished[^>]+exit="success"' "$SCAN_DIR/fast_scan.xml"; then
+        echo -e "${RED}[-] Service XML does not report a successful Nmap completion.${RESET}"
+        return 1
+    fi
+
+    analysis_json=$(latest_analysis_file)
+    analysis_txt=$(latest_analysis_text_file)
+    if [ -z "$analysis_json" ] || [ ! -s "$analysis_json" ]; then
+        echo -e "${RED}[-] Analysis JSON is missing; refusing to archive telemetry.${RESET}"
+        return 1
+    fi
+
+    run_id=$(date +%Y%m%d-%H%M%S)
+    bundle_dir="$RUN_DIR/$run_id"
+    if [ -e "$bundle_dir" ]; then
+        run_id="${run_id}-$$"
+        bundle_dir="$RUN_DIR/$run_id"
+    fi
+    mkdir -p "$bundle_dir"
+
+    cp "$DISCOVERY_DIR/live.xml" "$bundle_dir/discovery.xml"
+    [ -f "$DISCOVERY_DIR/live.gnmap" ] && cp "$DISCOVERY_DIR/live.gnmap" "$bundle_dir/discovery.gnmap"
+    [ -f "$DISCOVERY_DIR/live.nmap" ] && cp "$DISCOVERY_DIR/live.nmap" "$bundle_dir/discovery.nmap"
+    cp "$SCAN_DIR/fast_scan.xml" "$bundle_dir/services.xml"
+    [ -f "$SCAN_DIR/fast_scan.gnmap" ] && cp "$SCAN_DIR/fast_scan.gnmap" "$bundle_dir/services.gnmap"
+    [ -f "$SCAN_DIR/fast_scan.nmap" ] && cp "$SCAN_DIR/fast_scan.nmap" "$bundle_dir/services.nmap"
+    cp "$analysis_json" "$bundle_dir/analysis.json"
+    [ -n "$analysis_txt" ] && [ -f "$analysis_txt" ] && cp "$analysis_txt" "$bundle_dir/analysis.txt"
+    [ -f "$TARGET_DIR/hosts.txt" ] && cp "$TARGET_DIR/hosts.txt" "$bundle_dir/hosts.txt"
+    [ -f "$TARGET_DIR/high_risk.txt" ] && cp "$TARGET_DIR/high_risk.txt" "$bundle_dir/high_risk.txt"
+
+    neighbors_captured_at=$(date --iso-8601=seconds)
+    if command -v ip >/dev/null 2>&1; then
+        ip neigh show > "$bundle_dir/neighbors.txt" 2>/dev/null || : > "$bundle_dir/neighbors.txt"
+    else
+        : > "$bundle_dir/neighbors.txt"
+    fi
+
+    archived_at=$(date --iso-8601=seconds)
+    discovered_count=$(wc -l < "$TARGET_DIR/hosts.txt" 2>/dev/null || printf '0')
+    relevant_count=$(wc -l < "$TARGET_DIR/high_risk.txt" 2>/dev/null || printf '0')
+    service_hosts_up=$(sed -n 's/.*<hosts up="\([0-9][0-9]*\)".*/\1/p' "$SCAN_DIR/fast_scan.xml" | tail -n 1)
+    service_hosts_up=${service_hosts_up:-0}
+    nmap_version=$(nmap --version 2>/dev/null | awk 'NR == 1 {print $3}')
+    discovery_interface=$(ip route show "$NET" 2>/dev/null | awk '{for (i=1; i<=NF; i++) if ($i == "dev") {print $(i+1); exit}}')
+    profile_ports_json=$(printf '%s' "$TRUEAEGIS_PORTS" | tr ',' '\n' | jq -R 'tonumber' | jq -s '.')
+    profile_hash=$(printf '%s' "FAST_MONITORED_TCP|tcp|$TRUEAEGIS_PORTS" | sha256sum | awk '{print $1}')
+    service_started_epoch=$(sed -n 's/.*<nmaprun[^>]* start="\([0-9][0-9]*\)".*/\1/p' "$SCAN_DIR/fast_scan.xml" | head -n 1)
+    service_completed_epoch=$(sed -n 's/.*<finished[^>]* time="\([0-9][0-9]*\)".*/\1/p' "$SCAN_DIR/fast_scan.xml" | tail -n 1)
+    service_started_at=$(date --date="@${service_started_epoch:-0}" --iso-8601=seconds 2>/dev/null || printf '')
+    service_completed_at=$(date --date="@${service_completed_epoch:-0}" --iso-8601=seconds 2>/dev/null || printf '')
+    manifest_tmp="$bundle_dir/manifest.json.tmp"
+
+    jq -n \
+        --arg schema_version "netsniper-run-v2" \
+        --arg scan_id "$run_id" \
+        --arg scanner_version "$SCANNER_VERSION" \
+        --arg scan_profile "FAST_MONITORED_TCP" \
+        --arg target "$NET" \
+        --arg status "COMPLETE" \
+        --arg created_at "$archived_at" \
+        --arg archived_at "$archived_at" \
+        --arg neighbors_captured_at "$neighbors_captured_at" \
+        --arg service_started_at "$service_started_at" \
+        --arg service_completed_at "$service_completed_at" \
+        --arg nmap_version "$nmap_version" \
+        --arg discovery_interface "$discovery_interface" \
+        --arg profile_fingerprint "sha256:$profile_hash" \
+        --argjson monitored_ports "$profile_ports_json" \
+        --argjson discovered_count "$discovered_count" \
+        --argjson relevant_count "$relevant_count" \
+        --argjson service_hosts_up "$service_hosts_up" \
+        '{
+            schema_version: $schema_version,
+            scan_id: $scan_id,
+            scanner_version: $scanner_version,
+            scan_profile: $scan_profile,
+            target: $target,
+            status: $status,
+            created_at: $created_at,
+            profile: {
+                protocols: ["tcp"],
+                monitored_ports: $monitored_ports,
+                fingerprint: $profile_fingerprint
+            },
+            timestamps: {
+                archived_at: $archived_at,
+                neighbors_captured_at: $neighbors_captured_at,
+                service_started_at: $service_started_at,
+                service_completed_at: $service_completed_at
+            },
+            telemetry: {
+                nmap_version: $nmap_version,
+                discovery_interface: $discovery_interface
+            },
+            counts: {
+                discovered_hosts: $discovered_count,
+                service_hosts_up: $service_hosts_up,
+                relevant_hosts: $relevant_count
+            },
+            files: {
+                discovery_xml: "discovery.xml",
+                services_xml: "services.xml",
+                analysis_json: "analysis.json",
+                neighbors: "neighbors.txt"
+            }
+        }' > "$manifest_tmp"
+
+    mv "$manifest_tmp" "$bundle_dir/manifest.json"
+    echo -e "${GREEN}[+] DeltaAegis telemetry bundle archived:${RESET}"
+    echo "$bundle_dir"
+}
+
 run_full_pipeline() {
     echo ""
     echo "=============================="
-    echo "   NETSNIPER PIPELINE"
+    echo " NETSNIPER PIPELINE"
     echo "=============================="
 
-    INFO "Stage 1/4 - Discovery"
+    INFO "Stage 1/5 - Discovery"
     run_discovery || return 1
 
-    INFO "Stage 2/4 - Scanning"
+    INFO "Stage 2/5 - Scanning"
     run_scan || return 1
 
-    INFO "Stage 3/4 - Analysis"
+    INFO "Stage 3/5 - Extracting relevant hosts"
+    extract_high_risk || return 1
+
+    INFO "Stage 4/5 - Analysis"
     analyze_hosts || return 1
 
-    INFO "Stage 4/4 - Reporting"
+    INFO "Stage 5/5 - Reporting"
     generate_report || return 1
+    archive_deltaaegis_bundle || return 1
 
     SUCCESS "Pipeline complete"
 }
@@ -400,15 +692,15 @@ analyze_hosts() {
 
     if [ ! -f "$INPUT" ]; then
         echo -e "${RED}[-] Scan file not found.${RESET}"
-        return
+        return 1
     fi
 
     TIMESTAMP=$(date +%Y%m%d-%H%M%S)
     ANALYSIS_FILE="$TARGET_DIR/analysis_$TIMESTAMP.txt"
     JSON_FILE="$TARGET_DIR/analysis_$TIMESTAMP.json"
 
-    > "$JSON_FILE.tmp"
-    > "$ANALYSIS_FILE"
+    : > "$JSON_FILE.tmp"
+    : > "$ANALYSIS_FILE"
 
     {
         echo "========================================="
@@ -431,7 +723,8 @@ analyze_hosts() {
 
         has_port() {
             local port="$1"
-            [[ "$line" == *"$port/open"* ]]
+            local pattern="(^|[[:space:],])${port}/open/"
+            [[ "$line" =~ $pattern ]]
         }
 
         add_finding() {
@@ -472,6 +765,7 @@ analyze_hosts() {
         has_port 53 && add_finding "DNS_EXPOSED" "DNS service exposed" "dns" 53 4 "Port 53 open"
         has_port 80 && add_finding "HTTP_EXPOSED" "HTTP service exposed" "http" 80 2 "Port 80 open"
         has_port 88 && add_finding "KERBEROS_EXPOSED" "Kerberos service exposed" "kerberos" 88 7 "Port 88 open"
+        has_port 389 && add_finding "LDAP_EXPOSED" "LDAP service exposed" "ldap" 389 6 "Port 389 open"
         has_port 110 && add_finding "POP3_EXPOSED" "POP3 service exposed" "pop3" 110 4 "Port 110 open"
         has_port 139 && add_finding "NETBIOS_SMB_EXPOSED" "NetBIOS/SMB service exposed" "netbios-ssn" 139 5 "Port 139 open"
         has_port 143 && add_finding "IMAP_EXPOSED" "IMAP service exposed" "imap" 143 4 "Port 143 open"
@@ -609,12 +903,12 @@ generate_report() {
 
     if [ ! -f "$HOSTS_FILE" ]; then
         echo -e "${RED}[-] hosts.txt not found${RESET}"
-        return
+        return 1
     fi
 
     if [ ! -f "$SCAN_FILE" ]; then
         echo -e "${RED}[-] fast_scan.gnmap not found${RESET}"
-        return
+        return 1
     fi
 
     HOST_COUNT=$(wc -l < "$HOSTS_FILE")
@@ -625,10 +919,13 @@ generate_report() {
         HIGH_RISK_COUNT=0
     fi
 
-    PORT_SUMMARY=$(grep -oE '[0-9]+/open' "$SCAN_FILE" \
-        | sort \
-        | uniq -c \
-        | sort -nr)
+    PORT_SUMMARY=$(
+        grep -oE '[0-9]+/open' "$SCAN_FILE" 2>/dev/null \
+            | sort \
+            | uniq -c \
+            | sort -nr \
+            || true
+    )
 
     HOST_DETAILS=""
 
@@ -708,8 +1005,6 @@ init_workspace
 check_dirs
 load_config
 
-: "${USER:?Missing USER}"
-: "${PASS:?Missing PASS}"
 : "${NET:?Missing NET}"
 
 while true; do
@@ -728,7 +1023,7 @@ while true; do
     echo "  0) Exit"
     echo "================================"
 
-    read -p "netsniper> " opt
+    read -r -p "netsniper> " opt
 
     case $opt in
         1) run_discovery ;;
