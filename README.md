@@ -38,7 +38,7 @@ cd NetSniper
 chmod +x install.sh
 ./install.sh
 ```
-# After Installation
+## After Installation
 
 Run:
 
