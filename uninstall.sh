@@ -2,8 +2,18 @@
 set -Eeuo pipefail
 IFS=$'\n\t'
 
-NETSNIPER_HOME="${NETSNIPER_HOME:-$HOME/NetSniper}"
+# ============================================================
+# NetSniper Uninstaller
+#
+# Usage:
+#   ./uninstall.sh
+#   ./uninstall.sh --purge
+# ============================================================
+
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+NETSNIPER_HOME="${NETSNIPER_HOME:-${NETSNIPER_BASE:-$SCRIPT_DIR}}"
 BIN_DIR="${BIN_DIR:-$HOME/.local/bin}"
+
 PURGE=0
 
 for arg in "$@"; do
@@ -17,6 +27,7 @@ for arg in "$@"; do
             ;;
         *)
             echo "Unknown option: $arg"
+            echo "Usage: ./uninstall.sh [--purge]"
             exit 1
             ;;
     esac
