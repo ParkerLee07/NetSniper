@@ -51,7 +51,8 @@ WARN() {
 # PATH CONFIGURATION
 # =========================
 
-BASE="${NETSNIPER_BASE:-$HOME/NetSniper}"
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+BASE="${NETSNIPER_BASE:-$SCRIPT_DIR}"
 
 DISCOVERY_DIR="$BASE/discovery"
 TARGET_DIR="$BASE/targets"
