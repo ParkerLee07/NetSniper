@@ -38,6 +38,14 @@ cd NetSniper
 chmod +x install.sh
 ./install.sh
 ```
+# After Installation
+
+Run:
+
+```bash
+netsniper
+```
+
 
 ## Pipeline
 
