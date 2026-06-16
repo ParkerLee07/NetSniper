@@ -46,6 +46,14 @@ Run:
 netsniper
 ```
 
+## Uninstall
+
+Run:
+
+```bash
+./uninstall.sh
+./uninstall.sh --purge
+```
 
 ## Pipeline
 
