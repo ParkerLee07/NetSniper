@@ -28,11 +28,15 @@ Optional Greenbone integration requires a configured GVM installation and `gvm-c
 
 ## Installation
 
+Install required packages:
+
 ```bash
+sudo apt update
+sudo apt install -y nmap jq coreutils
 git clone https://github.com/ParkerLee07/NetSniper.git
 cd NetSniper
-chmod +x netsniper.sh
-./netsniper.sh
+chmod +x install.sh
+./install.sh
 ```
 
 ## Pipeline
