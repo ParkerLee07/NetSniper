@@ -6,6 +6,13 @@ NetSniper is a Bash-based network discovery and service-enumeration pipeline. It
 
 NetSniper is also the active network sensor for **DeltaAegis**. Each completed full-pipeline run creates an immutable telemetry bundle containing raw Nmap XML, discovery evidence, neighbor-table enrichment, interpreted findings, and a versioned manifest.
 
+## Current Release
+
+NetSniper v1.3.1
+
+---
+
+
 ## Features
 
 - Local-subnet host discovery with Nmap.
