@@ -65,7 +65,7 @@ CONFIG_FILE="$CONFIG_DIR/netsniper.conf"
 RUN_DIR="$BASE/runs"
 SOCK="/run/gvmd/gvmd.sock"
 
-SCANNER_VERSION="v1.3.1"
+SCANNER_VERSION="v1.4.0-dev"
 
 # TrueAegis-aligned scan ports.
 # These are the ports NetSniper can reliably identify from nmap grepable output.
@@ -722,6 +722,25 @@ analyze_hosts() {
         DEVICE_TYPE="Unknown"
         FINDINGS_JSON="[]"
 
+        CLASSIFICATION_EVIDENCE="[]"
+        CLASSIFICATION_CONTRADICTIONS="[]"
+        CLASSIFICATION_SECONDARY="[]"
+        CLASSIFICATION_PRIMARY="Unknown / Ambiguous"
+        CLASSIFICATION_CONFIDENCE=0
+        CLASSIFICATION_LABEL="weak"
+
+        AD_SCORE=0
+        KUBE_SCORE=0
+        CONTAINER_SCORE=0
+        WINDOWS_SCORE=0
+        DATABASE_SCORE=0
+        PRINTER_SCORE=0
+        CAMERA_SCORE=0
+        LINUX_WEB_SCORE=0
+        WEB_SCORE=0
+        NETWORK_SCORE=0
+        MAIL_SCORE=0
+
         has_port() {
             local port="$1"
             local pattern="(^|[[:space:],])${port}/open/"
@@ -753,6 +772,69 @@ analyze_hosts() {
                     score: ($score | tonumber),
                     evidence: $evidence
                 }]')
+        }
+
+        add_classification_evidence() {
+            local candidate="$1"
+            local source="$2"
+            local value="$3"
+            local points="$4"
+            local reason="$5"
+
+            CLASSIFICATION_EVIDENCE=$(echo "$CLASSIFICATION_EVIDENCE" | jq \
+                --arg candidate "$candidate" \
+                --arg source "$source" \
+                --arg value "$value" \
+                --arg points "$points" \
+                --arg reason "$reason" \
+                '. += [{
+                    candidate: $candidate,
+                    source: $source,
+                    value: $value,
+                    points: ($points | tonumber),
+                    reason: $reason
+                }]')
+
+            case "$candidate" in
+                ad) AD_SCORE=$((AD_SCORE + points)) ;;
+                kube) KUBE_SCORE=$((KUBE_SCORE + points)) ;;
+                container) CONTAINER_SCORE=$((CONTAINER_SCORE + points)) ;;
+                windows) WINDOWS_SCORE=$((WINDOWS_SCORE + points)) ;;
+                database) DATABASE_SCORE=$((DATABASE_SCORE + points)) ;;
+                printer) PRINTER_SCORE=$((PRINTER_SCORE + points)) ;;
+                camera) CAMERA_SCORE=$((CAMERA_SCORE + points)) ;;
+                linux_web) LINUX_WEB_SCORE=$((LINUX_WEB_SCORE + points)) ;;
+                web) WEB_SCORE=$((WEB_SCORE + points)) ;;
+                network) NETWORK_SCORE=$((NETWORK_SCORE + points)) ;;
+                mail) MAIL_SCORE=$((MAIL_SCORE + points)) ;;
+            esac
+        }
+
+        add_classification_contradiction() {
+            local value="$1"
+            local reason="$2"
+
+            CLASSIFICATION_CONTRADICTIONS=$(echo "$CLASSIFICATION_CONTRADICTIONS" | jq \
+                --arg value "$value" \
+                --arg reason "$reason" \
+                '. += [{
+                    value: $value,
+                    reason: $reason
+                }]')
+        }
+
+        confidence_label() {
+            local confidence="$1"
+
+            if [ "$confidence" -ge 85 ]; then
+                printf 'high'
+            elif [ "$confidence" -ge 65 ]; then
+                printf 'likely'
+            elif [ "$confidence" -ge 40 ]; then
+                printf 'possible'
+            else
+                printf 'weak'
+            fi
         }
 
         # -------------------------
@@ -815,28 +897,146 @@ analyze_hosts() {
         # Device Classification
         # -------------------------
 
+        # Weighted evidence-based classification.
+        # This preserves broad compatibility while adding explainable classification data.
+
         if has_port 88 && has_port 389 && has_port 445; then
-            DEVICE_TYPE="Likely Active Directory / Domain Controller"
-        elif has_port 6443 || has_port 10250 || has_port 10255; then
-            DEVICE_TYPE="Kubernetes Infrastructure"
-        elif has_port 2375 || has_port 2376; then DEVICE_TYPE="Container Infrastructure"
-        elif has_port 445 || has_port 3389 || has_port 139; then
-            DEVICE_TYPE="Windows Host"
-        elif has_port 1433 || has_port 1521 || has_port 3306 || has_port 5432 || has_port 6379 || has_port 9200 || has_port 27017; then
-            DEVICE_TYPE="Database Server"
-        elif has_port 9100 || has_port 631; then
-            DEVICE_TYPE="Network Printer"
-        elif has_port 554; then
-            DEVICE_TYPE="IP Camera / RTSP Device"
-        elif has_port 22 && (has_port 80 || has_port 443 || has_port 8080 || has_port 8443); then
-            DEVICE_TYPE="Linux/Web Server"
-        elif has_port 80 || has_port 443 || has_port 8080 || has_port 8443 || has_port 8000 || has_port 8888; then
-            DEVICE_TYPE="Web Server"
-        elif has_port 25 || has_port 465 || has_port 587 || has_port 110 || has_port 143 || has_port 993 || has_port 995; then
-            DEVICE_TYPE="Mail Server"
-        elif has_port 53; then
-            DEVICE_TYPE="DNS Server"
+            add_classification_evidence "ad" "port-combination" "tcp/88+389+445" 95 "Kerberos, LDAP, and SMB together strongly suggest Active Directory infrastructure"
         fi
+
+        has_port 6443 && add_classification_evidence "kube" "port" "tcp/6443" 55 "Kubernetes API service detected"
+        has_port 10250 && add_classification_evidence "kube" "port" "tcp/10250" 45 "Kubelet service detected"
+        has_port 10255 && add_classification_evidence "kube" "port" "tcp/10255" 35 "Kubelet read-only service detected"
+
+        has_port 2375 && add_classification_evidence "container" "port" "tcp/2375" 60 "Docker API service detected"
+        has_port 2376 && add_classification_evidence "container" "port" "tcp/2376" 50 "Docker TLS API service detected"
+        has_port 5000 && add_classification_evidence "container" "port" "tcp/5000" 35 "Docker Registry or container-adjacent web service detected"
+        has_port 9000 && add_classification_evidence "container" "port" "tcp/9000" 25 "Container/admin console candidate detected"
+        has_port 9443 && add_classification_evidence "container" "port" "tcp/9443" 25 "Container/admin TLS console candidate detected"
+
+        has_port 445 && add_classification_evidence "windows" "port" "tcp/445" 35 "SMB service is commonly associated with Windows hosts and file services"
+        has_port 3389 && add_classification_evidence "windows" "port" "tcp/3389" 35 "RDP service is commonly associated with Windows hosts"
+        has_port 139 && add_classification_evidence "windows" "port" "tcp/139" 15 "NetBIOS/SMB service detected"
+
+        has_port 1433 && add_classification_evidence "database" "port" "tcp/1433" 45 "Microsoft SQL Server port detected"
+        has_port 1521 && add_classification_evidence "database" "port" "tcp/1521" 45 "Oracle database port detected"
+        has_port 3306 && add_classification_evidence "database" "port" "tcp/3306" 45 "MySQL database port detected"
+        has_port 5432 && add_classification_evidence "database" "port" "tcp/5432" 45 "PostgreSQL database port detected"
+        has_port 6379 && add_classification_evidence "database" "port" "tcp/6379" 40 "Redis service detected"
+        has_port 9200 && add_classification_evidence "database" "port" "tcp/9200" 45 "Elasticsearch HTTP service detected"
+        has_port 9300 && add_classification_evidence "database" "port" "tcp/9300" 35 "Elasticsearch transport service detected"
+        has_port 27017 && add_classification_evidence "database" "port" "tcp/27017" 45 "MongoDB database port detected"
+
+        has_port 9100 && add_classification_evidence "printer" "port" "tcp/9100" 55 "Raw JetDirect-style printer service detected"
+        has_port 631 && add_classification_evidence "printer" "port" "tcp/631" 40 "IPP printing service detected"
+
+        has_port 554 && add_classification_evidence "camera" "port" "tcp/554" 60 "RTSP service commonly indicates camera, NVR, DVR, or media streaming device"
+        if has_port 554 && (has_port 80 || has_port 443 || has_port 8080 || has_port 8443); then
+            add_classification_evidence "camera" "port-combination" "tcp/554+web" 20 "RTSP plus web management surface strengthens camera/NVR likelihood"
+        fi
+
+        has_port 22 && add_classification_evidence "linux_web" "port" "tcp/22" 25 "SSH service commonly indicates Linux, Unix, network appliance, or administrative endpoint"
+        if has_port 22 && (has_port 80 || has_port 443 || has_port 8080 || has_port 8443); then
+            add_classification_evidence "linux_web" "port-combination" "tcp/22+web" 30 "SSH plus web service commonly indicates Linux server or web appliance"
+        fi
+
+        has_port 80 && add_classification_evidence "web" "port" "tcp/80" 20 "HTTP service detected"
+        has_port 443 && add_classification_evidence "web" "port" "tcp/443" 20 "HTTPS service detected"
+        has_port 8000 && add_classification_evidence "web" "port" "tcp/8000" 15 "Alternate HTTP service detected"
+        has_port 8080 && add_classification_evidence "web" "port" "tcp/8080" 15 "Alternate HTTP service detected"
+        has_port 8443 && add_classification_evidence "web" "port" "tcp/8443" 15 "Alternate HTTPS service detected"
+        has_port 8888 && add_classification_evidence "web" "port" "tcp/8888" 15 "Alternate HTTP service detected"
+
+        has_port 53 && add_classification_evidence "network" "port" "tcp/53" 35 "DNS service suggests infrastructure or DNS server role"
+        has_port 1900 && add_classification_evidence "network" "port" "tcp/1900" 20 "UPnP/SSDP service suggests infrastructure, embedded, or appliance behavior"
+        has_port 7547 && add_classification_evidence "network" "port" "tcp/7547" 45 "TR-069/CPE management service suggests router, gateway, or ISP-managed device"
+
+        has_port 25 && add_classification_evidence "mail" "port" "tcp/25" 35 "SMTP service detected"
+        has_port 465 && add_classification_evidence "mail" "port" "tcp/465" 25 "SMTPS service detected"
+        has_port 587 && add_classification_evidence "mail" "port" "tcp/587" 25 "SMTP submission service detected"
+        has_port 110 && add_classification_evidence "mail" "port" "tcp/110" 20 "POP3 service detected"
+        has_port 143 && add_classification_evidence "mail" "port" "tcp/143" 20 "IMAP service detected"
+        has_port 993 && add_classification_evidence "mail" "port" "tcp/993" 20 "IMAPS service detected"
+        has_port 995 && add_classification_evidence "mail" "port" "tcp/995" 20 "POP3S service detected"
+
+        if (has_port 9100 || has_port 631) && has_port 3389; then
+            add_classification_contradiction "printer+rDP" "Printer-like services detected, but RDP is also open; classification confidence should be reviewed"
+        fi
+
+        if has_port 554 && (has_port 445 || has_port 3389); then
+            add_classification_contradiction "camera+windows-services" "Camera/RTSP-like service detected with SMB or RDP; this may indicate misclassification or risky service exposure"
+        fi
+
+        if has_port 53 && (has_port 1433 || has_port 3306 || has_port 5432 || has_port 27017); then
+            add_classification_contradiction "infrastructure+database" "Infrastructure-like DNS service detected with database exposure; review asset role"
+        fi
+
+        CLASSIFICATION_PRIMARY="Unknown / Ambiguous"
+        CLASSIFICATION_CONFIDENCE=0
+
+        update_best_candidate() {
+            local label="$1"
+            local confidence="$2"
+
+            if [ "$confidence" -gt "$CLASSIFICATION_CONFIDENCE" ]; then
+                CLASSIFICATION_PRIMARY="$label"
+                CLASSIFICATION_CONFIDENCE="$confidence"
+            fi
+        }
+
+        update_best_candidate "Likely Active Directory / Domain Controller" "$AD_SCORE"
+        update_best_candidate "Kubernetes Infrastructure" "$KUBE_SCORE"
+        update_best_candidate "Container Infrastructure" "$CONTAINER_SCORE"
+        update_best_candidate "Windows Host" "$WINDOWS_SCORE"
+        update_best_candidate "Database Server" "$DATABASE_SCORE"
+        update_best_candidate "Network Printer / Multifunction Printer" "$PRINTER_SCORE"
+        update_best_candidate "IP Camera / NVR" "$CAMERA_SCORE"
+        update_best_candidate "Linux / Web Server" "$LINUX_WEB_SCORE"
+        update_best_candidate "Web Server" "$WEB_SCORE"
+        update_best_candidate "Network Infrastructure / Router" "$NETWORK_SCORE"
+        update_best_candidate "Mail Server" "$MAIL_SCORE"
+
+        if [ "$CLASSIFICATION_CONFIDENCE" -gt 100 ]; then
+            CLASSIFICATION_CONFIDENCE=100
+        fi
+
+        CLASSIFICATION_LABEL=$(confidence_label "$CLASSIFICATION_CONFIDENCE")
+
+        if [ "$CLASSIFICATION_CONFIDENCE" -ge 40 ]; then
+            DEVICE_TYPE="$CLASSIFICATION_PRIMARY"
+        fi
+
+        CLASSIFICATION_SECONDARY=$(jq -n \
+            --arg primary "$CLASSIFICATION_PRIMARY" \
+            --argjson ad "$AD_SCORE" \
+            --argjson kube "$KUBE_SCORE" \
+            --argjson container "$CONTAINER_SCORE" \
+            --argjson windows "$WINDOWS_SCORE" \
+            --argjson database "$DATABASE_SCORE" \
+            --argjson printer "$PRINTER_SCORE" \
+            --argjson camera "$CAMERA_SCORE" \
+            --argjson linux_web "$LINUX_WEB_SCORE" \
+            --argjson web "$WEB_SCORE" \
+            --argjson network "$NETWORK_SCORE" \
+            --argjson mail "$MAIL_SCORE" \
+            '[
+                {device_type: "Likely Active Directory / Domain Controller", confidence: $ad},
+                {device_type: "Kubernetes Infrastructure", confidence: $kube},
+                {device_type: "Container Infrastructure", confidence: $container},
+                {device_type: "Windows Host", confidence: $windows},
+                {device_type: "Database Server", confidence: $database},
+                {device_type: "Network Printer / Multifunction Printer", confidence: $printer},
+                {device_type: "IP Camera / NVR", confidence: $camera},
+                {device_type: "Linux / Web Server", confidence: $linux_web},
+                {device_type: "Web Server", confidence: $web},
+                {device_type: "Network Infrastructure / Router", confidence: $network},
+                {device_type: "Mail Server", confidence: $mail}
+            ]
+            | map(if .confidence > 100 then .confidence = 100 else . end)
+            | map(select(.confidence > 0 and .device_type != $primary))
+            | sort_by(.confidence)
+            | reverse
+            | .[:3]')
 
         # -------------------------
         # Severity Classification
@@ -859,14 +1059,49 @@ analyze_hosts() {
             --arg score "$SCORE" \
             --arg scanner_version "$SCANNER_VERSION" \
             --arg timestamp "$TIMESTAMP" \
+            --arg classification_primary "$CLASSIFICATION_PRIMARY" \
+            --arg classification_confidence "$CLASSIFICATION_CONFIDENCE" \
+            --arg classification_label "$CLASSIFICATION_LABEL" \
             --argjson findings "$FINDINGS_JSON" \
+            --argjson classification_evidence "$CLASSIFICATION_EVIDENCE" \
+            --argjson classification_contradictions "$CLASSIFICATION_CONTRADICTIONS" \
+            --argjson classification_secondary "$CLASSIFICATION_SECONDARY" \
             '{
                 host: $host,
                 device_type: $device,
+                device_type_confidence: ($classification_confidence | tonumber),
                 severity: $severity,
                 score: ($score | tonumber),
                 scanner_version: $scanner_version,
                 timestamp: $timestamp,
+                classification: {
+                    schema_version: "netsniper-classification-v1",
+
+                    # Compatibility aliases for downstream tools.
+                    # primary_type/secondary_candidates remain the canonical v1.4 names.
+                    # type/candidates are easier for DeltaAegis and other parsers to consume.
+                    type: $classification_primary,
+                    primary_type: $classification_primary,
+
+                    confidence: ($classification_confidence | tonumber),
+                    confidence_label: $classification_label,
+                    decision: (
+                        if ($classification_confidence | tonumber) >= 40 then
+                            "classified"
+                        elif ($classification_confidence | tonumber) > 0 then
+                            "possible"
+                        else
+                            "unknown"
+                        end
+                    ),
+                    method: "weighted_evidence",
+
+                    evidence: $classification_evidence,
+                    contradictions: $classification_contradictions,
+
+                    candidates: $classification_secondary,
+                    secondary_candidates: $classification_secondary
+                },
                 findings: $findings
             }' >> "$JSON_FILE.tmp"
 
@@ -874,6 +1109,9 @@ analyze_hosts() {
             echo "HOST: $HOST"
             echo "SCORE: $SCORE"
             echo "DEVICE TYPE: $DEVICE_TYPE"
+            echo "DEVICE TYPE CONFIDENCE: $CLASSIFICATION_CONFIDENCE ($CLASSIFICATION_LABEL)"
+            echo "CLASSIFICATION CONTRADICTIONS:"
+            echo "$CLASSIFICATION_CONTRADICTIONS" | jq -r '.[]? | "- " + .reason'
             echo "SEVERITY: $SEVERITY"
             echo "FINDINGS:"
             echo "$FINDINGS_JSON" | jq -r '.[] | "- [" + .id + "] " + .name + " (" + .evidence + ")"'
