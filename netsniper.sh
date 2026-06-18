@@ -5,8 +5,8 @@
 # License: MIT
 
 # =========================
-# NETSNIPER ENGINE v1.3.1
-# NETSNIPER_HARDENING_V131
+# NETSNIPER ENGINE v1.4.0
+# NETSNIPER_CLASSIFICATION_ENGINE_V140
 # TrueAegis-compatible telemetry output
 # =========================
 
@@ -65,7 +65,7 @@ CONFIG_FILE="$CONFIG_DIR/netsniper.conf"
 RUN_DIR="$BASE/runs"
 SOCK="/run/gvmd/gvmd.sock"
 
-SCANNER_VERSION="v1.4.0-dev"
+SCANNER_VERSION="v1.4.0"
 
 # TrueAegis-aligned scan ports.
 # These are the ports NetSniper can reliably identify from nmap grepable output.
