@@ -54,18 +54,52 @@ path = Path(sys.argv[1])
 data = json.loads(path.read_text(encoding="utf-8"))
 
 if isinstance(data, dict):
-    hosts = data.get("hosts") or data.get("results") or data.get("analysis") or []
+    hosts = (
+        data.get("hosts")
+        or data.get("targets")
+        or data.get("results")
+        or data.get("analysis")
+        or data.get("devices")
+        or []
+    )
 else:
     hosts = data
 
 if not isinstance(hosts, list):
     raise SystemExit("[-] Analysis JSON did not contain a host list.")
 
-by_ip = {
-    item.get("ip"): item
-    for item in hosts
-    if isinstance(item, dict) and item.get("ip")
-}
+def host_key(item):
+    if not isinstance(item, dict):
+        return None
+
+    return (
+        item.get("ip")
+        or item.get("host")
+        or item.get("address")
+        or item.get("target")
+        or item.get("ip_address")
+    )
+
+by_ip = {}
+
+for item in hosts:
+    key = host_key(item)
+
+    if key:
+        by_ip[str(key)] = item
+
+if not by_ip:
+    print("[-] Could not index any hosts from analysis JSON.")
+    print("[*] Top-level JSON type:", type(data).__name__)
+
+    if isinstance(data, dict):
+        print("[*] Top-level keys:", sorted(data.keys()))
+
+    if isinstance(hosts, list):
+        print("[*] Host list length:", len(hosts))
+        print("[*] First host object:", hosts[0] if hosts else None)
+
+    raise SystemExit(1)
 
 expected = {
     "192.0.2.1": "Router / Gateway",
