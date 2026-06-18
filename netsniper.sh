@@ -71,7 +71,7 @@ SCANNER_VERSION="v1.4.0"
 # These are the ports NetSniper can reliably identify from nmap grepable output.
 TRUEAEGIS_PORTS="21,22,23,25,53,80,88,389,110,139,143,443,445,465,554,587,631,993,995,1433,1521,1900,2375,2376,3000,3306,3389,5000,5432,5555,5601,5900,6379,6443,7547,8000,8080,8081,8443,8888,9000,9090,9100,9200,9300,9443,10250,10255,27017,3268,3269"
 
-HIGH_RISK_PATTERN="21/open|22/open|23/open|25/open|53/open|80/open|88/open|389/open|110/open|139/open|143/open|443/open|445/open|465/open|554/open|587/open|631/open|993/open|995/open|1433/open|1521/open|1900/open|2375/open|2376/open|3000/open|3306/open|3389/open|5000/open|5432/open|5555/open|5601/open|5900/open|6379/open|6443/open|7547/open|8000/open|8080/open|8081/open|8443/open|8888/open|9000/open|9090/open|9100/open|9200/open|9300/open|9443/open|10250/open|10255/open|27017/open|3268/open|3269/open"
+HIGH_RISK_PATTERN="21/open|22/open|23/open|25/open|53/open|80/open|88/open|389/open|110/open|139/open|143/open|443/open|445/open|465/open|554/open|587/open|631/open|993/open|995/open|1433/open|1521/open|1900/open|2049/open|2375/open|2376/open|3000/open|3306/open|3389/open|5000/open|5432/open|5555/open|5601/open|5900/open|6379/open|6443/open|7547/open|8000/open|8080/open|8081/open|8443/open|8888/open|9000/open|9090/open|9100/open|9200/open|9300/open|9443/open|10250/open|10255/open|27017/open|3268/open|3269/open"
 
 # =========================
 # FUNCTIONS
@@ -732,6 +732,8 @@ analyze_hosts() {
         AD_SCORE=0
         KUBE_SCORE=0
         CONTAINER_SCORE=0
+        ROUTER_GATEWAY_SCORE=0
+        NAS_SCORE=0
         WINDOWS_SCORE=0
         DATABASE_SCORE=0
         PRINTER_SCORE=0
@@ -799,6 +801,8 @@ analyze_hosts() {
                 ad) AD_SCORE=$((AD_SCORE + points)) ;;
                 kube) KUBE_SCORE=$((KUBE_SCORE + points)) ;;
                 container) CONTAINER_SCORE=$((CONTAINER_SCORE + points)) ;;
+                router_gateway) ROUTER_GATEWAY_SCORE=$((ROUTER_GATEWAY_SCORE + points)) ;;
+                nas) NAS_SCORE=$((NAS_SCORE + points)) ;;
                 windows) WINDOWS_SCORE=$((WINDOWS_SCORE + points)) ;;
                 database) DATABASE_SCORE=$((DATABASE_SCORE + points)) ;;
                 printer) PRINTER_SCORE=$((PRINTER_SCORE + points)) ;;
@@ -947,6 +951,25 @@ analyze_hosts() {
         has_port 8443 && add_classification_evidence "web" "port" "tcp/8443" 8 "Alternate HTTPS service detected; treated as weak web-interface evidence"
         has_port 8888 && add_classification_evidence "web" "port" "tcp/8888" 8 "Alternate HTTP service detected; treated as weak web-interface evidence"
 
+
+        # v1.5 Router/Gateway evidence.
+        has_port 7547 && add_classification_evidence "router_gateway" "port" "tcp/7547" 60 "TR-069/CPE management service suggests router, gateway, modem, or ISP-managed device"
+        if has_port 53 && (has_port 80 || has_port 443 || has_port 8080 || has_port 8443); then
+            add_classification_evidence "router_gateway" "port-combination" "dns+web" 30 "DNS plus web management suggests gateway or network appliance"
+        fi
+        if has_port 1900 && (has_port 80 || has_port 443 || has_port 8080 || has_port 8443); then
+            add_classification_evidence "router_gateway" "port-combination" "upnp+web" 25 "UPnP/SSDP-like service plus web management suggests gateway, router, or embedded network appliance"
+        fi
+
+        # v1.5 NAS/File Server evidence.
+        has_port 2049 && add_classification_evidence "nas" "port" "tcp/2049" 55 "NFS service suggests NAS, file server, or Unix file-sharing role"
+        if has_port 445 && has_port 2049; then
+            add_classification_evidence "nas" "port-combination" "smb+nfs" 40 "SMB plus NFS strongly suggests NAS or file server"
+        fi
+        if has_port 445 && has_port 5000 && ! has_port 2375 && ! has_port 2376; then
+            add_classification_evidence "nas" "port-combination" "smb+tcp/5000" 20 "SMB plus TCP/5000 may indicate NAS management when Docker API is absent"
+        fi
+
         has_port 53 && add_classification_evidence "network" "port" "tcp/53" 35 "DNS service suggests infrastructure or DNS server role"
         has_port 1900 && add_classification_evidence "network" "port" "tcp/1900" 20 "UPnP/SSDP service suggests infrastructure, embedded, or appliance behavior"
         has_port 7547 && add_classification_evidence "network" "port" "tcp/7547" 45 "TR-069/CPE management service suggests router, gateway, or ISP-managed device"
@@ -987,6 +1010,8 @@ analyze_hosts() {
         update_best_candidate "Likely Active Directory / Domain Controller" "$AD_SCORE"
         update_best_candidate "Kubernetes Infrastructure" "$KUBE_SCORE"
         update_best_candidate "Container Infrastructure" "$CONTAINER_SCORE"
+        update_best_candidate "Router / Gateway" "$ROUTER_GATEWAY_SCORE"
+        update_best_candidate "NAS / File Server" "$NAS_SCORE"
         update_best_candidate "Windows Host" "$WINDOWS_SCORE"
         update_best_candidate "Database Server" "$DATABASE_SCORE"
         update_best_candidate "Network Printer / Multifunction Printer" "$PRINTER_SCORE"
@@ -1011,6 +1036,8 @@ analyze_hosts() {
             --argjson ad "$AD_SCORE" \
             --argjson kube "$KUBE_SCORE" \
             --argjson container "$CONTAINER_SCORE" \
+            --argjson router_gateway "$ROUTER_GATEWAY_SCORE" \
+            --argjson nas "$NAS_SCORE" \
             --argjson windows "$WINDOWS_SCORE" \
             --argjson database "$DATABASE_SCORE" \
             --argjson printer "$PRINTER_SCORE" \
@@ -1023,6 +1050,8 @@ analyze_hosts() {
                 {device_type: "Likely Active Directory / Domain Controller", confidence: $ad},
                 {device_type: "Kubernetes Infrastructure", confidence: $kube},
                 {device_type: "Container Infrastructure", confidence: $container},
+                {device_type: "Router / Gateway", confidence: $router_gateway},
+                {device_type: "NAS / File Server", confidence: $nas},
                 {device_type: "Windows Host", confidence: $windows},
                 {device_type: "Database Server", confidence: $database},
                 {device_type: "Network Printer / Multifunction Printer", confidence: $printer},
