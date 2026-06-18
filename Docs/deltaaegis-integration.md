@@ -1,13 +1,14 @@
-# DeltaAegis Integration
+# NetSniper DeltaAegis Integration
 
-<!-- NETSNIPER_V140_DELTAAEGIS_START -->
+NetSniper is the active network telemetry sensor for DeltaAegis. It performs host discovery, service scanning, exposure analysis, device classification, and immutable bundle generation. DeltaAegis ingests those bundles to preserve network state, compare accepted snapshots, and explain meaningful changes over time.
+
 ## NetSniper v1.4.0 DeltaAegis Classification Contract
 
 NetSniper v1.4.0 telemetry bundles expose richer classification intelligence for DeltaAegis.
 
 ### Bundle schema
 
-Full pipeline runs continue to archive immutable telemetry bundles under:
+Full pipeline runs archive immutable telemetry bundles under:
 
     runs/<scan_id>/
 
@@ -65,37 +66,3 @@ NetSniper v1.4.0 uses weighted evidence to classify hosts:
 - `unknown` means no useful classification evidence was found.
 
 DeltaAegis should treat NetSniper classification intelligence as explainable context, not automatic truth. Evidence, confidence, contradictions, and secondary candidates should remain visible to the operator.
-<!-- NETSNIPER_V140_DELTAAEGIS_END -->
-
-
-NetSniper full-pipeline runs emit immutable telemetry bundles under `runs/`.
-
-## Bundle Layout
-
-```text
-runs/<scan_id>/
-├── manifest.json
-├── discovery.xml
-├── discovery.gnmap
-├── discovery.nmap
-├── services.xml
-├── services.gnmap
-├── services.nmap
-├── analysis.json
-├── analysis.txt
-├── hosts.txt
-├── high_risk.txt
-└── neighbors.txt
-```
-
-Only bundles containing a finalized `manifest.json` file should be ingested.
-
-## Data Responsibilities
-
-- `discovery.xml`: raw discovery evidence and MAC addresses when available.
-- `neighbors.txt`: archived IP-to-MAC fallback enrichment captured at scan time.
-- `services.xml`: authoritative neutral service observations.
-- `analysis.json`: NetSniper's interpreted exposure findings and classifications.
-- `manifest.json`: schema, scan profile, profile fingerprint, timestamps, counts, and file pointers.
-
-DeltaAegis preserves historical bundles and compares only compatible scan profiles.

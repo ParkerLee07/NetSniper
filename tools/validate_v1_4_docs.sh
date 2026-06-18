@@ -27,6 +27,8 @@ checks = {
         "Classification schema",
         "netsniper-classification-v1",
         "DeltaAegis-ready schema aliases",
+        "Current Release",
+        "NetSniper v1.4.0",
     ],
     "CHANGELOG.md": [
         "## v1.4.0 - 2026-06-18",
@@ -57,14 +59,13 @@ for filename, phrases in checks.items():
         raise SystemExit(f"[-] {filename} missing expected phrase(s): {missing}")
 
 readme = Path("README.md").read_text(encoding="utf-8")
-changelog = Path("CHANGELOG.md").read_text(encoding="utf-8")
-integration = Path("Docs/deltaaegis-integration.md").read_text(encoding="utf-8")
 script = Path("netsniper.sh").read_text(encoding="utf-8")
+validator = Path("tools/validate_v1_4_docs.sh").read_text(encoding="utf-8")
 
 if "Current Release NetSniper v1.3.1" in readme:
     raise SystemExit("[-] README.md still says current release is v1.3.1.")
 
-if "SCANNER_VERSION=\"v1.4.0-dev\"" in script:
+if 'SCANNER_VERSION="v1.4.0-dev"' in script:
     raise SystemExit("[-] netsniper.sh still has dev scanner version.")
 
 if "NETSNIPER ENGINE v1.3.1" in script:
@@ -72,6 +73,9 @@ if "NETSNIPER ENGINE v1.3.1" in script:
 
 if "netsniper-classification-v1" not in script:
     raise SystemExit("[-] netsniper.sh does not expose v1.4 classification schema.")
+
+if validator.count("\n") < 20:
+    raise SystemExit("[-] Docs validator appears malformed or one-lined.")
 
 print("[+] PASS: NetSniper v1.4.0 documentation and version markers are valid.")
 PY
