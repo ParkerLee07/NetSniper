@@ -733,6 +733,8 @@ analyze_hosts() {
         KUBE_SCORE=0
         CONTAINER_SCORE=0
         ROUTER_GATEWAY_SCORE=0
+        AP_SCORE=0
+        SWITCH_SCORE=0
         NAS_SCORE=0
         VOIP_SCORE=0
         UPS_SCORE=0
@@ -809,6 +811,8 @@ analyze_hosts() {
                 kube) KUBE_SCORE=$((KUBE_SCORE + points)) ;;
                 container) CONTAINER_SCORE=$((CONTAINER_SCORE + points)) ;;
                 router_gateway) ROUTER_GATEWAY_SCORE=$((ROUTER_GATEWAY_SCORE + points)) ;;
+                wireless_ap) AP_SCORE=$((AP_SCORE + points)) ;;
+                managed_switch) SWITCH_SCORE=$((SWITCH_SCORE + points)) ;;
                 nas) NAS_SCORE=$((NAS_SCORE + points)) ;;
                 voip) VOIP_SCORE=$((VOIP_SCORE + points)) ;;
                 ups) UPS_SCORE=$((UPS_SCORE + points)) ;;
@@ -989,6 +993,19 @@ analyze_hosts() {
             add_classification_evidence "router_gateway" "port-combination" "upnp+web" 25 "UPnP/SSDP-like service plus web management suggests gateway, router, or embedded network appliance"
         fi
 
+
+        # v1.5 Wireless AP and Managed Switch evidence.
+        has_port 161 && add_classification_evidence "managed_switch" "port" "tcp-or-udp/161" 25 "SNMP service suggests managed switch, network infrastructure, UPS, printer, router, or appliance"
+        if has_port 161 && has_port 22; then
+            add_classification_evidence "managed_switch" "port-combination" "snmp+ssh" 35 "SNMP plus SSH strongly suggests managed network infrastructure"
+        fi
+        if has_port 161 && (has_port 80 || has_port 443 || has_port 8080 || has_port 8443); then
+            add_classification_evidence "managed_switch" "port-combination" "snmp+web" 25 "SNMP plus web management suggests managed network infrastructure"
+        fi
+        if has_port 1900 && (has_port 80 || has_port 443 || has_port 8080 || has_port 8443); then
+            add_classification_evidence "wireless_ap" "port-combination" "upnp+web" 25 "UPnP/SSDP-like service plus web management can indicate wireless AP or embedded network infrastructure"
+        fi
+
         # v1.5 NAS/File Server evidence.
         has_port 2049 && add_classification_evidence "nas" "port" "tcp/2049" 55 "NFS service suggests NAS, file server, or Unix file-sharing role"
         if has_port 445 && has_port 2049; then
@@ -1068,6 +1085,8 @@ analyze_hosts() {
         update_best_candidate "Kubernetes Infrastructure" "$KUBE_SCORE"
         update_best_candidate "Container Infrastructure" "$CONTAINER_SCORE"
         update_best_candidate "Router / Gateway" "$ROUTER_GATEWAY_SCORE"
+        update_best_candidate "Wireless Access Point" "$AP_SCORE"
+        update_best_candidate "Managed Switch / Network Infrastructure" "$SWITCH_SCORE"
         update_best_candidate "NAS / File Server" "$NAS_SCORE"
         update_best_candidate "VoIP Phone / PBX" "$VOIP_SCORE"
         update_best_candidate "UPS / Power Device" "$UPS_SCORE"
@@ -1098,6 +1117,8 @@ analyze_hosts() {
             --argjson kube "$KUBE_SCORE" \
             --argjson container "$CONTAINER_SCORE" \
             --argjson router_gateway "$ROUTER_GATEWAY_SCORE" \
+            --argjson ap "$AP_SCORE" \
+            --argjson switch_score "$SWITCH_SCORE" \
             --argjson nas "$NAS_SCORE" \
             --argjson voip "$VOIP_SCORE" \
             --argjson ups "$UPS_SCORE" \
@@ -1116,6 +1137,8 @@ analyze_hosts() {
                 {device_type: "Kubernetes Infrastructure", confidence: $kube},
                 {device_type: "Container Infrastructure", confidence: $container},
                 {device_type: "Router / Gateway", confidence: $router_gateway},
+                {device_type: "Wireless Access Point", confidence: $ap},
+                {device_type: "Managed Switch / Network Infrastructure", confidence: $switch_score},
                 {device_type: "NAS / File Server", confidence: $nas},
                 {device_type: "VoIP Phone / PBX", confidence: $voip},
                 {device_type: "UPS / Power Device", confidence: $ups},
