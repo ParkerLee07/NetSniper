@@ -71,7 +71,7 @@ SCANNER_VERSION="v1.4.0"
 # These are the ports NetSniper can reliably identify from nmap grepable output.
 TRUEAEGIS_PORTS="21,22,23,25,53,80,88,389,110,139,143,443,445,465,554,587,631,993,995,1433,1521,1900,2375,2376,3000,3306,3389,5000,5432,5555,5601,5900,6379,6443,7547,8000,8080,8081,8443,8888,9000,9090,9100,9200,9300,9443,10250,10255,27017,3268,3269"
 
-HIGH_RISK_PATTERN="21/open|22/open|23/open|25/open|53/open|80/open|88/open|110/open|139/open|143/open|161/open|389/open|443/open|445/open|465/open|554/open|587/open|631/open|993/open|995/open|1433/open|1521/open|1900/open|2049/open|2375/open|2376/open|3000/open|3268/open|3269/open|3306/open|3389/open|5000/open|5060/open|5061/open|5432/open|5555/open|5601/open|5900/open|6379/open|6443/open|7547/open|8000/open|8080/open|8081/open|8443/open|8888/open|9000/open|9090/open|9100/open|9200/open|9300/open|9443/open|10250/open|10255/open|27017/open"
+HIGH_RISK_PATTERN="21/open|22/open|23/open|25/open|53/open|80/open|88/open|110/open|139/open|143/open|161/open|389/open|443/open|445/open|465/open|500/open|554/open|587/open|631/open|993/open|995/open|1433/open|1521/open|1900/open|2049/open|2375/open|2376/open|3000/open|3268/open|3269/open|3306/open|3389/open|4500/open|5000/open|5060/open|5061/open|5432/open|5555/open|5601/open|5900/open|6379/open|6443/open|7547/open|8000/open|8006/open|8080/open|8081/open|8443/open|8888/open|9000/open|9090/open|9100/open|9200/open|9300/open|9443/open|10250/open|10255/open|27017/open"
 
 # =========================
 # FUNCTIONS
@@ -736,6 +736,8 @@ analyze_hosts() {
         NAS_SCORE=0
         VOIP_SCORE=0
         UPS_SCORE=0
+        SECURITY_SCORE=0
+        HYPERVISOR_SCORE=0
         WINDOWS_SCORE=0
         DATABASE_SCORE=0
         PRINTER_SCORE=0
@@ -807,6 +809,8 @@ analyze_hosts() {
                 nas) NAS_SCORE=$((NAS_SCORE + points)) ;;
                 voip) VOIP_SCORE=$((VOIP_SCORE + points)) ;;
                 ups) UPS_SCORE=$((UPS_SCORE + points)) ;;
+                security_appliance) SECURITY_SCORE=$((SECURITY_SCORE + points)) ;;
+                hypervisor) HYPERVISOR_SCORE=$((HYPERVISOR_SCORE + points)) ;;
                 windows) WINDOWS_SCORE=$((WINDOWS_SCORE + points)) ;;
                 database) DATABASE_SCORE=$((DATABASE_SCORE + points)) ;;
                 printer) PRINTER_SCORE=$((PRINTER_SCORE + points)) ;;
@@ -988,6 +992,21 @@ analyze_hosts() {
             add_classification_evidence "ups" "port-combination" "snmp+web" 25 "SNMP plus web management may indicate UPS, PDU, or managed power device, but requires vendor/title confirmation"
         fi
 
+
+        # v1.5 Security Appliance evidence.
+        has_port 500 && add_classification_evidence "security_appliance" "port" "udp-or-tcp/500" 40 "IKE/IPsec service suggests VPN or security gateway"
+        has_port 4500 && add_classification_evidence "security_appliance" "port" "udp-or-tcp/4500" 40 "IPsec NAT traversal service suggests VPN or security gateway"
+        if (has_port 500 || has_port 4500) && (has_port 443 || has_port 8443); then
+            add_classification_evidence "security_appliance" "port-combination" "vpn+https" 35 "VPN-related service plus HTTPS management suggests security appliance"
+        fi
+
+        # v1.5 Hypervisor/Virtualization evidence.
+        has_port 8006 && add_classification_evidence "hypervisor" "port" "tcp/8006" 65 "Proxmox management port detected"
+        has_port 5900 && add_classification_evidence "hypervisor" "port" "tcp/5900" 25 "VNC console service may indicate virtualization or remote console role"
+        if has_port 8006 && has_port 22; then
+            add_classification_evidence "hypervisor" "port-combination" "tcp/8006+22" 25 "Hypervisor management plus SSH strengthens virtualization host likelihood"
+        fi
+
         has_port 53 && add_classification_evidence "network" "port" "tcp/53" 35 "DNS service suggests infrastructure or DNS server role"
         has_port 1900 && add_classification_evidence "network" "port" "tcp/1900" 20 "UPnP/SSDP service suggests infrastructure, embedded, or appliance behavior"
         has_port 7547 && add_classification_evidence "network" "port" "tcp/7547" 45 "TR-069/CPE management service suggests router, gateway, or ISP-managed device"
@@ -1032,6 +1051,8 @@ analyze_hosts() {
         update_best_candidate "NAS / File Server" "$NAS_SCORE"
         update_best_candidate "VoIP Phone / PBX" "$VOIP_SCORE"
         update_best_candidate "UPS / Power Device" "$UPS_SCORE"
+        update_best_candidate "Security Appliance" "$SECURITY_SCORE"
+        update_best_candidate "Hypervisor / Virtualization Host" "$HYPERVISOR_SCORE"
         update_best_candidate "Windows Host" "$WINDOWS_SCORE"
         update_best_candidate "Database Server" "$DATABASE_SCORE"
         update_best_candidate "Network Printer / Multifunction Printer" "$PRINTER_SCORE"
@@ -1060,6 +1081,8 @@ analyze_hosts() {
             --argjson nas "$NAS_SCORE" \
             --argjson voip "$VOIP_SCORE" \
             --argjson ups "$UPS_SCORE" \
+            --argjson security "$SECURITY_SCORE" \
+            --argjson hypervisor "$HYPERVISOR_SCORE" \
             --argjson windows "$WINDOWS_SCORE" \
             --argjson database "$DATABASE_SCORE" \
             --argjson printer "$PRINTER_SCORE" \
@@ -1076,6 +1099,8 @@ analyze_hosts() {
                 {device_type: "NAS / File Server", confidence: $nas},
                 {device_type: "VoIP Phone / PBX", confidence: $voip},
                 {device_type: "UPS / Power Device", confidence: $ups},
+                {device_type: "Security Appliance", confidence: $security},
+                {device_type: "Hypervisor / Virtualization Host", confidence: $hypervisor},
                 {device_type: "Windows Host", confidence: $windows},
                 {device_type: "Database Server", confidence: $database},
                 {device_type: "Network Printer / Multifunction Printer", confidence: $printer},
