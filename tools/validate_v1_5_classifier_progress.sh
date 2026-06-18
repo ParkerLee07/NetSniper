@@ -82,6 +82,16 @@ checks = {
         'add_classification_evidence "managed_switch" "port-combination" "snmp+web"',
         'add_classification_evidence "wireless_ap" "port-combination" "upnp+web"',
     ],
+    "dev_iot": [
+        "DEV_ADMIN_SCORE=0",
+        "IOT_SCORE=0",
+        "dev_admin) DEV_ADMIN_SCORE",
+        "iot) IOT_SCORE",
+        'update_best_candidate "Development / Admin Interface" "$DEV_ADMIN_SCORE"',
+        'update_best_candidate "IoT / Embedded Device" "$IOT_SCORE"',
+        'add_classification_evidence "dev_admin" "port-combination" "tcp/3000+9090"',
+        'add_classification_evidence "iot" "port-combination" "upnp+web"',
+    ],
 }
 
 failed = False

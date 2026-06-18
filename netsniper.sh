@@ -748,6 +748,8 @@ analyze_hosts() {
         CAMERA_SCORE=0
         LINUX_WEB_SCORE=0
         LINUX_SERVER_SCORE=0
+        DEV_ADMIN_SCORE=0
+        IOT_SCORE=0
         WEB_SCORE=0
         NETWORK_SCORE=0
         MAIL_SCORE=0
@@ -826,6 +828,8 @@ analyze_hosts() {
                 camera) CAMERA_SCORE=$((CAMERA_SCORE + points)) ;;
                 linux_web) LINUX_WEB_SCORE=$((LINUX_WEB_SCORE + points)) ;;
                 linux_server) LINUX_SERVER_SCORE=$((LINUX_SERVER_SCORE + points)) ;;
+                dev_admin) DEV_ADMIN_SCORE=$((DEV_ADMIN_SCORE + points)) ;;
+                iot) IOT_SCORE=$((IOT_SCORE + points)) ;;
                 web) WEB_SCORE=$((WEB_SCORE + points)) ;;
                 network) NETWORK_SCORE=$((NETWORK_SCORE + points)) ;;
                 mail) MAIL_SCORE=$((MAIL_SCORE + points)) ;;
@@ -976,6 +980,27 @@ analyze_hosts() {
             add_classification_evidence "linux_server" "port-combination" "ssh+web" 20 "SSH plus web service suggests Linux server, Unix server, or web appliance"
         fi
 
+
+        # v1.5 Development/Admin Interface evidence.
+        has_port 3000 && add_classification_evidence "dev_admin" "port" "tcp/3000" 25 "Common development, dashboard, or admin web service detected"
+        has_port 5601 && add_classification_evidence "dev_admin" "port" "tcp/5601" 45 "Kibana-style admin or observability service detected"
+        has_port 9090 && add_classification_evidence "dev_admin" "port" "tcp/9090" 35 "Prometheus-style monitoring or admin service detected"
+        if has_port 3000 && has_port 9090; then
+            add_classification_evidence "dev_admin" "port-combination" "tcp/3000+9090" 25 "Grafana/Prometheus-style combination suggests development or admin interface"
+        fi
+        if has_port 5601 && (has_port 9200 || has_port 9300); then
+            add_classification_evidence "dev_admin" "port-combination" "kibana+elasticsearch" 25 "Kibana plus Elasticsearch ports suggest observability or admin stack"
+        fi
+
+        # v1.5 IoT/Embedded Device evidence.
+        has_port 5555 && add_classification_evidence "iot" "port" "tcp/5555" 35 "ADB-like or embedded debug service detected"
+        if has_port 1900 && (has_port 80 || has_port 443 || has_port 8080 || has_port 8443); then
+            add_classification_evidence "iot" "port-combination" "upnp+web" 25 "UPnP/SSDP-like service plus web management can indicate embedded or IoT appliance behavior"
+        fi
+        if has_port 7547 && (has_port 80 || has_port 443); then
+            add_classification_evidence "iot" "port-combination" "tr069+web" 15 "TR-069 plus web management can indicate embedded CPE or managed appliance behavior"
+        fi
+
         has_port 80 && add_classification_evidence "web" "port" "tcp/80" 10 "HTTP service detected; treated as weak web-interface evidence"
         has_port 443 && add_classification_evidence "web" "port" "tcp/443" 10 "HTTPS service detected; treated as weak web-interface evidence"
         has_port 8000 && add_classification_evidence "web" "port" "tcp/8000" 8 "Alternate HTTP service detected; treated as weak web-interface evidence"
@@ -1097,6 +1122,8 @@ analyze_hosts() {
         update_best_candidate "Network Printer / Multifunction Printer" "$PRINTER_SCORE"
         update_best_candidate "IP Camera / NVR" "$CAMERA_SCORE"
         update_best_candidate "Linux Server" "$LINUX_SERVER_SCORE"
+        update_best_candidate "Development / Admin Interface" "$DEV_ADMIN_SCORE"
+        update_best_candidate "IoT / Embedded Device" "$IOT_SCORE"
         update_best_candidate "Web Server / Web Application Host" "$WEB_SCORE"
         update_best_candidate "Network Infrastructure / Router" "$NETWORK_SCORE"
         update_best_candidate "Mail Server" "$MAIL_SCORE"
@@ -1129,6 +1156,8 @@ analyze_hosts() {
             --argjson printer "$PRINTER_SCORE" \
             --argjson camera "$CAMERA_SCORE" \
             --argjson linux_server "$LINUX_SERVER_SCORE" \
+            --argjson dev_admin "$DEV_ADMIN_SCORE" \
+            --argjson iot "$IOT_SCORE" \
             --argjson web "$WEB_SCORE" \
             --argjson network "$NETWORK_SCORE" \
             --argjson mail "$MAIL_SCORE" \
@@ -1149,6 +1178,8 @@ analyze_hosts() {
                 {device_type: "Network Printer / Multifunction Printer", confidence: $printer},
                 {device_type: "IP Camera / NVR", confidence: $camera},
                 {device_type: "Linux Server", confidence: $linux_server},
+                {device_type: "Development / Admin Interface", confidence: $dev_admin},
+                {device_type: "IoT / Embedded Device", confidence: $iot},
                 {device_type: "Web Server / Web Application Host", confidence: $web},
                 {device_type: "Network Infrastructure / Router", confidence: $network},
                 {device_type: "Mail Server", confidence: $mail}
