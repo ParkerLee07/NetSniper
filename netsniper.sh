@@ -1405,6 +1405,11 @@ EOF
 # MENU LOOP
 # =========================
 
+# Allows validators to source this file without launching the interactive menu.
+if [ "${NETSNIPER_TEST_MODE:-0}" = "1" ]; then
+    return 0 2>/dev/null || exit 0
+fi
+
 boot_screen
 init_workspace
 check_dirs
