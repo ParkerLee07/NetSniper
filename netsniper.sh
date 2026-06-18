@@ -71,7 +71,7 @@ SCANNER_VERSION="v1.4.0"
 # These are the ports NetSniper can reliably identify from nmap grepable output.
 TRUEAEGIS_PORTS="21,22,23,25,53,80,88,389,110,139,143,443,445,465,554,587,631,993,995,1433,1521,1900,2375,2376,3000,3306,3389,5000,5432,5555,5601,5900,6379,6443,7547,8000,8080,8081,8443,8888,9000,9090,9100,9200,9300,9443,10250,10255,27017,3268,3269"
 
-HIGH_RISK_PATTERN="21/open|22/open|23/open|25/open|53/open|80/open|88/open|110/open|139/open|143/open|161/open|389/open|443/open|445/open|465/open|500/open|554/open|587/open|631/open|993/open|995/open|1433/open|1521/open|1900/open|2049/open|2375/open|2376/open|3000/open|3268/open|3269/open|3306/open|3389/open|4500/open|5000/open|5060/open|5061/open|5432/open|5555/open|5601/open|5900/open|6379/open|6443/open|7547/open|8000/open|8006/open|8080/open|8081/open|8443/open|8888/open|9000/open|9090/open|9100/open|9200/open|9300/open|9443/open|10250/open|10255/open|27017/open"
+HIGH_RISK_PATTERN="21/open|22/open|23/open|25/open|53/open|80/open|88/open|110/open|111/open|135/open|139/open|143/open|161/open|389/open|443/open|445/open|465/open|500/open|554/open|587/open|631/open|993/open|995/open|1433/open|1521/open|1900/open|2049/open|2375/open|2376/open|3000/open|3268/open|3269/open|3306/open|3389/open|4500/open|5000/open|5060/open|5061/open|5432/open|5555/open|5601/open|5900/open|6379/open|6443/open|7547/open|8000/open|8006/open|8080/open|8081/open|8443/open|8888/open|9000/open|9090/open|9100/open|9200/open|9300/open|9443/open|10250/open|10255/open|27017/open"
 
 # =========================
 # FUNCTIONS
@@ -739,10 +739,13 @@ analyze_hosts() {
         SECURITY_SCORE=0
         HYPERVISOR_SCORE=0
         WINDOWS_SCORE=0
+        WINDOWS_SERVER_SCORE=0
+        WINDOWS_WORKSTATION_SCORE=0
         DATABASE_SCORE=0
         PRINTER_SCORE=0
         CAMERA_SCORE=0
         LINUX_WEB_SCORE=0
+        LINUX_SERVER_SCORE=0
         WEB_SCORE=0
         NETWORK_SCORE=0
         MAIL_SCORE=0
@@ -812,10 +815,13 @@ analyze_hosts() {
                 security_appliance) SECURITY_SCORE=$((SECURITY_SCORE + points)) ;;
                 hypervisor) HYPERVISOR_SCORE=$((HYPERVISOR_SCORE + points)) ;;
                 windows) WINDOWS_SCORE=$((WINDOWS_SCORE + points)) ;;
+                windows_server) WINDOWS_SERVER_SCORE=$((WINDOWS_SERVER_SCORE + points)) ;;
+                windows_workstation) WINDOWS_WORKSTATION_SCORE=$((WINDOWS_WORKSTATION_SCORE + points)) ;;
                 database) DATABASE_SCORE=$((DATABASE_SCORE + points)) ;;
                 printer) PRINTER_SCORE=$((PRINTER_SCORE + points)) ;;
                 camera) CAMERA_SCORE=$((CAMERA_SCORE + points)) ;;
                 linux_web) LINUX_WEB_SCORE=$((LINUX_WEB_SCORE + points)) ;;
+                linux_server) LINUX_SERVER_SCORE=$((LINUX_SERVER_SCORE + points)) ;;
                 web) WEB_SCORE=$((WEB_SCORE + points)) ;;
                 network) NETWORK_SCORE=$((NETWORK_SCORE + points)) ;;
                 mail) MAIL_SCORE=$((MAIL_SCORE + points)) ;;
@@ -913,8 +919,14 @@ analyze_hosts() {
         # This preserves broad compatibility while adding explainable classification data.
 
         if has_port 88 && has_port 389 && has_port 445; then
-            add_classification_evidence "ad" "port-combination" "tcp/88+389+445" 95 "Kerberos, LDAP, and SMB together strongly suggest Active Directory infrastructure"
+            add_classification_evidence "windows_server" "port-combination" "tcp/88+389+445" 95 "Kerberos, LDAP, and SMB together strongly suggest Windows Server or domain controller infrastructure"
         fi
+        if has_port 53 && has_port 88; then
+            add_classification_evidence "windows_server" "port-combination" "tcp/53+88" 30 "DNS plus Kerberos suggests Windows Server infrastructure"
+        fi
+        has_port 389 && add_classification_evidence "windows_server" "port" "tcp/389" 25 "LDAP service may indicate server directory role"
+        has_port 3268 && add_classification_evidence "windows_server" "port" "tcp/3268" 35 "Active Directory Global Catalog service detected"
+        has_port 3269 && add_classification_evidence "windows_server" "port" "tcp/3269" 35 "Active Directory LDAPS Global Catalog service detected"
 
         has_port 6443 && add_classification_evidence "kube" "port" "tcp/6443" 55 "Kubernetes API service detected"
         has_port 10250 && add_classification_evidence "kube" "port" "tcp/10250" 45 "Kubelet service detected"
@@ -926,9 +938,13 @@ analyze_hosts() {
         has_port 9000 && add_classification_evidence "container" "port" "tcp/9000" 25 "Container/admin console candidate detected"
         has_port 9443 && add_classification_evidence "container" "port" "tcp/9443" 25 "Container/admin TLS console candidate detected"
 
-        has_port 445 && add_classification_evidence "windows" "port" "tcp/445" 35 "SMB service is commonly associated with Windows hosts and file services"
-        has_port 3389 && add_classification_evidence "windows" "port" "tcp/3389" 35 "RDP service is commonly associated with Windows hosts"
-        has_port 139 && add_classification_evidence "windows" "port" "tcp/139" 15 "NetBIOS/SMB service detected"
+        has_port 445 && add_classification_evidence "windows_workstation" "port" "tcp/445" 25 "SMB service is commonly associated with Windows hosts and file sharing"
+        has_port 3389 && add_classification_evidence "windows_workstation" "port" "tcp/3389" 25 "RDP service is commonly associated with Windows hosts"
+        has_port 139 && add_classification_evidence "windows_workstation" "port" "tcp/139" 10 "NetBIOS/SMB service detected"
+        has_port 135 && add_classification_evidence "windows_workstation" "port" "tcp/135" 15 "Microsoft RPC service detected"
+        if has_port 445 && has_port 3389 && ! has_port 88 && ! has_port 389; then
+            add_classification_evidence "windows_workstation" "port-combination" "tcp/445+3389" 20 "SMB plus RDP without directory services suggests Windows workstation or standalone Windows host"
+        fi
 
         has_port 1433 && add_classification_evidence "database" "port" "tcp/1433" 45 "Microsoft SQL Server port detected"
         has_port 1521 && add_classification_evidence "database" "port" "tcp/1521" 45 "Oracle database port detected"
@@ -947,9 +963,13 @@ analyze_hosts() {
             add_classification_evidence "camera" "port-combination" "tcp/554+web" 20 "RTSP plus web management surface strengthens camera/NVR likelihood"
         fi
 
-        has_port 22 && add_classification_evidence "linux_web" "port" "tcp/22" 25 "SSH service commonly indicates Linux, Unix, network appliance, or administrative endpoint"
+        has_port 22 && add_classification_evidence "linux_server" "port" "tcp/22" 20 "SSH service commonly indicates Linux, Unix, network appliance, or administrative endpoint"
+        has_port 111 && add_classification_evidence "linux_server" "port" "tcp/111" 25 "rpcbind service suggests Unix/Linux service role"
+        if has_port 22 && has_port 2049; then
+            add_classification_evidence "linux_server" "port-combination" "ssh+nfs" 45 "SSH plus NFS suggests Linux or Unix server role"
+        fi
         if has_port 22 && (has_port 80 || has_port 443 || has_port 8080 || has_port 8443); then
-            add_classification_evidence "linux_web" "port-combination" "tcp/22+web" 30 "SSH plus web service commonly indicates Linux server or web appliance"
+            add_classification_evidence "linux_server" "port-combination" "ssh+web" 20 "SSH plus web service suggests Linux server, Unix server, or web appliance"
         fi
 
         has_port 80 && add_classification_evidence "web" "port" "tcp/80" 10 "HTTP service detected; treated as weak web-interface evidence"
@@ -1044,7 +1064,7 @@ analyze_hosts() {
             fi
         }
 
-        update_best_candidate "Likely Active Directory / Domain Controller" "$AD_SCORE"
+        update_best_candidate "Windows Server" "$WINDOWS_SERVER_SCORE"
         update_best_candidate "Kubernetes Infrastructure" "$KUBE_SCORE"
         update_best_candidate "Container Infrastructure" "$CONTAINER_SCORE"
         update_best_candidate "Router / Gateway" "$ROUTER_GATEWAY_SCORE"
@@ -1053,11 +1073,11 @@ analyze_hosts() {
         update_best_candidate "UPS / Power Device" "$UPS_SCORE"
         update_best_candidate "Security Appliance" "$SECURITY_SCORE"
         update_best_candidate "Hypervisor / Virtualization Host" "$HYPERVISOR_SCORE"
-        update_best_candidate "Windows Host" "$WINDOWS_SCORE"
+        update_best_candidate "Windows Workstation" "$WINDOWS_WORKSTATION_SCORE"
         update_best_candidate "Database Server" "$DATABASE_SCORE"
         update_best_candidate "Network Printer / Multifunction Printer" "$PRINTER_SCORE"
         update_best_candidate "IP Camera / NVR" "$CAMERA_SCORE"
-        update_best_candidate "Linux / Web Server" "$LINUX_WEB_SCORE"
+        update_best_candidate "Linux Server" "$LINUX_SERVER_SCORE"
         update_best_candidate "Web Server / Web Application Host" "$WEB_SCORE"
         update_best_candidate "Network Infrastructure / Router" "$NETWORK_SCORE"
         update_best_candidate "Mail Server" "$MAIL_SCORE"
@@ -1074,7 +1094,7 @@ analyze_hosts() {
 
         CLASSIFICATION_SECONDARY=$(jq -n \
             --arg primary "$CLASSIFICATION_PRIMARY" \
-            --argjson ad "$AD_SCORE" \
+            --argjson windows_server "$WINDOWS_SERVER_SCORE" \
             --argjson kube "$KUBE_SCORE" \
             --argjson container "$CONTAINER_SCORE" \
             --argjson router_gateway "$ROUTER_GATEWAY_SCORE" \
@@ -1083,16 +1103,16 @@ analyze_hosts() {
             --argjson ups "$UPS_SCORE" \
             --argjson security "$SECURITY_SCORE" \
             --argjson hypervisor "$HYPERVISOR_SCORE" \
-            --argjson windows "$WINDOWS_SCORE" \
+            --argjson windows_workstation "$WINDOWS_WORKSTATION_SCORE" \
             --argjson database "$DATABASE_SCORE" \
             --argjson printer "$PRINTER_SCORE" \
             --argjson camera "$CAMERA_SCORE" \
-            --argjson linux_web "$LINUX_WEB_SCORE" \
+            --argjson linux_server "$LINUX_SERVER_SCORE" \
             --argjson web "$WEB_SCORE" \
             --argjson network "$NETWORK_SCORE" \
             --argjson mail "$MAIL_SCORE" \
             '[
-                {device_type: "Likely Active Directory / Domain Controller", confidence: $ad},
+                {device_type: "Windows Server", confidence: $windows_server},
                 {device_type: "Kubernetes Infrastructure", confidence: $kube},
                 {device_type: "Container Infrastructure", confidence: $container},
                 {device_type: "Router / Gateway", confidence: $router_gateway},
@@ -1101,11 +1121,11 @@ analyze_hosts() {
                 {device_type: "UPS / Power Device", confidence: $ups},
                 {device_type: "Security Appliance", confidence: $security},
                 {device_type: "Hypervisor / Virtualization Host", confidence: $hypervisor},
-                {device_type: "Windows Host", confidence: $windows},
+                {device_type: "Windows Workstation", confidence: $windows_workstation},
                 {device_type: "Database Server", confidence: $database},
                 {device_type: "Network Printer / Multifunction Printer", confidence: $printer},
                 {device_type: "IP Camera / NVR", confidence: $camera},
-                {device_type: "Linux / Web Server", confidence: $linux_web},
+                {device_type: "Linux Server", confidence: $linux_server},
                 {device_type: "Web Server / Web Application Host", confidence: $web},
                 {device_type: "Network Infrastructure / Router", confidence: $network},
                 {device_type: "Mail Server", confidence: $mail}
