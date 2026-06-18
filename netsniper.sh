@@ -6,7 +6,7 @@
 
 # =========================
 # NETSNIPER ENGINE v1.4.0
-# NETSNIPER_CLASSIFICATION_ENGINE_V140
+# NETSNIPER_CLASSIFICATION_ENGINE_V150_DEV
 # TrueAegis-compatible telemetry output
 # =========================
 
@@ -940,12 +940,12 @@ analyze_hosts() {
             add_classification_evidence "linux_web" "port-combination" "tcp/22+web" 30 "SSH plus web service commonly indicates Linux server or web appliance"
         fi
 
-        has_port 80 && add_classification_evidence "web" "port" "tcp/80" 20 "HTTP service detected"
-        has_port 443 && add_classification_evidence "web" "port" "tcp/443" 20 "HTTPS service detected"
-        has_port 8000 && add_classification_evidence "web" "port" "tcp/8000" 15 "Alternate HTTP service detected"
-        has_port 8080 && add_classification_evidence "web" "port" "tcp/8080" 15 "Alternate HTTP service detected"
-        has_port 8443 && add_classification_evidence "web" "port" "tcp/8443" 15 "Alternate HTTPS service detected"
-        has_port 8888 && add_classification_evidence "web" "port" "tcp/8888" 15 "Alternate HTTP service detected"
+        has_port 80 && add_classification_evidence "web" "port" "tcp/80" 10 "HTTP service detected; treated as weak web-interface evidence"
+        has_port 443 && add_classification_evidence "web" "port" "tcp/443" 10 "HTTPS service detected; treated as weak web-interface evidence"
+        has_port 8000 && add_classification_evidence "web" "port" "tcp/8000" 8 "Alternate HTTP service detected; treated as weak web-interface evidence"
+        has_port 8080 && add_classification_evidence "web" "port" "tcp/8080" 8 "Alternate HTTP service detected; treated as weak web-interface evidence"
+        has_port 8443 && add_classification_evidence "web" "port" "tcp/8443" 8 "Alternate HTTPS service detected; treated as weak web-interface evidence"
+        has_port 8888 && add_classification_evidence "web" "port" "tcp/8888" 8 "Alternate HTTP service detected; treated as weak web-interface evidence"
 
         has_port 53 && add_classification_evidence "network" "port" "tcp/53" 35 "DNS service suggests infrastructure or DNS server role"
         has_port 1900 && add_classification_evidence "network" "port" "tcp/1900" 20 "UPnP/SSDP service suggests infrastructure, embedded, or appliance behavior"
@@ -992,7 +992,7 @@ analyze_hosts() {
         update_best_candidate "Network Printer / Multifunction Printer" "$PRINTER_SCORE"
         update_best_candidate "IP Camera / NVR" "$CAMERA_SCORE"
         update_best_candidate "Linux / Web Server" "$LINUX_WEB_SCORE"
-        update_best_candidate "Web Server" "$WEB_SCORE"
+        update_best_candidate "Web Server / Web Application Host" "$WEB_SCORE"
         update_best_candidate "Network Infrastructure / Router" "$NETWORK_SCORE"
         update_best_candidate "Mail Server" "$MAIL_SCORE"
 
@@ -1028,7 +1028,7 @@ analyze_hosts() {
                 {device_type: "Network Printer / Multifunction Printer", confidence: $printer},
                 {device_type: "IP Camera / NVR", confidence: $camera},
                 {device_type: "Linux / Web Server", confidence: $linux_web},
-                {device_type: "Web Server", confidence: $web},
+                {device_type: "Web Server / Web Application Host", confidence: $web},
                 {device_type: "Network Infrastructure / Router", confidence: $network},
                 {device_type: "Mail Server", confidence: $mail}
             ]
