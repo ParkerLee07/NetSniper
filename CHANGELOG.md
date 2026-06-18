@@ -1,5 +1,61 @@
 # Changelog
 
+<!-- NETSNIPER_V140_CHANGELOG_START -->
+## v1.4.0 - 2026-06-18
+
+### Added
+
+- Evidence-based device classification engine.
+- Weighted classification evidence model.
+- Classification schema version: `netsniper-classification-v1`.
+- Per-host classification object with:
+  - `type`
+  - `primary_type`
+  - `confidence`
+  - `confidence_label`
+  - `decision`
+  - `method`
+  - `evidence`
+  - `contradictions`
+  - `candidates`
+  - `secondary_candidates`
+- Compatibility fields for DeltaAegis and other downstream parsers.
+- Classification scoring support for:
+  - web servers
+  - Linux/web hosts
+  - Windows hosts
+  - Active Directory/domain-controller candidates
+  - network printers and multifunction printers
+  - IP cameras and NVRs
+  - databases
+  - container infrastructure
+  - Kubernetes services
+  - mail services
+  - network infrastructure
+- Contradiction detection for suspicious or ambiguous service combinations.
+- Immutable bundle validation for v1.4 classification intelligence.
+- Analysis validation for v1.4 classification intelligence.
+
+### Changed
+
+- `SCANNER_VERSION` finalized as `v1.4.0`.
+- Device type confidence now reflects the v1.4 weighted classification result.
+- Weak or uncertain classifications can remain `Unknown` while still exposing a possible classification candidate.
+- DeltaAegis telemetry bundles now carry richer classification intelligence for downstream historical comparison.
+
+### Validation
+
+Validated with:
+
+- `tools/validate_v1_4_analysis.sh`
+- `tools/validate_v1_4_bundle.sh`
+
+### Notes
+
+- NetSniper v1.4.0 does not claim perfect device identification. It exposes evidence, confidence, contradictions, and secondary candidates so downstream tools and operators can review uncertain classifications.
+<!-- NETSNIPER_V140_CHANGELOG_END -->
+
+
 ## [v1.3.1] - 2026-06-12
 
 ### Added

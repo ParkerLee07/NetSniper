@@ -1,5 +1,47 @@
 # NetSniper
 
+<!-- NETSNIPER_V140_README_START -->
+## NetSniper v1.4.0 Current Capabilities
+
+NetSniper v1.4.0 upgrades the scanner from simple device-type guessing into an evidence-based network classification sensor for DeltaAegis and other downstream tools.
+
+### What v1.4.0 adds
+
+- **Evidence-based classification** — assigns suspected device roles using weighted service evidence instead of one-off static port assumptions.
+- **Classification confidence** — records numeric confidence, confidence labels, and classification decisions such as `classified`, `possible`, and `unknown`.
+- **Explainable evidence** — stores evidence entries with candidate role, source, value, points, and reason.
+- **Contradiction tracking** — records conflicting signals when a host exposes service combinations that do not cleanly match one role.
+- **Secondary candidates** — preserves alternate likely roles for downstream review.
+- **DeltaAegis-ready schema aliases** — includes both canonical and compatibility fields such as `primary_type`, `type`, `secondary_candidates`, and `candidates`.
+- **Expanded monitored TCP profile** — scans a broader set of security-relevant ports for web, printer, camera/NVR, database, Windows, Active Directory, container, Kubernetes, mail, and network infrastructure signals.
+- **v1.4 validators** — includes validators for classification analysis files and immutable telemetry bundles.
+
+### Classification schema
+
+NetSniper v1.4.0 uses the classification schema version `netsniper-classification-v1`.
+
+Each analyzed host now includes a `classification` object with:
+
+- `schema_version`
+- `type`
+- `primary_type`
+- `confidence`
+- `confidence_label`
+- `decision`
+- `method`
+- `evidence`
+- `contradictions`
+- `candidates`
+- `secondary_candidates`
+
+NetSniper keeps legacy compatibility fields such as `device_type` and `device_type_confidence` so existing downstream tooling can continue to consume results.
+
+### Intended use
+
+NetSniper is still a sensor, not a full SIEM and not an exploit framework. Its job is to observe, classify, score, and package network telemetry. DeltaAegis then stores, compares, correlates, and explains changes across accepted snapshots.
+<!-- NETSNIPER_V140_README_END -->
+
+
 **Network reconnaissance and exposure-intelligence sensor for authorized security assessments.**
 
 NetSniper is a Bash-based network discovery and service-enumeration pipeline. It performs host discovery, scans a curated set of security-relevant TCP ports, classifies likely device types, scores exposed services, and writes structured analysis files for downstream tooling.
@@ -8,7 +50,7 @@ NetSniper is also the active network sensor for **DeltaAegis**. Each completed f
 
 ## Current Release
 
-NetSniper v1.3.1
+NetSniper v1.4.0
 
 ---
 
