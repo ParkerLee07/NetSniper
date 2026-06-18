@@ -810,7 +810,7 @@ analyze_hosts() {
 
             case "$candidate" in
                 ad) AD_SCORE=$((AD_SCORE + points)) ;;
-                kube) KUBE_SCORE=$((KUBE_SCORE + points)) ;;
+                kube) CONTAINER_SCORE=$((CONTAINER_SCORE + points)) ;;
                 container) CONTAINER_SCORE=$((CONTAINER_SCORE + points)) ;;
                 router_gateway) ROUTER_GATEWAY_SCORE=$((ROUTER_GATEWAY_SCORE + points)) ;;
                 wireless_ap) AP_SCORE=$((AP_SCORE + points)) ;;
@@ -946,6 +946,13 @@ analyze_hosts() {
         has_port 9000 && add_classification_evidence "container" "port" "tcp/9000" 25 "Container/admin console candidate detected"
         has_port 9443 && add_classification_evidence "container" "port" "tcp/9443" 25 "Container/admin TLS console candidate detected"
 
+        if has_port 6443 && (has_port 10250 || has_port 10255); then
+            add_classification_evidence "container" "port-combination" "k8s-api+kubelet" 30 "Kubernetes API plus kubelet service strongly suggests container infrastructure"
+        fi
+        if (has_port 2375 || has_port 2376) && (has_port 9000 || has_port 9443); then
+            add_classification_evidence "container" "port-combination" "docker+admin-console" 25 "Docker API plus admin console strengthens container infrastructure likelihood"
+        fi
+
         has_port 445 && add_classification_evidence "windows_workstation" "port" "tcp/445" 25 "SMB service is commonly associated with Windows hosts and file sharing"
         has_port 3389 && add_classification_evidence "windows_workstation" "port" "tcp/3389" 25 "RDP service is commonly associated with Windows hosts"
         has_port 139 && add_classification_evidence "windows_workstation" "port" "tcp/139" 10 "NetBIOS/SMB service detected"
@@ -962,6 +969,16 @@ analyze_hosts() {
         has_port 9200 && add_classification_evidence "database" "port" "tcp/9200" 45 "Elasticsearch HTTP service detected"
         has_port 9300 && add_classification_evidence "database" "port" "tcp/9300" 35 "Elasticsearch transport service detected"
         has_port 27017 && add_classification_evidence "database" "port" "tcp/27017" 45 "MongoDB database port detected"
+
+        if has_port 9200 && has_port 9300; then
+            add_classification_evidence "database" "port-combination" "elasticsearch-http+transport" 25 "Elasticsearch HTTP plus transport ports strongly suggest database/search infrastructure"
+        fi
+        if has_port 3306 && has_port 5432; then
+            add_classification_evidence "database" "port-combination" "mysql+postgresql" 25 "Multiple relational database services suggest database server role"
+        fi
+        if (has_port 3306 || has_port 5432) && has_port 6379; then
+            add_classification_evidence "database" "port-combination" "rdbms+redis" 20 "Relational database plus Redis suggests database or application data host"
+        fi
 
         has_port 9100 && add_classification_evidence "printer" "port" "tcp/9100" 55 "Raw JetDirect-style printer service detected"
         has_port 631 && add_classification_evidence "printer" "port" "tcp/631" 40 "IPP printing service detected"
@@ -1107,7 +1124,6 @@ analyze_hosts() {
         }
 
         update_best_candidate "Windows Server" "$WINDOWS_SERVER_SCORE"
-        update_best_candidate "Kubernetes Infrastructure" "$KUBE_SCORE"
         update_best_candidate "Container Infrastructure" "$CONTAINER_SCORE"
         update_best_candidate "Router / Gateway" "$ROUTER_GATEWAY_SCORE"
         update_best_candidate "Wireless Access Point" "$AP_SCORE"
@@ -1141,7 +1157,6 @@ analyze_hosts() {
         CLASSIFICATION_SECONDARY=$(jq -n \
             --arg primary "$CLASSIFICATION_PRIMARY" \
             --argjson windows_server "$WINDOWS_SERVER_SCORE" \
-            --argjson kube "$KUBE_SCORE" \
             --argjson container "$CONTAINER_SCORE" \
             --argjson router_gateway "$ROUTER_GATEWAY_SCORE" \
             --argjson ap "$AP_SCORE" \
@@ -1163,7 +1178,6 @@ analyze_hosts() {
             --argjson mail "$MAIL_SCORE" \
             '[
                 {device_type: "Windows Server", confidence: $windows_server},
-                {device_type: "Kubernetes Infrastructure", confidence: $kube},
                 {device_type: "Container Infrastructure", confidence: $container},
                 {device_type: "Router / Gateway", confidence: $router_gateway},
                 {device_type: "Wireless Access Point", confidence: $ap},

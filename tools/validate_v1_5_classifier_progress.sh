@@ -92,6 +92,15 @@ checks = {
         'add_classification_evidence "dev_admin" "port-combination" "tcp/3000+9090"',
         'add_classification_evidence "iot" "port-combination" "upnp+web"',
     ],
+    "container_database_refinement": [
+        "kube) CONTAINER_SCORE",
+        'update_best_candidate "Container Infrastructure" "$CONTAINER_SCORE"',
+        'add_classification_evidence "container" "port-combination" "k8s-api+kubelet"',
+        'add_classification_evidence "container" "port-combination" "docker+admin-console"',
+        'add_classification_evidence "database" "port-combination" "elasticsearch-http+transport"',
+        'add_classification_evidence "database" "port-combination" "mysql+postgresql"',
+        'add_classification_evidence "database" "port-combination" "rdbms+redis"',
+    ],
 }
 
 failed = False
@@ -115,6 +124,8 @@ stale_forbidden = [
     '{device_type: "Web Server", confidence: $web}',
     '{device_type: "Windows Host", confidence: $windows}',
     '{device_type: "Linux / Web Server", confidence: $linux_web}',
+    'update_best_candidate "Kubernetes Infrastructure" "$KUBE_SCORE"',
+    '{device_type: "Kubernetes Infrastructure", confidence: $kube}',
 ]
 
 stale_found = [item for item in stale_forbidden if item in text]
