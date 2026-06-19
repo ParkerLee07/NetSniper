@@ -1,0 +1,25 @@
+{
+  "ip": "192.168.4.50",
+  "hostname": "docker-host",
+  "services": [
+    {
+      "port": 2375,
+      "protocol": "tcp",
+      "state": "open",
+      "service": "docker"
+    },
+    {
+      "port": 5000,
+      "protocol": "tcp",
+      "state": "open",
+      "service": "registry"
+    },
+    {
+      "port": 9000,
+      "protocol": "tcp",
+      "state": "open",
+      "service": "http",
+      "http_title": "Portainer"
+    }
+  ]
+}
