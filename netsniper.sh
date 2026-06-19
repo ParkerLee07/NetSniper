@@ -6,6 +6,8 @@
 
 # =========================
 # NETSNIPER ENGINE v1.5.0
+# NETSNIPER_CLASSIFICATION_ENGINE_V150
+# Compatibility marker retained for v1.5 regression validators.
 # NETSNIPER_CLASSIFICATION_ENGINE_V160
 # TrueAegis-compatible telemetry output
 # =========================

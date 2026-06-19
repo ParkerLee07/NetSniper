@@ -19,7 +19,7 @@ grep -q 'NetSniper v1.6.0' README.md
 grep -q 'Current release: \*\*NetSniper v1.6.0' README.md
 grep -q '## v1.6.0' CHANGELOG.md
 
-if grep -q 'SCANNER_VERSION="v1.6.0"' netsniper.sh; then
+if grep -q 'SCANNER_VERSION="v1.6.0-dev"' netsniper.sh; then
   echo "[-] Dev version marker still present."
   exit 1
 fi
