@@ -1,6 +1,6 @@
-## NetSniper v1.5.0 — Classification Accuracy Expansion
+## NetSniper v1.6.0 — Classification Accuracy Expansion
 
-NetSniper v1.5.0 expands the evidence-based device classification engine with a broader device taxonomy, weaker generic web-interface scoring, service-text evidence, and synthetic behavior validation.
+NetSniper v1.6.0 expands the evidence-based device classification engine with a broader device taxonomy, weaker generic web-interface scoring, service-text evidence, and synthetic behavior validation.
 
 ### Highlights
 
@@ -20,9 +20,9 @@ Run:
 # NetSniper
 
 <!-- NETSNIPER_V140_README_START -->
-## NetSniper v1.5.0 Current Capabilities
+## NetSniper v1.6.0 Current Capabilities
 
-NetSniper v1.5.0 expands the scanner from evidence-based classification into a broader device-role identification sensor for DeltaAegis and other downstream tools.
+NetSniper v1.6.0 expands the scanner from evidence-based classification into a broader device-role identification sensor for DeltaAegis and other downstream tools.
 
 ### What v1.5.0 adds
 
@@ -37,7 +37,7 @@ NetSniper v1.5.0 expands the scanner from evidence-based classification into a b
 
 ### Classification schema
 
-NetSniper v1.5.0 uses the classification schema version `netsniper-classification-v1`.
+NetSniper v1.6.0 uses the classification schema version `netsniper-classification-v1`.
 
 Each analyzed host now includes a `classification` object with:
 
@@ -69,13 +69,62 @@ NetSniper is also the active network sensor for **DeltaAegis**. Each completed f
 
 ## Current Release
 
-Current release: **NetSniper v1.5.0 — Classification Accuracy Expansion**
+Current release: **NetSniper v1.6.0 — Classification Accuracy Expansion**
 
-NetSniper v1.5.0 expands device classification accuracy with a broader taxonomy, weaker generic web-interface scoring, service-text evidence, synthetic classification fixtures, and behavior validation.
+NetSniper v1.6.0 expands device classification accuracy with a broader taxonomy, weaker generic web-interface scoring, service-text evidence, synthetic classification fixtures, and behavior validation.
 
 Recommended validation before release or demo use:
 
     ./tools/validate_v1_5_release_gate.sh
+
+
+## NetSniper v1.6.0 Intelligence Validation
+
+NetSniper v1.6.0 improves classification intelligence for SIEM ingestion by adding calibrated confidence fields, validator results, contradiction-aware gating, service-text product validation, and validator summaries.
+
+### v1.6 Intelligence Fields
+
+Each host classification now keeps the legacy v1.x fields while adding safer SIEM-oriented fields:
+
+- `confidence_band`
+- `calibrated_decision`
+- `siem_action`
+- `calibration_reason`
+- `validation_state`
+- `contradiction_count`
+- `validators`
+- `validator_summary`
+
+Legacy fields such as `classification.decision`, `classification.primary_type`, `classification.confidence`, `device_type`, and `device_type_confidence` remain available for downstream compatibility.
+
+### Confidence Calibration
+
+NetSniper v1.6.0 uses calibrated confidence bands:
+
+- `unknown`: no useful classification evidence.
+- `weak`: weak evidence only; display/review context.
+- `possible`: some supporting evidence; review queue context.
+- `likely`: stronger evidence; can inform risk context.
+- `confirmed`: strong validated evidence; eligible for stronger SIEM use.
+
+### SIEM Behavior
+
+NetSniper v1.6.0 is designed to reduce alert fatigue. Weak classifications are not treated as confirmed identity. Contradictory classifications are routed to review through `siem_action: "contradiction_review"` even when legacy compatibility fields still show a classified decision.
+
+### Validators
+
+v1.6.0 adds validator-style intelligence records:
+
+- passive evidence validators
+- high-reliability evidence validator
+- weak evidence validator
+- contradiction validator
+- generic web interface validator
+- service-text product validator
+- validator summary counts
+
+This gives DeltaAegis and other SIEM consumers a clearer distinction between observed evidence, validated identity, weak guesses, and conflicting signals.
+
 
 ## Features
 

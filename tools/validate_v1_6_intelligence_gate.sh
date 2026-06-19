@@ -20,7 +20,7 @@ from pathlib import Path
 script = Path("netsniper.sh").read_text(encoding="utf-8")
 
 required = [
-    'SCANNER_VERSION="v1.6.0-dev"',
+    'SCANNER_VERSION="v1.6.0"',
     "evidence_reliability()",
     "calibrated_decision()",
     "siem_action()",
