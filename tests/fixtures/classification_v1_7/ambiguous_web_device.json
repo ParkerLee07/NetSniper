@@ -1,0 +1,23 @@
+{
+  "schema_version": "netsniper-classification-fixture-v1",
+  "fixture_id": "ambiguous_web_device",
+  "description": "Synthetic generic web device with only weak HTTP evidence. This should not become a confident device classification.",
+  "observed": {
+    "open_ports": ["tcp/80", "tcp/443"],
+    "service_hints": ["http", "https"],
+    "vendor_hints": [],
+    "http_titles": ["Login"],
+    "hostname_hints": [],
+    "network_roles": []
+  },
+  "expected": {
+    "primary_type": "Web Server / Web Application Host",
+    "category": "Server Infrastructure",
+    "minimum_confidence": 1,
+    "allowed_confidence_bands": ["weak", "possible"],
+    "decision": "possible",
+    "siem_action": "review_queue",
+    "expected_contradiction_review": false,
+    "false_confidence_guard": true
+  }
+}

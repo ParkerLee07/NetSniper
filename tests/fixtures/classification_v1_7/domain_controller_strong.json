@@ -1,0 +1,22 @@
+{
+  "schema_version": "netsniper-classification-fixture-v1",
+  "fixture_id": "domain_controller_strong",
+  "description": "Synthetic Active Directory domain controller with Kerberos, LDAP, SMB, DNS, and domain metadata.",
+  "observed": {
+    "open_ports": ["tcp/53", "tcp/88", "tcp/389", "tcp/445"],
+    "service_hints": ["kerberos", "ldap", "active directory", "domain"],
+    "vendor_hints": ["Microsoft"],
+    "http_titles": [],
+    "hostname_hints": ["dc01"],
+    "network_roles": []
+  },
+  "expected": {
+    "primary_type": "Active Directory / Domain Controller",
+    "category": "Server Infrastructure",
+    "minimum_confidence": 70,
+    "allowed_confidence_bands": ["strong", "high"],
+    "decision": "classified",
+    "siem_action": "alert_candidate",
+    "expected_contradiction_review": false
+  }
+}
