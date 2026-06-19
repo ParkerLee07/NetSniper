@@ -1,25 +1,27 @@
 ## NetSniper v1.7.0 — Device Intelligence Expansion
 
-NetSniper v1.7.0 expands the scanner from calibrated classification into a stronger device-intelligence producer for DeltaAegis and other downstream tools.
+NetSniper is a Bash-based network reconnaissance and exposure-intelligence sensor that produces structured telemetry for local review and downstream tools such as DeltaAegis.
 
 Current release: **NetSniper v1.7.0 — Device Intelligence Expansion**
 
-### What v1.7.0 adds
+NetSniper v1.7.0 expands the scanner from calibrated scan analysis into a stronger device-intelligence producer. It adds a formal taxonomy, evidence-profile scoring, reusable classification tooling, enriched run artifacts, classification quality reporting, and release-gated validation for device identity confidence.
+
+### v1.7.0 Highlights
 
 - Formal device taxonomy under `classification/device_taxonomy.json`.
-- Evidence-profile map under `classification/evidence_profiles.json`.
-- Reusable v1.7 host classifier for normalized host records.
-- Host normalizer for current and legacy NetSniper analysis shapes.
-- Safe analysis enhancer that writes `analysis.enriched.json` without overwriting `analysis.json`.
-- Classification quality reports:
+- Evidence-profile scoring under `classification/evidence_profiles.json`.
+- Reusable v1.7 host classifier and host normalizer.
+- Safe analysis enrichment through `analysis.enriched.json`.
+- Run-level classification quality reports:
   - `classification_quality.json`
   - `classification_quality.md`
-- Bundle manifest references for v1.7 artifacts.
-- Release gate validation through `tools/validate_v1_7_release_gate.sh`.
+- Manifest-addressable v1.7 artifacts for downstream tools.
+- Conservative dashboard/web evidence handling, including Grafana-style dashboard services, without overclassifying them.
+- Full v1.7 release gate validation.
 
 ### v1.7 Bundle Artifacts
 
-Each finalized run bundle can now include:
+Finalized run bundles can include:
 
 ```text
 analysis.json
@@ -29,38 +31,18 @@ classification_quality.md
 manifest.json
 ```
 
-`analysis.json` remains the original compatibility artifact. `analysis.enriched.json` contains v1.7 classification details, evidence, contradictions, confidence bands, SIEM actions, and secondary candidates.
+`analysis.json` remains the compatibility artifact. `analysis.enriched.json` contains v1.7 classification details, evidence, contradictions, confidence bands, SIEM actions, secondary candidates, and explanations.
 
-### v1.7 Classification Quality
-
-The quality report summarizes:
-
-- host count
-- classified count
-- possible/review count
-- unknown count
-- contradiction host count
-- confidence-band distribution
-- top device types
-- review queue sample
-- false-confidence candidates
-- unknown hosts with exposed services
-- sample explanations by device type
-
-NetSniper v1.7.0 is intentionally conservative. A weak or generic service should remain `possible` or `review_queue` instead of becoming a confident but unreliable classification.
-
-### v1.7 Validation
-
-Run:
+### Recommended Validation
 
 ```bash
 ./tools/validate_v1_7_release_gate.sh
 ```
 
-The release gate checks shell syntax, taxonomy, evidence profiles, fixtures, reusable host classification, normalization, analysis enhancement, run artifact generation, manifest awareness, latest bundle artifacts, and false-confidence review metrics.
+The v1.7 release gate checks syntax, taxonomy, evidence profiles, fixtures, reusable host classification, normalization, analysis enhancement, run artifact generation, manifest awareness, docs/version markers, latest bundle artifacts, and false-confidence review metrics.
 
 ---
-## NetSniper v1.6.0 — Intelligence Validation and Confidence Calibration
+## Previous Release Notes — NetSniper v1.6.0
 
 NetSniper v1.6.0 improves classification intelligence for SIEM ingestion by adding calibrated confidence fields, validator-style evidence checks, contradiction-aware gating, service-text product validation, and validator summaries.
 
@@ -77,12 +59,12 @@ NetSniper v1.6.0 improves classification intelligence for SIEM ingestion by addi
 
 Run:
 
-    ./tools/validate_v1_6_release_gate.sh
+    ./tools/validate_v1_7_release_gate.sh
 
 # NetSniper
 
 <!-- NETSNIPER_V140_README_START -->
-## NetSniper v1.6.0 Current Capabilities
+## Previous v1.6.0 Capabilities
 
 NetSniper v1.6.0 expands the scanner from evidence-based classification into a broader device-role identification sensor for DeltaAegis and other downstream tools.
 
@@ -137,7 +119,7 @@ NetSniper v1.6.0 expands device classification accuracy with a broader taxonomy,
 
 Recommended validation before release or demo use:
 
-    ./tools/validate_v1_6_release_gate.sh
+    ./tools/validate_v1_7_release_gate.sh
 
 
 ## NetSniper v1.6.0 Intelligence Validation
