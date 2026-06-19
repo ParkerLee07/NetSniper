@@ -1711,6 +1711,15 @@ analyze_hosts() {
 
                     evidence: $classification_evidence,
                     validators: $classification_validators,
+                    validator_summary: {
+                        total: ($classification_validators | length),
+                        confirmed: ([$classification_validators[]? | select(.status == "confirmed")] | length),
+                        inconclusive: ([$classification_validators[]? | select(.status == "inconclusive")] | length),
+                        refuted: ([$classification_validators[]? | select(.status == "refuted")] | length),
+                        not_applicable: ([$classification_validators[]? | select(.status == "not_applicable")] | length),
+                        error: ([$classification_validators[]? | select(.status == "error")] | length),
+                        names: ([$classification_validators[]? | .name] | unique)
+                    },
                     contradictions: $classification_contradictions,
 
                     candidates: $classification_secondary,
