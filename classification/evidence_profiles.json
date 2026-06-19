@@ -494,6 +494,54 @@
         }
       ],
       "default_siem_action": "display_only"
+    },
+    {
+      "primary_type": "Web Server / Web Application Host",
+      "category": "Server Infrastructure",
+      "positive_evidence": [
+        {
+          "id": "http_80",
+          "source": "port",
+          "value": "tcp/80",
+          "reliability": "low",
+          "points": 15,
+          "reason": "HTTP service indicates a web interface or web server, but port-only evidence is weak."
+        },
+        {
+          "id": "https_443",
+          "source": "port",
+          "value": "tcp/443",
+          "reliability": "low",
+          "points": 15,
+          "reason": "HTTPS service indicates a web interface or web server, but port-only evidence is weak."
+        },
+        {
+          "id": "http_alt_8080",
+          "source": "port",
+          "value": "tcp/8080",
+          "reliability": "low",
+          "points": 15,
+          "reason": "Alternate HTTP service may indicate a web application or admin interface."
+        },
+        {
+          "id": "web_product_title",
+          "source": "http_title",
+          "value": "apache|nginx|iis|tomcat|jenkins|grafana|dashboard|webmin|admin console",
+          "reliability": "medium",
+          "points": 25,
+          "reason": "HTTP title contains a recognizable web server or web application hint."
+        },
+        {
+          "id": "server_header",
+          "source": "service",
+          "value": "apache|nginx|iis|tomcat|jetty|gunicorn|uwsgi",
+          "reliability": "medium",
+          "points": 25,
+          "reason": "Service metadata contains a recognizable web server header or product."
+        }
+      ],
+      "contradictions": [],
+      "default_siem_action": "display_only"
     }
   ]
 }

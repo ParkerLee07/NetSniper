@@ -26,7 +26,7 @@ schema_version="$(jq -r '.schema_version // empty' "$PROFILES_FILE")"
 [[ "$schema_version" == "netsniper-evidence-profiles-v1" ]] || fail "Unexpected schema_version: $schema_version"
 
 profile_count="$(jq '.profiles | length' "$PROFILES_FILE")"
-[[ "$profile_count" -ge 8 ]] || fail "Expected at least 8 evidence profiles, found $profile_count"
+[[ "$profile_count" -ge 9 ]] || fail "Expected at least 9 evidence profiles, found $profile_count"
 
 for required_type in \
   "IP Camera / NVR" \
@@ -34,6 +34,7 @@ for required_type in \
   "Container Infrastructure" \
   "Active Directory / Domain Controller" \
   "Database Server" \
+  "Web Server / Web Application Host" \
   "NAS / Storage Appliance" \
   "Router / Gateway" \
   "Wireless Access Point"
