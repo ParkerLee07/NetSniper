@@ -14,7 +14,7 @@ NetSniper v1.6.0 expands the evidence-based device classification engine with a 
 
 Run:
 
-    ./tools/validate_v1_5_release_gate.sh
+    ./tools/validate_v1_6_release_gate.sh
 
 
 # NetSniper
@@ -24,7 +24,7 @@ Run:
 
 NetSniper v1.6.0 expands the scanner from evidence-based classification into a broader device-role identification sensor for DeltaAegis and other downstream tools.
 
-### What v1.5.0 adds
+### What v1.6.0 adds
 
 - **Evidence-based classification** — assigns suspected device roles using weighted service evidence instead of one-off static port assumptions.
 - **Classification confidence** — records numeric confidence, confidence labels, and classification decisions such as `classified`, `possible`, and `unknown`.
@@ -69,13 +69,13 @@ NetSniper is also the active network sensor for **DeltaAegis**. Each completed f
 
 ## Current Release
 
-Current release: **NetSniper v1.6.0 — Classification Accuracy Expansion**
+Current release: **NetSniper v1.6.0 — Intelligence Validation and Confidence Calibration**
 
 NetSniper v1.6.0 expands device classification accuracy with a broader taxonomy, weaker generic web-interface scoring, service-text evidence, synthetic classification fixtures, and behavior validation.
 
 Recommended validation before release or demo use:
 
-    ./tools/validate_v1_5_release_gate.sh
+    ./tools/validate_v1_6_release_gate.sh
 
 
 ## NetSniper v1.6.0 Intelligence Validation

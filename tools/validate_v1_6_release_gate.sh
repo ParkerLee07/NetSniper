@@ -24,6 +24,9 @@ if grep -q 'SCANNER_VERSION="v1.6.0-dev"' netsniper.sh; then
   exit 1
 fi
 
+echo "[*] Running v1.6 docs validator..."
+./tools/validate_v1_6_docs.sh
+
 echo "[*] Running v1.6 intelligence gate..."
 ./tools/validate_v1_6_intelligence_gate.sh
 
