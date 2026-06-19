@@ -1154,6 +1154,115 @@ analyze_hosts() {
         }
 
 
+        add_service_text_product_validators() {
+            line_has 'synology|diskstation|qnap|truenas|freenas|openmediavault' && \
+                add_classification_validator \
+                    "service_text_product_validator" \
+                    "confirmed" \
+                    "NAS / File Server" \
+                    0 \
+                    "Storage product text was observed in the service/version output."
+
+            line_has 'hp laserjet|jetdirect|brother|canon|epson|xerox|printer|ipp|cups' && \
+                add_classification_validator \
+                    "service_text_product_validator" \
+                    "confirmed" \
+                    "Network Printer / Multifunction Printer" \
+                    0 \
+                    "Printer product or printing protocol text was observed in the service/version output."
+
+            line_has 'reolink|hikvision|dahua|axis|amcrest|onvif|nvr|dvr|ip camera' && \
+                add_classification_validator \
+                    "service_text_product_validator" \
+                    "confirmed" \
+                    "IP Camera / NVR" \
+                    0 \
+                    "Camera, NVR, DVR, or ONVIF product text was observed in the service/version output."
+
+            line_has 'ubiquiti|unifi|aruba|ruckus|meraki|access point|wireless ap' && \
+                add_classification_validator \
+                    "service_text_product_validator" \
+                    "confirmed" \
+                    "Wireless Access Point" \
+                    0 \
+                    "Wireless access point product text was observed in the service/version output."
+
+            line_has 'cisco|procurve|edgeswitch|switch device|managed switch' && \
+                add_classification_validator \
+                    "service_text_product_validator" \
+                    "confirmed" \
+                    "Managed Switch / Network Infrastructure" \
+                    0 \
+                    "Managed switch or network infrastructure product text was observed in the service/version output."
+
+            line_has 'apc|eaton|cyberpower|tripplite|ups|pdu|network management card' && \
+                add_classification_validator \
+                    "service_text_product_validator" \
+                    "confirmed" \
+                    "UPS / Power Device" \
+                    0 \
+                    "UPS, PDU, or power-management product text was observed in the service/version output."
+
+            line_has 'pfsense|fortinet|sonicwall|palo alto|sophos|watchguard|firewall|vpn gateway' && \
+                add_classification_validator \
+                    "service_text_product_validator" \
+                    "confirmed" \
+                    "Security Appliance" \
+                    0 \
+                    "Firewall, VPN gateway, or security appliance product text was observed in the service/version output."
+
+            line_has 'proxmox|vmware|esxi|vcenter|hyper-v|xenserver|virtual environment' && \
+                add_classification_validator \
+                    "service_text_product_validator" \
+                    "confirmed" \
+                    "Hypervisor / Virtualization Host" \
+                    0 \
+                    "Virtualization platform product text was observed in the service/version output."
+
+            line_has 'jenkins|grafana|prometheus|kibana|gitlab|gitea|jupyter|webmin|cockpit|phpmyadmin|adminer' && \
+                add_classification_validator \
+                    "service_text_product_validator" \
+                    "confirmed" \
+                    "Development / Admin Interface" \
+                    0 \
+                    "Development, admin, or observability product text was observed in the service/version output."
+
+            line_has 'esp32|espressif|arduino|embedded|iot device|microcontroller' && \
+                add_classification_validator \
+                    "service_text_product_validator" \
+                    "confirmed" \
+                    "IoT / Embedded Device" \
+                    0 \
+                    "Embedded or IoT product text was observed in the service/version output."
+
+            line_has 'nginx|apache httpd|tomcat|iis|gunicorn|node.js|express' && \
+                add_classification_validator \
+                    "service_text_product_validator" \
+                    "confirmed" \
+                    "Web Server / Web Application Host" \
+                    0 \
+                    "Web server or web application runtime product text was observed in the service/version output."
+
+            line_has 'microsoft windows server|active directory|domain controller' && \
+                add_classification_validator \
+                    "service_text_product_validator" \
+                    "confirmed" \
+                    "Windows Server" \
+                    0 \
+                    "Windows Server, Active Directory, or domain controller product text was observed in the service/version output."
+
+            line_has 'ubuntu|debian|centos|red hat|rocky linux|alma linux|openssh' && \
+                add_classification_validator \
+                    "service_text_product_validator" \
+                    "confirmed" \
+                    "Linux Server" \
+                    0 \
+                    "Linux, Unix, or OpenSSH product text was observed in the service/version output."
+
+            return 0
+        }
+
+
         # -------------------------
         # TrueAegis Finding Checks
         # -------------------------
@@ -1232,6 +1341,8 @@ analyze_hosts() {
         line_has 'nginx|apache httpd|tomcat|iis|gunicorn|node.js|express' && add_classification_evidence "web" "service-text" "web-server-product" 35 "Web server product text strengthens web application host role"
         line_has 'microsoft windows server|active directory|domain controller' && add_classification_evidence "windows_server" "service-text" "windows-server-product" 45 "Windows Server or directory-service text strengthens server classification"
         line_has 'ubuntu|debian|centos|red hat|rocky linux|alma linux|openssh' && add_classification_evidence "linux_server" "service-text" "linux-unix-product" 25 "Linux/Unix service text strengthens Linux server classification"
+
+        add_service_text_product_validators
 
         if has_port 88 && has_port 389 && has_port 445; then
             add_classification_evidence "windows_server" "port-combination" "tcp/88+389+445" 95 "Kerberos, LDAP, and SMB together strongly suggest Windows Server or domain controller infrastructure"
