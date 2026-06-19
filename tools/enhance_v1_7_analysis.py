@@ -14,6 +14,7 @@ from __future__ import annotations
 import argparse
 import copy
 import json
+import re
 import sys
 from collections import Counter
 from datetime import datetime, timezone
@@ -127,12 +128,34 @@ def enrich_host(host: Any, profiles: dict[str, Any]) -> dict[str, Any]:
     classification_result = classify_host_record(normalized, profiles)
     compatible = compatibility_classification(classification_result)
 
+    normalized_host_id = str(
+        normalized.get("host_id")
+        or classification_result.get("host_id")
+        or enriched.get("host_id")
+        or "unknown-host"
+    ).strip()
+
+    if normalized_host_id and normalized_host_id != "unknown-host":
+        enriched.setdefault("host_id", normalized_host_id)
+
+        if re.fullmatch(r"\d+\.\d+\.\d+\.\d+", normalized_host_id):
+            enriched.setdefault("ip", normalized_host_id)
+
+    observed = normalized.get("observed", {})
+
+    if not enriched.get("hostname"):
+        hostname_hints = observed.get("hostname_hints", [])
+        if isinstance(hostname_hints, list) and hostname_hints:
+            first_hostname = str(hostname_hints[0]).strip()
+            if first_hostname and first_hostname != normalized_host_id:
+                enriched["hostname"] = first_hostname
+
     if "classification" in enriched:
         enriched["classification_previous"] = enriched["classification"]
 
     enriched["classification"] = compatible
     enriched["classification_v1_7"] = classification_result
-    enriched["classification_observed_v1_7"] = normalized.get("observed", {})
+    enriched["classification_observed_v1_7"] = observed
     enriched["device_type"] = compatible["primary_type"]
     enriched["device_type_confidence"] = compatible["confidence"]
 

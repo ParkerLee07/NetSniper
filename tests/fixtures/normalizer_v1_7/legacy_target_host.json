@@ -1,0 +1,20 @@
+{
+  "target": "192.168.4.70",
+  "host_name": "legacy-camera",
+  "mac_vendor": "Reolink",
+  "high_risk_ports": [
+    {
+      "port": "554",
+      "proto": "tcp",
+      "state": "open",
+      "service_name": "rtsp"
+    },
+    {
+      "port": "80",
+      "proto": "tcp",
+      "state": "open",
+      "service_name": "http",
+      "http_title": "Reolink IP Camera"
+    }
+  ]
+}

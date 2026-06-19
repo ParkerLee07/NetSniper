@@ -59,9 +59,35 @@
     {
       "ip": "192.168.4.80",
       "hostname": "generic-web-device",
-      "open_ports": ["80/tcp", "443/tcp"],
-      "service": ["http", "https"],
+      "open_ports": [
+        "80/tcp",
+        "443/tcp"
+      ],
+      "service": [
+        "http",
+        "https"
+      ],
       "http_title": "Login"
+    },
+    {
+      "target_ip": "192.168.4.70",
+      "host_name": "legacy-camera",
+      "mac_vendor": "Reolink",
+      "high_risk_ports": [
+        {
+          "port": "554",
+          "proto": "tcp",
+          "state": "open",
+          "service_name": "rtsp"
+        },
+        {
+          "port": "80",
+          "proto": "tcp",
+          "state": "open",
+          "service_name": "http",
+          "http_title": "Reolink IP Camera"
+        }
+      ]
     }
   ]
 }

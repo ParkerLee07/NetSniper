@@ -35,6 +35,9 @@ PORT_KEYS = [
     "port_id",
     "number",
     "port_number",
+    "port_num",
+    "service_port",
+    "target_port",
 ]
 
 PROTO_KEYS = [
@@ -45,6 +48,7 @@ PROTO_KEYS = [
 
 SERVICE_KEYS = [
     "service",
+    "services",
     "service_name",
     "name",
     "product",
@@ -53,6 +57,10 @@ SERVICE_KEYS = [
     "service_product",
     "service_version",
     "fingerprint",
+    "description",
+    "finding",
+    "finding_name",
+    "title",
 ]
 
 HTTP_TITLE_KEYS = [
@@ -151,7 +159,12 @@ def host_id_from(record: dict[str, Any]) -> str:
         "ip",
         "ip_address",
         "address",
+        "addr",
         "host",
+        "host_ip",
+        "target",
+        "target_ip",
+        "target_address",
         "hostname",
         "name",
         "mac",
@@ -160,6 +173,13 @@ def host_id_from(record: dict[str, Any]) -> str:
         value = record.get(key)
         if isinstance(value, str) and value.strip():
             return value.strip()
+
+    for nested_key in ["host", "target", "asset", "device"]:
+        nested = record.get(nested_key)
+        if isinstance(nested, dict):
+            nested_id = host_id_from(nested)
+            if nested_id != "unknown-host":
+                return nested_id
 
     return "unknown-host"
 
@@ -237,7 +257,36 @@ def collect_from_entry(entry: dict[str, Any], observed: dict[str, list[str]]) ->
 
 
 def collect_list_of_ports(value: Any, observed: dict[str, list[str]]) -> None:
+    if value is None:
+        return
+
+    if isinstance(value, dict):
+        # Some outputs use maps such as {"80": "http"} or {"tcp": [80, 443]}.
+        for key, item in value.items():
+            key_port = normalize_port_text(key)
+            if key_port:
+                observed["open_ports"].append(key_port)
+                add_value(observed["service_hints"], item)
+                continue
+
+            if isinstance(item, list):
+                for subitem in item:
+                    if str(key).lower() in {"tcp", "udp"}:
+                        port = normalize_port_text(subitem, str(key).lower())
+                    else:
+                        port = normalize_port_text(subitem)
+                    if port:
+                        observed["open_ports"].append(port)
+                    elif isinstance(subitem, dict):
+                        collect_from_entry(subitem, observed)
+            elif isinstance(item, dict):
+                collect_from_entry(item, observed)
+        return
+
     if not isinstance(value, list):
+        port = normalize_port_text(value)
+        if port:
+            observed["open_ports"].append(port)
         return
 
     for item in value:
@@ -270,13 +319,30 @@ def normalize_host_record(record: dict[str, Any]) -> dict[str, Any]:
         observed = {field: [] for field in OBSERVED_FIELDS}
 
         # Common direct fields.
-        collect_list_of_ports(record.get("open_ports"), observed)
-        collect_list_of_ports(record.get("ports"), observed)
-        collect_list_of_ports(record.get("services"), observed)
+        for key in [
+            "open_ports",
+            "ports",
+            "services",
+            "findings",
+            "high_risk_ports",
+            "risky_ports",
+            "ports_open",
+            "open_tcp_ports",
+            "open_udp_ports",
+            "tcp_ports",
+            "udp_ports",
+            "tcp",
+            "udp",
+        ]:
+            collect_list_of_ports(record.get(key), observed)
 
-        # Some NetSniper-style outputs may store TCP and UDP separately.
-        collect_list_of_ports(record.get("tcp_ports"), observed)
-        collect_list_of_ports(record.get("udp_ports"), observed)
+        # Common nested containers.
+        for nested_key in ["host", "target", "asset", "device", "scan", "nmap"]:
+            nested = record.get(nested_key)
+            if isinstance(nested, dict):
+                nested_normalized = normalize_host_record(nested)
+                for field in OBSERVED_FIELDS:
+                    observed[field].extend(nested_normalized.get("observed", {}).get(field, []))
 
         # Direct hint fields.
         for key in SERVICE_KEYS:

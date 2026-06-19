@@ -42,10 +42,10 @@ jq empty "$output" || fail "Enhanced analysis output is invalid JSON"
 jq empty "$tmp_dir/summary.json" || fail "Enhancer summary output is invalid JSON"
 
 host_count="$(jq '.hosts | length' "$output")"
-[[ "$host_count" -eq 3 ]] || fail "Expected 3 enriched hosts, found $host_count"
+[[ "$host_count" -eq 4 ]] || fail "Expected 4 enriched hosts, found $host_count"
 
 summary_host_count="$(jq '.netsniper_v1_7_enrichment.host_count' "$output")"
-[[ "$summary_host_count" -eq 3 ]] || fail "Expected summary host_count 3, found $summary_host_count"
+[[ "$summary_host_count" -eq 4 ]] || fail "Expected summary host_count 4, found $summary_host_count"
 
 printer_type="$(jq -r '.hosts[] | select(.ip == "192.168.4.60") | .classification.primary_type' "$output")"
 [[ "$printer_type" == "Network Printer / MFP" ]] \
@@ -66,6 +66,30 @@ web_decision="$(jq -r '.hosts[] | select(.ip == "192.168.4.80") | .classificatio
 web_confidence="$(jq -r '.hosts[] | select(.ip == "192.168.4.80") | .classification.confidence' "$output")"
 [[ "$web_confidence" -lt 70 ]] \
   || fail "Generic web fixture violated false-confidence guard with confidence $web_confidence"
+
+camera_host_id="$(jq -r '.hosts[] | select(.target_ip == "192.168.4.70" or .host_id == "192.168.4.70") | .host_id' "$output")"
+[[ "$camera_host_id" == "192.168.4.70" ]] \
+  || fail "Expected target_ip host identity to be preserved as host_id, got '$camera_host_id'"
+
+camera_ip="$(jq -r '.hosts[] | select(.host_id == "192.168.4.70") | .ip' "$output")"
+[[ "$camera_ip" == "192.168.4.70" ]] \
+  || fail "Expected target_ip host identity to be promoted to ip, got '$camera_ip'"
+
+camera_type="$(jq -r '.hosts[] | select(.host_id == "192.168.4.70") | .classification.primary_type' "$output")"
+[[ "$camera_type" == "IP Camera / NVR" ]] \
+  || fail "Expected legacy camera fixture to classify as IP Camera / NVR, got '$camera_type'"
+
+missing_host_id_count="$(
+  jq '
+    [
+      .hosts[]
+      | select((.host_id // "") == "")
+    ]
+    | length
+  ' "$output"
+)"
+[[ "$missing_host_id_count" -eq 0 ]] \
+  || fail "Expected all enriched hosts to have host_id, missing on $missing_host_id_count host(s)"
 
 previous_classification_count="$(
   jq '
