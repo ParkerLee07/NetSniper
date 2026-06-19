@@ -33,6 +33,11 @@ Host: 192.0.2.41 () Ports: 53/open/tcp//domain///, 88/open/tcp//kerberos-sec///,
 Host: 192.0.2.47 () Ports: 9100/open/tcp//jetdirect///, 631/open/tcp//ipp///, 80/open/tcp//http///
 Host: 192.0.2.51 () Ports: 3000/open/tcp//http///, 9090/open/tcp//http///
 Host: 192.0.2.70 () Ports: 80/open/tcp//http///
+Host: 192.0.2.80 () Ports: 80/open/tcp//http//nginx///
+Host: 192.0.2.81 () Ports: 554/open/tcp//rtsp//Reolink IP Camera///, 80/open/tcp//http//Reolink Web UI///
+Host: 192.0.2.82 () Ports: 80/open/tcp//http//UniFi Access Point///, 1900/open/tcp//upnp///
+Host: 192.0.2.83 () Ports: 80/open/tcp//http//APC UPS Network Management Card///, 161/open/tcp//snmp///
+Host: 192.0.2.84 () Ports: 445/open/tcp//microsoft-ds//Synology DiskStation///, 2049/open/tcp//nfs///
 GNMAP
 
 analyze_hosts > "$tmp_root/analyze.log"
@@ -108,6 +113,11 @@ expected = {
     "192.0.2.41": "Windows Server",
     "192.0.2.47": "Network Printer / Multifunction Printer",
     "192.0.2.51": "Development / Admin Interface",
+    "192.0.2.80": "Web Server / Web Application Host",
+    "192.0.2.81": "IP Camera / NVR",
+    "192.0.2.82": "Wireless Access Point",
+    "192.0.2.83": "UPS / Power Device",
+    "192.0.2.84": "NAS / File Server",
 }
 
 failures = []
@@ -151,7 +161,7 @@ if failures:
         print(f"    - {failure}")
     raise SystemExit(1)
 
-print(f"[+] PASS: behavior smoke test validated {len(expected) + 1} synthetic hosts.")
+print(f"[+] PASS: behavior smoke test validated {len(expected) + 1} synthetic hosts, including service-text cases.")
 print(f"[+] Analysis JSON: {path}")
 PY
 
