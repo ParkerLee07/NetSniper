@@ -5,8 +5,8 @@
 # License: MIT
 
 # =========================
-# NETSNIPER ENGINE v1.4.0
-# NETSNIPER_CLASSIFICATION_ENGINE_V140
+# NETSNIPER ENGINE v1.5.0
+# NETSNIPER_CLASSIFICATION_ENGINE_V150
 # TrueAegis-compatible telemetry output
 # =========================
 
@@ -65,13 +65,13 @@ CONFIG_FILE="$CONFIG_DIR/netsniper.conf"
 RUN_DIR="$BASE/runs"
 SOCK="/run/gvmd/gvmd.sock"
 
-SCANNER_VERSION="v1.4.0"
+SCANNER_VERSION="v1.5.0"
 
 # TrueAegis-aligned scan ports.
 # These are the ports NetSniper can reliably identify from nmap grepable output.
 TRUEAEGIS_PORTS="21,22,23,25,53,80,88,389,110,139,143,443,445,465,554,587,631,993,995,1433,1521,1900,2375,2376,3000,3306,3389,5000,5432,5555,5601,5900,6379,6443,7547,8000,8080,8081,8443,8888,9000,9090,9100,9200,9300,9443,10250,10255,27017,3268,3269"
 
-HIGH_RISK_PATTERN="21/open|22/open|23/open|25/open|53/open|80/open|88/open|389/open|110/open|139/open|143/open|443/open|445/open|465/open|554/open|587/open|631/open|993/open|995/open|1433/open|1521/open|1900/open|2375/open|2376/open|3000/open|3306/open|3389/open|5000/open|5432/open|5555/open|5601/open|5900/open|6379/open|6443/open|7547/open|8000/open|8080/open|8081/open|8443/open|8888/open|9000/open|9090/open|9100/open|9200/open|9300/open|9443/open|10250/open|10255/open|27017/open|3268/open|3269/open"
+HIGH_RISK_PATTERN="21/open|22/open|23/open|25/open|53/open|80/open|88/open|110/open|111/open|135/open|139/open|143/open|161/open|389/open|443/open|445/open|465/open|500/open|554/open|587/open|631/open|993/open|995/open|1433/open|1521/open|1900/open|2049/open|2375/open|2376/open|3000/open|3268/open|3269/open|3306/open|3389/open|4500/open|5000/open|5060/open|5061/open|5432/open|5555/open|5601/open|5900/open|6379/open|6443/open|7547/open|8000/open|8006/open|8080/open|8081/open|8443/open|8888/open|9000/open|9090/open|9100/open|9200/open|9300/open|9443/open|10250/open|10255/open|27017/open"
 
 # =========================
 # FUNCTIONS
@@ -732,11 +732,24 @@ analyze_hosts() {
         AD_SCORE=0
         KUBE_SCORE=0
         CONTAINER_SCORE=0
+        ROUTER_GATEWAY_SCORE=0
+        AP_SCORE=0
+        SWITCH_SCORE=0
+        NAS_SCORE=0
+        VOIP_SCORE=0
+        UPS_SCORE=0
+        SECURITY_SCORE=0
+        HYPERVISOR_SCORE=0
         WINDOWS_SCORE=0
+        WINDOWS_SERVER_SCORE=0
+        WINDOWS_WORKSTATION_SCORE=0
         DATABASE_SCORE=0
         PRINTER_SCORE=0
         CAMERA_SCORE=0
         LINUX_WEB_SCORE=0
+        LINUX_SERVER_SCORE=0
+        DEV_ADMIN_SCORE=0
+        IOT_SCORE=0
         WEB_SCORE=0
         NETWORK_SCORE=0
         MAIL_SCORE=0
@@ -745,6 +758,11 @@ analyze_hosts() {
             local port="$1"
             local pattern="(^|[[:space:],])${port}/open/"
             [[ "$line" =~ $pattern ]]
+        }
+
+        line_has() {
+            local pattern="$1"
+            printf '%s\n' "$line" | grep -Eiq "$pattern"
         }
 
         add_finding() {
@@ -797,13 +815,26 @@ analyze_hosts() {
 
             case "$candidate" in
                 ad) AD_SCORE=$((AD_SCORE + points)) ;;
-                kube) KUBE_SCORE=$((KUBE_SCORE + points)) ;;
+                kube) CONTAINER_SCORE=$((CONTAINER_SCORE + points)) ;;
                 container) CONTAINER_SCORE=$((CONTAINER_SCORE + points)) ;;
+                router_gateway) ROUTER_GATEWAY_SCORE=$((ROUTER_GATEWAY_SCORE + points)) ;;
+                wireless_ap) AP_SCORE=$((AP_SCORE + points)) ;;
+                managed_switch) SWITCH_SCORE=$((SWITCH_SCORE + points)) ;;
+                nas) NAS_SCORE=$((NAS_SCORE + points)) ;;
+                voip) VOIP_SCORE=$((VOIP_SCORE + points)) ;;
+                ups) UPS_SCORE=$((UPS_SCORE + points)) ;;
+                security_appliance) SECURITY_SCORE=$((SECURITY_SCORE + points)) ;;
+                hypervisor) HYPERVISOR_SCORE=$((HYPERVISOR_SCORE + points)) ;;
                 windows) WINDOWS_SCORE=$((WINDOWS_SCORE + points)) ;;
+                windows_server) WINDOWS_SERVER_SCORE=$((WINDOWS_SERVER_SCORE + points)) ;;
+                windows_workstation) WINDOWS_WORKSTATION_SCORE=$((WINDOWS_WORKSTATION_SCORE + points)) ;;
                 database) DATABASE_SCORE=$((DATABASE_SCORE + points)) ;;
                 printer) PRINTER_SCORE=$((PRINTER_SCORE + points)) ;;
                 camera) CAMERA_SCORE=$((CAMERA_SCORE + points)) ;;
                 linux_web) LINUX_WEB_SCORE=$((LINUX_WEB_SCORE + points)) ;;
+                linux_server) LINUX_SERVER_SCORE=$((LINUX_SERVER_SCORE + points)) ;;
+                dev_admin) DEV_ADMIN_SCORE=$((DEV_ADMIN_SCORE + points)) ;;
+                iot) IOT_SCORE=$((IOT_SCORE + points)) ;;
                 web) WEB_SCORE=$((WEB_SCORE + points)) ;;
                 network) NETWORK_SCORE=$((NETWORK_SCORE + points)) ;;
                 mail) MAIL_SCORE=$((MAIL_SCORE + points)) ;;
@@ -900,9 +931,31 @@ analyze_hosts() {
         # Weighted evidence-based classification.
         # This preserves broad compatibility while adding explainable classification data.
 
+        # v1.5 service-text classification evidence.
+        # These checks use nmap service/version strings when available.
+        line_has 'synology|diskstation|qnap|truenas|freenas|openmediavault' && add_classification_evidence "nas" "service-text" "storage-product" 45 "Storage appliance product text suggests NAS/File Server role"
+        line_has 'hp laserjet|jetdirect|brother|canon|epson|xerox|printer|ipp|cups' && add_classification_evidence "printer" "service-text" "printer-product" 45 "Printer product or protocol text suggests network printer role"
+        line_has 'reolink|hikvision|dahua|axis|amcrest|onvif|nvr|dvr|ip camera' && add_classification_evidence "camera" "service-text" "camera-product" 45 "Camera/NVR product text suggests IP Camera or NVR role"
+        line_has 'ubiquiti|unifi|aruba|ruckus|meraki|access point|wireless ap' && add_classification_evidence "wireless_ap" "service-text" "ap-product" 45 "Wireless/AP product text suggests wireless access point role"
+        line_has 'cisco|procurve|edgeswitch|switch device|managed switch' && add_classification_evidence "managed_switch" "service-text" "switch-product" 40 "Switch product text suggests managed network infrastructure"
+        line_has 'apc|eaton|cyberpower|tripplite|ups|pdu|network management card' && add_classification_evidence "ups" "service-text" "power-product" 45 "Power-management product text suggests UPS or PDU role"
+        line_has 'pfsense|fortinet|sonicwall|palo alto|sophos|watchguard|firewall|vpn gateway' && add_classification_evidence "security_appliance" "service-text" "security-product" 45 "Firewall/VPN product text suggests security appliance role"
+        line_has 'proxmox|vmware|esxi|vcenter|hyper-v|xenserver|virtual environment' && add_classification_evidence "hypervisor" "service-text" "hypervisor-product" 50 "Virtualization product text suggests hypervisor role"
+        line_has 'jenkins|grafana|prometheus|kibana|gitlab|gitea|jupyter|webmin|cockpit|phpmyadmin|adminer' && add_classification_evidence "dev_admin" "service-text" "admin-tool" 45 "Admin/development tool text suggests development or admin interface"
+        line_has 'esp32|espressif|arduino|embedded|iot device|microcontroller' && add_classification_evidence "iot" "service-text" "embedded-product" 45 "Embedded product text suggests IoT or embedded device role"
+        line_has 'nginx|apache httpd|tomcat|iis|gunicorn|node.js|express' && add_classification_evidence "web" "service-text" "web-server-product" 35 "Web server product text strengthens web application host role"
+        line_has 'microsoft windows server|active directory|domain controller' && add_classification_evidence "windows_server" "service-text" "windows-server-product" 45 "Windows Server or directory-service text strengthens server classification"
+        line_has 'ubuntu|debian|centos|red hat|rocky linux|alma linux|openssh' && add_classification_evidence "linux_server" "service-text" "linux-unix-product" 25 "Linux/Unix service text strengthens Linux server classification"
+
         if has_port 88 && has_port 389 && has_port 445; then
-            add_classification_evidence "ad" "port-combination" "tcp/88+389+445" 95 "Kerberos, LDAP, and SMB together strongly suggest Active Directory infrastructure"
+            add_classification_evidence "windows_server" "port-combination" "tcp/88+389+445" 95 "Kerberos, LDAP, and SMB together strongly suggest Windows Server or domain controller infrastructure"
         fi
+        if has_port 53 && has_port 88; then
+            add_classification_evidence "windows_server" "port-combination" "tcp/53+88" 30 "DNS plus Kerberos suggests Windows Server infrastructure"
+        fi
+        has_port 389 && add_classification_evidence "windows_server" "port" "tcp/389" 25 "LDAP service may indicate server directory role"
+        has_port 3268 && add_classification_evidence "windows_server" "port" "tcp/3268" 35 "Active Directory Global Catalog service detected"
+        has_port 3269 && add_classification_evidence "windows_server" "port" "tcp/3269" 35 "Active Directory LDAPS Global Catalog service detected"
 
         has_port 6443 && add_classification_evidence "kube" "port" "tcp/6443" 55 "Kubernetes API service detected"
         has_port 10250 && add_classification_evidence "kube" "port" "tcp/10250" 45 "Kubelet service detected"
@@ -914,9 +967,20 @@ analyze_hosts() {
         has_port 9000 && add_classification_evidence "container" "port" "tcp/9000" 25 "Container/admin console candidate detected"
         has_port 9443 && add_classification_evidence "container" "port" "tcp/9443" 25 "Container/admin TLS console candidate detected"
 
-        has_port 445 && add_classification_evidence "windows" "port" "tcp/445" 35 "SMB service is commonly associated with Windows hosts and file services"
-        has_port 3389 && add_classification_evidence "windows" "port" "tcp/3389" 35 "RDP service is commonly associated with Windows hosts"
-        has_port 139 && add_classification_evidence "windows" "port" "tcp/139" 15 "NetBIOS/SMB service detected"
+        if has_port 6443 && (has_port 10250 || has_port 10255); then
+            add_classification_evidence "container" "port-combination" "k8s-api+kubelet" 30 "Kubernetes API plus kubelet service strongly suggests container infrastructure"
+        fi
+        if (has_port 2375 || has_port 2376) && (has_port 9000 || has_port 9443); then
+            add_classification_evidence "container" "port-combination" "docker+admin-console" 25 "Docker API plus admin console strengthens container infrastructure likelihood"
+        fi
+
+        has_port 445 && add_classification_evidence "windows_workstation" "port" "tcp/445" 25 "SMB service is commonly associated with Windows hosts and file sharing"
+        has_port 3389 && add_classification_evidence "windows_workstation" "port" "tcp/3389" 25 "RDP service is commonly associated with Windows hosts"
+        has_port 139 && add_classification_evidence "windows_workstation" "port" "tcp/139" 10 "NetBIOS/SMB service detected"
+        has_port 135 && add_classification_evidence "windows_workstation" "port" "tcp/135" 15 "Microsoft RPC service detected"
+        if has_port 445 && has_port 3389 && ! has_port 88 && ! has_port 389; then
+            add_classification_evidence "windows_workstation" "port-combination" "tcp/445+3389" 20 "SMB plus RDP without directory services suggests Windows workstation or standalone Windows host"
+        fi
 
         has_port 1433 && add_classification_evidence "database" "port" "tcp/1433" 45 "Microsoft SQL Server port detected"
         has_port 1521 && add_classification_evidence "database" "port" "tcp/1521" 45 "Oracle database port detected"
@@ -927,6 +991,16 @@ analyze_hosts() {
         has_port 9300 && add_classification_evidence "database" "port" "tcp/9300" 35 "Elasticsearch transport service detected"
         has_port 27017 && add_classification_evidence "database" "port" "tcp/27017" 45 "MongoDB database port detected"
 
+        if has_port 9200 && has_port 9300; then
+            add_classification_evidence "database" "port-combination" "elasticsearch-http+transport" 25 "Elasticsearch HTTP plus transport ports strongly suggest database/search infrastructure"
+        fi
+        if has_port 3306 && has_port 5432; then
+            add_classification_evidence "database" "port-combination" "mysql+postgresql" 25 "Multiple relational database services suggest database server role"
+        fi
+        if (has_port 3306 || has_port 5432) && has_port 6379; then
+            add_classification_evidence "database" "port-combination" "rdbms+redis" 20 "Relational database plus Redis suggests database or application data host"
+        fi
+
         has_port 9100 && add_classification_evidence "printer" "port" "tcp/9100" 55 "Raw JetDirect-style printer service detected"
         has_port 631 && add_classification_evidence "printer" "port" "tcp/631" 40 "IPP printing service detected"
 
@@ -935,17 +1009,103 @@ analyze_hosts() {
             add_classification_evidence "camera" "port-combination" "tcp/554+web" 20 "RTSP plus web management surface strengthens camera/NVR likelihood"
         fi
 
-        has_port 22 && add_classification_evidence "linux_web" "port" "tcp/22" 25 "SSH service commonly indicates Linux, Unix, network appliance, or administrative endpoint"
+        has_port 22 && add_classification_evidence "linux_server" "port" "tcp/22" 20 "SSH service commonly indicates Linux, Unix, network appliance, or administrative endpoint"
+        has_port 111 && add_classification_evidence "linux_server" "port" "tcp/111" 25 "rpcbind service suggests Unix/Linux service role"
+        if has_port 22 && has_port 2049; then
+            add_classification_evidence "linux_server" "port-combination" "ssh+nfs" 45 "SSH plus NFS suggests Linux or Unix server role"
+        fi
         if has_port 22 && (has_port 80 || has_port 443 || has_port 8080 || has_port 8443); then
-            add_classification_evidence "linux_web" "port-combination" "tcp/22+web" 30 "SSH plus web service commonly indicates Linux server or web appliance"
+            add_classification_evidence "linux_server" "port-combination" "ssh+web" 20 "SSH plus web service suggests Linux server, Unix server, or web appliance"
         fi
 
-        has_port 80 && add_classification_evidence "web" "port" "tcp/80" 20 "HTTP service detected"
-        has_port 443 && add_classification_evidence "web" "port" "tcp/443" 20 "HTTPS service detected"
-        has_port 8000 && add_classification_evidence "web" "port" "tcp/8000" 15 "Alternate HTTP service detected"
-        has_port 8080 && add_classification_evidence "web" "port" "tcp/8080" 15 "Alternate HTTP service detected"
-        has_port 8443 && add_classification_evidence "web" "port" "tcp/8443" 15 "Alternate HTTPS service detected"
-        has_port 8888 && add_classification_evidence "web" "port" "tcp/8888" 15 "Alternate HTTP service detected"
+
+        # v1.5 Development/Admin Interface evidence.
+        has_port 3000 && add_classification_evidence "dev_admin" "port" "tcp/3000" 25 "Common development, dashboard, or admin web service detected"
+        has_port 5601 && add_classification_evidence "dev_admin" "port" "tcp/5601" 45 "Kibana-style admin or observability service detected"
+        has_port 9090 && add_classification_evidence "dev_admin" "port" "tcp/9090" 35 "Prometheus-style monitoring or admin service detected"
+        if has_port 3000 && has_port 9090; then
+            add_classification_evidence "dev_admin" "port-combination" "tcp/3000+9090" 25 "Grafana/Prometheus-style combination suggests development or admin interface"
+        fi
+        if has_port 5601 && (has_port 9200 || has_port 9300); then
+            add_classification_evidence "dev_admin" "port-combination" "kibana+elasticsearch" 25 "Kibana plus Elasticsearch ports suggest observability or admin stack"
+        fi
+
+        # v1.5 IoT/Embedded Device evidence.
+        has_port 5555 && add_classification_evidence "iot" "port" "tcp/5555" 35 "ADB-like or embedded debug service detected"
+        if has_port 1900 && (has_port 80 || has_port 443 || has_port 8080 || has_port 8443); then
+            add_classification_evidence "iot" "port-combination" "upnp+web" 25 "UPnP/SSDP-like service plus web management can indicate embedded or IoT appliance behavior"
+        fi
+        if has_port 7547 && (has_port 80 || has_port 443); then
+            add_classification_evidence "iot" "port-combination" "tr069+web" 15 "TR-069 plus web management can indicate embedded CPE or managed appliance behavior"
+        fi
+
+        has_port 80 && add_classification_evidence "web" "port" "tcp/80" 10 "HTTP service detected; treated as weak web-interface evidence"
+        has_port 443 && add_classification_evidence "web" "port" "tcp/443" 10 "HTTPS service detected; treated as weak web-interface evidence"
+        has_port 8000 && add_classification_evidence "web" "port" "tcp/8000" 8 "Alternate HTTP service detected; treated as weak web-interface evidence"
+        has_port 8080 && add_classification_evidence "web" "port" "tcp/8080" 8 "Alternate HTTP service detected; treated as weak web-interface evidence"
+        has_port 8443 && add_classification_evidence "web" "port" "tcp/8443" 8 "Alternate HTTPS service detected; treated as weak web-interface evidence"
+        has_port 8888 && add_classification_evidence "web" "port" "tcp/8888" 8 "Alternate HTTP service detected; treated as weak web-interface evidence"
+
+
+        # v1.5 Router/Gateway evidence.
+        has_port 7547 && add_classification_evidence "router_gateway" "port" "tcp/7547" 60 "TR-069/CPE management service suggests router, gateway, modem, or ISP-managed device"
+        if has_port 53 && (has_port 80 || has_port 443 || has_port 8080 || has_port 8443); then
+            add_classification_evidence "router_gateway" "port-combination" "dns+web" 30 "DNS plus web management suggests gateway or network appliance"
+        fi
+        if has_port 1900 && (has_port 80 || has_port 443 || has_port 8080 || has_port 8443); then
+            add_classification_evidence "router_gateway" "port-combination" "upnp+web" 25 "UPnP/SSDP-like service plus web management suggests gateway, router, or embedded network appliance"
+        fi
+
+
+        # v1.5 Wireless AP and Managed Switch evidence.
+        has_port 161 && add_classification_evidence "managed_switch" "port" "tcp-or-udp/161" 25 "SNMP service suggests managed switch, network infrastructure, UPS, printer, router, or appliance"
+        if has_port 161 && has_port 22; then
+            add_classification_evidence "managed_switch" "port-combination" "snmp+ssh" 35 "SNMP plus SSH strongly suggests managed network infrastructure"
+        fi
+        if has_port 161 && (has_port 80 || has_port 443 || has_port 8080 || has_port 8443); then
+            add_classification_evidence "managed_switch" "port-combination" "snmp+web" 25 "SNMP plus web management suggests managed network infrastructure"
+        fi
+        if has_port 1900 && (has_port 80 || has_port 443 || has_port 8080 || has_port 8443); then
+            add_classification_evidence "wireless_ap" "port-combination" "upnp+web" 25 "UPnP/SSDP-like service plus web management can indicate wireless AP or embedded network infrastructure"
+        fi
+
+        # v1.5 NAS/File Server evidence.
+        has_port 2049 && add_classification_evidence "nas" "port" "tcp/2049" 55 "NFS service suggests NAS, file server, or Unix file-sharing role"
+        if has_port 445 && has_port 2049; then
+            add_classification_evidence "nas" "port-combination" "smb+nfs" 40 "SMB plus NFS strongly suggests NAS or file server"
+        fi
+        if has_port 445 && has_port 5000 && ! has_port 2375 && ! has_port 2376; then
+            add_classification_evidence "nas" "port-combination" "smb+tcp/5000" 20 "SMB plus TCP/5000 may indicate NAS management when Docker API is absent"
+        fi
+
+
+        # v1.5 VoIP/PBX evidence.
+        has_port 5060 && add_classification_evidence "voip" "port" "tcp-or-udp/5060" 65 "SIP service suggests VoIP endpoint or PBX"
+        has_port 5061 && add_classification_evidence "voip" "port" "tcp-or-udp/5061" 65 "SIP TLS service suggests VoIP endpoint or PBX"
+        if (has_port 5060 || has_port 5061) && (has_port 80 || has_port 443 || has_port 8080 || has_port 8443); then
+            add_classification_evidence "voip" "port-combination" "sip+web" 20 "SIP plus web management strengthens VoIP phone or PBX likelihood"
+        fi
+
+        # v1.5 UPS/Power Device evidence.
+        has_port 161 && add_classification_evidence "ups" "port" "tcp-or-udp/161" 20 "SNMP service may indicate UPS, PDU, switch, router, printer, or managed appliance"
+        if has_port 161 && (has_port 80 || has_port 443); then
+            add_classification_evidence "ups" "port-combination" "snmp+web" 25 "SNMP plus web management may indicate UPS, PDU, or managed power device, but requires vendor/title confirmation"
+        fi
+
+
+        # v1.5 Security Appliance evidence.
+        has_port 500 && add_classification_evidence "security_appliance" "port" "udp-or-tcp/500" 40 "IKE/IPsec service suggests VPN or security gateway"
+        has_port 4500 && add_classification_evidence "security_appliance" "port" "udp-or-tcp/4500" 40 "IPsec NAT traversal service suggests VPN or security gateway"
+        if (has_port 500 || has_port 4500) && (has_port 443 || has_port 8443); then
+            add_classification_evidence "security_appliance" "port-combination" "vpn+https" 35 "VPN-related service plus HTTPS management suggests security appliance"
+        fi
+
+        # v1.5 Hypervisor/Virtualization evidence.
+        has_port 8006 && add_classification_evidence "hypervisor" "port" "tcp/8006" 65 "Proxmox management port detected"
+        has_port 5900 && add_classification_evidence "hypervisor" "port" "tcp/5900" 25 "VNC console service may indicate virtualization or remote console role"
+        if has_port 8006 && has_port 22; then
+            add_classification_evidence "hypervisor" "port-combination" "tcp/8006+22" 25 "Hypervisor management plus SSH strengthens virtualization host likelihood"
+        fi
 
         has_port 53 && add_classification_evidence "network" "port" "tcp/53" 35 "DNS service suggests infrastructure or DNS server role"
         has_port 1900 && add_classification_evidence "network" "port" "tcp/1900" 20 "UPnP/SSDP service suggests infrastructure, embedded, or appliance behavior"
@@ -984,15 +1144,24 @@ analyze_hosts() {
             fi
         }
 
-        update_best_candidate "Likely Active Directory / Domain Controller" "$AD_SCORE"
-        update_best_candidate "Kubernetes Infrastructure" "$KUBE_SCORE"
+        update_best_candidate "Windows Server" "$WINDOWS_SERVER_SCORE"
         update_best_candidate "Container Infrastructure" "$CONTAINER_SCORE"
-        update_best_candidate "Windows Host" "$WINDOWS_SCORE"
+        update_best_candidate "Router / Gateway" "$ROUTER_GATEWAY_SCORE"
+        update_best_candidate "Wireless Access Point" "$AP_SCORE"
+        update_best_candidate "Managed Switch / Network Infrastructure" "$SWITCH_SCORE"
+        update_best_candidate "NAS / File Server" "$NAS_SCORE"
+        update_best_candidate "VoIP Phone / PBX" "$VOIP_SCORE"
+        update_best_candidate "UPS / Power Device" "$UPS_SCORE"
+        update_best_candidate "Security Appliance" "$SECURITY_SCORE"
+        update_best_candidate "Hypervisor / Virtualization Host" "$HYPERVISOR_SCORE"
+        update_best_candidate "Windows Workstation" "$WINDOWS_WORKSTATION_SCORE"
         update_best_candidate "Database Server" "$DATABASE_SCORE"
         update_best_candidate "Network Printer / Multifunction Printer" "$PRINTER_SCORE"
         update_best_candidate "IP Camera / NVR" "$CAMERA_SCORE"
-        update_best_candidate "Linux / Web Server" "$LINUX_WEB_SCORE"
-        update_best_candidate "Web Server" "$WEB_SCORE"
+        update_best_candidate "Linux Server" "$LINUX_SERVER_SCORE"
+        update_best_candidate "Development / Admin Interface" "$DEV_ADMIN_SCORE"
+        update_best_candidate "IoT / Embedded Device" "$IOT_SCORE"
+        update_best_candidate "Web Server / Web Application Host" "$WEB_SCORE"
         update_best_candidate "Network Infrastructure / Router" "$NETWORK_SCORE"
         update_best_candidate "Mail Server" "$MAIL_SCORE"
 
@@ -1008,27 +1177,45 @@ analyze_hosts() {
 
         CLASSIFICATION_SECONDARY=$(jq -n \
             --arg primary "$CLASSIFICATION_PRIMARY" \
-            --argjson ad "$AD_SCORE" \
-            --argjson kube "$KUBE_SCORE" \
+            --argjson windows_server "$WINDOWS_SERVER_SCORE" \
             --argjson container "$CONTAINER_SCORE" \
-            --argjson windows "$WINDOWS_SCORE" \
+            --argjson router_gateway "$ROUTER_GATEWAY_SCORE" \
+            --argjson ap "$AP_SCORE" \
+            --argjson switch_score "$SWITCH_SCORE" \
+            --argjson nas "$NAS_SCORE" \
+            --argjson voip "$VOIP_SCORE" \
+            --argjson ups "$UPS_SCORE" \
+            --argjson security "$SECURITY_SCORE" \
+            --argjson hypervisor "$HYPERVISOR_SCORE" \
+            --argjson windows_workstation "$WINDOWS_WORKSTATION_SCORE" \
             --argjson database "$DATABASE_SCORE" \
             --argjson printer "$PRINTER_SCORE" \
             --argjson camera "$CAMERA_SCORE" \
-            --argjson linux_web "$LINUX_WEB_SCORE" \
+            --argjson linux_server "$LINUX_SERVER_SCORE" \
+            --argjson dev_admin "$DEV_ADMIN_SCORE" \
+            --argjson iot "$IOT_SCORE" \
             --argjson web "$WEB_SCORE" \
             --argjson network "$NETWORK_SCORE" \
             --argjson mail "$MAIL_SCORE" \
             '[
-                {device_type: "Likely Active Directory / Domain Controller", confidence: $ad},
-                {device_type: "Kubernetes Infrastructure", confidence: $kube},
+                {device_type: "Windows Server", confidence: $windows_server},
                 {device_type: "Container Infrastructure", confidence: $container},
-                {device_type: "Windows Host", confidence: $windows},
+                {device_type: "Router / Gateway", confidence: $router_gateway},
+                {device_type: "Wireless Access Point", confidence: $ap},
+                {device_type: "Managed Switch / Network Infrastructure", confidence: $switch_score},
+                {device_type: "NAS / File Server", confidence: $nas},
+                {device_type: "VoIP Phone / PBX", confidence: $voip},
+                {device_type: "UPS / Power Device", confidence: $ups},
+                {device_type: "Security Appliance", confidence: $security},
+                {device_type: "Hypervisor / Virtualization Host", confidence: $hypervisor},
+                {device_type: "Windows Workstation", confidence: $windows_workstation},
                 {device_type: "Database Server", confidence: $database},
                 {device_type: "Network Printer / Multifunction Printer", confidence: $printer},
                 {device_type: "IP Camera / NVR", confidence: $camera},
-                {device_type: "Linux / Web Server", confidence: $linux_web},
-                {device_type: "Web Server", confidence: $web},
+                {device_type: "Linux Server", confidence: $linux_server},
+                {device_type: "Development / Admin Interface", confidence: $dev_admin},
+                {device_type: "IoT / Embedded Device", confidence: $iot},
+                {device_type: "Web Server / Web Application Host", confidence: $web},
                 {device_type: "Network Infrastructure / Router", confidence: $network},
                 {device_type: "Mail Server", confidence: $mail}
             ]
@@ -1239,6 +1426,11 @@ EOF
 # MENU LOOP
 # =========================
 
+# Allows validators to source this file without launching the interactive menu.
+if [ "${NETSNIPER_TEST_MODE:-0}" = "1" ]; then
+    return 0 2>/dev/null || exit 0
+fi
+
 boot_screen
 init_workspace
 check_dirs
@@ -1249,7 +1441,7 @@ load_config
 while true; do
     echo ""
     echo "================================"
-    echo "        NETSNIPER v1.4"
+    echo "        NETSNIPER v1.5"
     echo "================================"
     echo "  1) Discover Hosts"
     echo "  2) TrueAegis-Aligned Scan"

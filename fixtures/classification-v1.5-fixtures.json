@@ -1,0 +1,696 @@
+{
+  "fixtures_version": "netsniper-classification-fixtures-v1.5",
+  "classification_schema": "netsniper-classification-v1",
+  "purpose": "Synthetic device classification fixtures for NetSniper v1.5 scoring improvements.",
+  "fixtures": [
+    {
+      "name": "router_gateway_strong",
+      "description": "Gateway-like device with DNS, DHCP, web management, and gateway hostname evidence.",
+      "host": {
+        "ip": "192.0.2.1",
+        "hostname": "gateway.local",
+        "mac_vendor": "Netgear",
+        "ports": [
+          {
+            "proto": "tcp",
+            "port": 53,
+            "service": "domain",
+            "product": "dnsmasq"
+          },
+          {
+            "proto": "udp",
+            "port": 67,
+            "service": "dhcp"
+          },
+          {
+            "proto": "tcp",
+            "port": 80,
+            "service": "http",
+            "title": "NETGEAR Router Login"
+          },
+          {
+            "proto": "tcp",
+            "port": 443,
+            "service": "https",
+            "title": "NETGEAR Router Login"
+          }
+        ]
+      },
+      "expected": {
+        "primary_type": "Router / Gateway",
+        "decision": "classified",
+        "min_confidence": 70,
+        "max_confidence": 100
+      }
+    },
+    {
+      "name": "wireless_access_point_strong",
+      "description": "Wireless AP with vendor, hostname, and WLAN management title evidence.",
+      "host": {
+        "ip": "192.0.2.2",
+        "hostname": "ap-lobby",
+        "mac_vendor": "Ubiquiti",
+        "ports": [
+          {
+            "proto": "tcp",
+            "port": 22,
+            "service": "ssh",
+            "product": "OpenSSH"
+          },
+          {
+            "proto": "tcp",
+            "port": 80,
+            "service": "http",
+            "title": "UniFi Access Point"
+          },
+          {
+            "proto": "tcp",
+            "port": 443,
+            "service": "https",
+            "title": "Wireless AP Management"
+          }
+        ]
+      },
+      "expected": {
+        "primary_type": "Wireless Access Point",
+        "decision": "classified",
+        "min_confidence": 70,
+        "max_confidence": 100
+      }
+    },
+    {
+      "name": "managed_switch_strong",
+      "description": "Managed switch with network infrastructure hostname, vendor, SSH, HTTP, and SNMP evidence.",
+      "host": {
+        "ip": "192.0.2.3",
+        "hostname": "core-switch-01",
+        "mac_vendor": "Cisco",
+        "ports": [
+          {
+            "proto": "tcp",
+            "port": 22,
+            "service": "ssh"
+          },
+          {
+            "proto": "tcp",
+            "port": 80,
+            "service": "http",
+            "title": "Cisco Switch Device Manager"
+          },
+          {
+            "proto": "udp",
+            "port": 161,
+            "service": "snmp"
+          }
+        ]
+      },
+      "expected": {
+        "primary_type": "Managed Switch / Network Infrastructure",
+        "decision": "classified",
+        "min_confidence": 70,
+        "max_confidence": 100
+      }
+    },
+    {
+      "name": "printer_strong",
+      "description": "Printer with JetDirect, IPP, printer vendor, and printer web title evidence.",
+      "host": {
+        "ip": "192.0.2.47",
+        "hostname": "hp-printer-office",
+        "mac_vendor": "HP",
+        "ports": [
+          {
+            "proto": "tcp",
+            "port": 9100,
+            "service": "jetdirect",
+            "product": "HP JetDirect"
+          },
+          {
+            "proto": "tcp",
+            "port": 631,
+            "service": "ipp",
+            "product": "CUPS"
+          },
+          {
+            "proto": "tcp",
+            "port": 80,
+            "service": "http",
+            "title": "HP LaserJet Embedded Web Server"
+          }
+        ]
+      },
+      "expected": {
+        "primary_type": "Network Printer / Multifunction Printer",
+        "decision": "classified",
+        "min_confidence": 80,
+        "max_confidence": 100
+      }
+    },
+    {
+      "name": "ip_camera_strong",
+      "description": "Camera with RTSP, camera vendor, and surveillance web UI evidence.",
+      "host": {
+        "ip": "192.0.2.23",
+        "hostname": "front-door-camera",
+        "mac_vendor": "Reolink",
+        "ports": [
+          {
+            "proto": "tcp",
+            "port": 554,
+            "service": "rtsp",
+            "product": "RTSP"
+          },
+          {
+            "proto": "tcp",
+            "port": 80,
+            "service": "http",
+            "title": "Reolink IP Camera"
+          },
+          {
+            "proto": "tcp",
+            "port": 8000,
+            "service": "http-alt",
+            "title": "NVR Video Management"
+          }
+        ]
+      },
+      "expected": {
+        "primary_type": "IP Camera / NVR",
+        "decision": "classified",
+        "min_confidence": 80,
+        "max_confidence": 100
+      }
+    },
+    {
+      "name": "nas_file_server_strong",
+      "description": "NAS with file-sharing services and storage appliance title evidence.",
+      "host": {
+        "ip": "192.0.2.10",
+        "hostname": "synology-nas",
+        "mac_vendor": "Synology",
+        "ports": [
+          {
+            "proto": "tcp",
+            "port": 445,
+            "service": "microsoft-ds",
+            "product": "Samba"
+          },
+          {
+            "proto": "tcp",
+            "port": 2049,
+            "service": "nfs"
+          },
+          {
+            "proto": "tcp",
+            "port": 5000,
+            "service": "http",
+            "title": "Synology DiskStation Manager"
+          }
+        ]
+      },
+      "expected": {
+        "primary_type": "NAS / File Server",
+        "decision": "classified",
+        "min_confidence": 75,
+        "max_confidence": 100
+      }
+    },
+    {
+      "name": "voip_phone_strong",
+      "description": "VoIP endpoint with SIP and phone vendor web UI evidence.",
+      "host": {
+        "ip": "192.0.2.20",
+        "hostname": "conference-phone",
+        "mac_vendor": "Yealink",
+        "ports": [
+          {
+            "proto": "tcp",
+            "port": 5060,
+            "service": "sip"
+          },
+          {
+            "proto": "udp",
+            "port": 5060,
+            "service": "sip"
+          },
+          {
+            "proto": "tcp",
+            "port": 80,
+            "service": "http",
+            "title": "Yealink IP Phone"
+          }
+        ]
+      },
+      "expected": {
+        "primary_type": "VoIP Phone / PBX",
+        "decision": "classified",
+        "min_confidence": 75,
+        "max_confidence": 100
+      }
+    },
+    {
+      "name": "ups_power_device_strong",
+      "description": "UPS with SNMP and power management web title evidence.",
+      "host": {
+        "ip": "192.0.2.21",
+        "hostname": "server-room-ups",
+        "mac_vendor": "APC",
+        "ports": [
+          {
+            "proto": "udp",
+            "port": 161,
+            "service": "snmp"
+          },
+          {
+            "proto": "tcp",
+            "port": 80,
+            "service": "http",
+            "title": "APC UPS Network Management Card"
+          }
+        ]
+      },
+      "expected": {
+        "primary_type": "UPS / Power Device",
+        "decision": "classified",
+        "min_confidence": 70,
+        "max_confidence": 100
+      }
+    },
+    {
+      "name": "security_appliance_strong",
+      "description": "Firewall/VPN appliance with security gateway title and VPN-related services.",
+      "host": {
+        "ip": "192.0.2.22",
+        "hostname": "firewall-edge",
+        "mac_vendor": "Netgate",
+        "ports": [
+          {
+            "proto": "tcp",
+            "port": 443,
+            "service": "https",
+            "title": "pfSense Firewall"
+          },
+          {
+            "proto": "udp",
+            "port": 500,
+            "service": "isakmp"
+          },
+          {
+            "proto": "udp",
+            "port": 4500,
+            "service": "ipsec-nat-t"
+          }
+        ]
+      },
+      "expected": {
+        "primary_type": "Security Appliance",
+        "decision": "classified",
+        "min_confidence": 75,
+        "max_confidence": 100
+      }
+    },
+    {
+      "name": "hypervisor_strong",
+      "description": "Virtualization host with hypervisor management title and platform ports.",
+      "host": {
+        "ip": "192.0.2.30",
+        "hostname": "proxmox-node-01",
+        "mac_vendor": "Dell",
+        "ports": [
+          {
+            "proto": "tcp",
+            "port": 22,
+            "service": "ssh",
+            "product": "OpenSSH"
+          },
+          {
+            "proto": "tcp",
+            "port": 8006,
+            "service": "https",
+            "title": "Proxmox Virtual Environment"
+          },
+          {
+            "proto": "tcp",
+            "port": 5900,
+            "service": "vnc"
+          }
+        ]
+      },
+      "expected": {
+        "primary_type": "Hypervisor / Virtualization Host",
+        "decision": "classified",
+        "min_confidence": 75,
+        "max_confidence": 100
+      }
+    },
+    {
+      "name": "container_infrastructure_strong",
+      "description": "Container management endpoint with Docker, Kubernetes, and Portainer-style evidence.",
+      "host": {
+        "ip": "192.0.2.31",
+        "hostname": "docker-host",
+        "mac_vendor": "Intel",
+        "ports": [
+          {
+            "proto": "tcp",
+            "port": 2375,
+            "service": "docker",
+            "product": "Docker API"
+          },
+          {
+            "proto": "tcp",
+            "port": 6443,
+            "service": "https",
+            "product": "Kubernetes API"
+          },
+          {
+            "proto": "tcp",
+            "port": 9443,
+            "service": "https",
+            "title": "Portainer"
+          }
+        ]
+      },
+      "expected": {
+        "primary_type": "Container Infrastructure",
+        "decision": "classified",
+        "min_confidence": 75,
+        "max_confidence": 100
+      }
+    },
+    {
+      "name": "database_server_strong",
+      "description": "Database host exposing multiple database services.",
+      "host": {
+        "ip": "192.0.2.32",
+        "hostname": "db01",
+        "mac_vendor": "Supermicro",
+        "ports": [
+          {
+            "proto": "tcp",
+            "port": 3306,
+            "service": "mysql",
+            "product": "MariaDB"
+          },
+          {
+            "proto": "tcp",
+            "port": 5432,
+            "service": "postgresql",
+            "product": "PostgreSQL"
+          },
+          {
+            "proto": "tcp",
+            "port": 6379,
+            "service": "redis",
+            "product": "Redis"
+          }
+        ]
+      },
+      "expected": {
+        "primary_type": "Database Server",
+        "decision": "classified",
+        "min_confidence": 75,
+        "max_confidence": 100
+      }
+    },
+    {
+      "name": "windows_workstation_strong",
+      "description": "Windows client endpoint with workstation hostname and Windows service evidence.",
+      "host": {
+        "ip": "192.0.2.40",
+        "hostname": "DESKTOP-9K2M1Q",
+        "mac_vendor": "Dell",
+        "ports": [
+          {
+            "proto": "tcp",
+            "port": 135,
+            "service": "msrpc",
+            "product": "Microsoft Windows RPC"
+          },
+          {
+            "proto": "tcp",
+            "port": 139,
+            "service": "netbios-ssn"
+          },
+          {
+            "proto": "tcp",
+            "port": 445,
+            "service": "microsoft-ds",
+            "product": "Windows SMB"
+          },
+          {
+            "proto": "tcp",
+            "port": 3389,
+            "service": "ms-wbt-server",
+            "product": "Microsoft Terminal Services"
+          }
+        ]
+      },
+      "expected": {
+        "primary_type": "Windows Workstation",
+        "decision": "classified",
+        "min_confidence": 70,
+        "max_confidence": 100
+      }
+    },
+    {
+      "name": "windows_server_strong",
+      "description": "Windows server/domain-style host with AD, SMB, DNS, Kerberos, LDAP, and RDP evidence.",
+      "host": {
+        "ip": "192.0.2.41",
+        "hostname": "DC01",
+        "mac_vendor": "Dell",
+        "ports": [
+          {
+            "proto": "tcp",
+            "port": 53,
+            "service": "domain",
+            "product": "Microsoft DNS"
+          },
+          {
+            "proto": "tcp",
+            "port": 88,
+            "service": "kerberos-sec",
+            "product": "Microsoft Windows Kerberos"
+          },
+          {
+            "proto": "tcp",
+            "port": 135,
+            "service": "msrpc"
+          },
+          {
+            "proto": "tcp",
+            "port": 389,
+            "service": "ldap",
+            "product": "Microsoft Windows Active Directory LDAP"
+          },
+          {
+            "proto": "tcp",
+            "port": 445,
+            "service": "microsoft-ds",
+            "product": "Windows Server SMB"
+          },
+          {
+            "proto": "tcp",
+            "port": 3389,
+            "service": "ms-wbt-server"
+          }
+        ]
+      },
+      "expected": {
+        "primary_type": "Windows Server",
+        "decision": "classified",
+        "min_confidence": 80,
+        "max_confidence": 100
+      }
+    },
+    {
+      "name": "linux_server_strong",
+      "description": "Linux server with OpenSSH, Linux product evidence, NFS, and server-style hostname.",
+      "host": {
+        "ip": "192.0.2.42",
+        "hostname": "ubuntu-app01",
+        "mac_vendor": "Intel",
+        "ports": [
+          {
+            "proto": "tcp",
+            "port": 22,
+            "service": "ssh",
+            "product": "OpenSSH Ubuntu"
+          },
+          {
+            "proto": "tcp",
+            "port": 111,
+            "service": "rpcbind"
+          },
+          {
+            "proto": "tcp",
+            "port": 2049,
+            "service": "nfs"
+          }
+        ]
+      },
+      "expected": {
+        "primary_type": "Linux Server",
+        "decision": "classified",
+        "min_confidence": 70,
+        "max_confidence": 100
+      }
+    },
+    {
+      "name": "web_application_host_strong",
+      "description": "True web application host with web server product evidence and no stronger appliance role.",
+      "host": {
+        "ip": "192.0.2.50",
+        "hostname": "app-web01",
+        "mac_vendor": "Amazon",
+        "ports": [
+          {
+            "proto": "tcp",
+            "port": 80,
+            "service": "http",
+            "product": "nginx",
+            "title": "Company Portal"
+          },
+          {
+            "proto": "tcp",
+            "port": 443,
+            "service": "https",
+            "product": "nginx",
+            "title": "Company Portal"
+          },
+          {
+            "proto": "tcp",
+            "port": 8080,
+            "service": "http-proxy",
+            "product": "Tomcat",
+            "title": "Apache Tomcat"
+          }
+        ]
+      },
+      "expected": {
+        "primary_type": "Web Server / Web Application Host",
+        "decision": "classified",
+        "min_confidence": 70,
+        "max_confidence": 100
+      }
+    },
+    {
+      "name": "development_admin_interface_strong",
+      "description": "Development/admin host exposing known admin tooling.",
+      "host": {
+        "ip": "192.0.2.51",
+        "hostname": "dev-tools",
+        "mac_vendor": "Intel",
+        "ports": [
+          {
+            "proto": "tcp",
+            "port": 8080,
+            "service": "http",
+            "title": "Jenkins"
+          },
+          {
+            "proto": "tcp",
+            "port": 3000,
+            "service": "http",
+            "title": "Grafana"
+          },
+          {
+            "proto": "tcp",
+            "port": 9090,
+            "service": "http",
+            "title": "Prometheus"
+          }
+        ]
+      },
+      "expected": {
+        "primary_type": "Development / Admin Interface",
+        "decision": "classified",
+        "min_confidence": 75,
+        "max_confidence": 100
+      }
+    },
+    {
+      "name": "iot_embedded_device_strong",
+      "description": "Embedded device with IoT vendor and embedded web server evidence.",
+      "host": {
+        "ip": "192.0.2.60",
+        "hostname": "esp32-sensor",
+        "mac_vendor": "Espressif",
+        "ports": [
+          {
+            "proto": "tcp",
+            "port": 80,
+            "service": "http",
+            "product": "ESP32WebServer",
+            "title": "ESP32 Sensor Device"
+          }
+        ]
+      },
+      "expected": {
+        "primary_type": "IoT / Embedded Device",
+        "decision": "possible",
+        "min_confidence": 50,
+        "max_confidence": 85
+      }
+    },
+    {
+      "name": "client_device_strong",
+      "description": "Client endpoint with client-style hostname and no exposed server role.",
+      "host": {
+        "ip": "192.0.2.61",
+        "hostname": "parkers-iphone",
+        "mac_vendor": "Apple",
+        "ports": []
+      },
+      "expected": {
+        "primary_type": "Client Device",
+        "decision": "possible",
+        "min_confidence": 40,
+        "max_confidence": 75
+      }
+    },
+    {
+      "name": "generic_web_interface_only_not_web_server",
+      "description": "Negative-control fixture: port 80 alone should not become a confident web server classification.",
+      "host": {
+        "ip": "192.0.2.70",
+        "hostname": "",
+        "mac_vendor": "",
+        "ports": [
+          {
+            "proto": "tcp",
+            "port": 80,
+            "service": "http",
+            "title": "Login"
+          }
+        ]
+      },
+      "expected": {
+        "primary_type": "Unknown / Ambiguous",
+        "decision": "unknown",
+        "min_confidence": 0,
+        "max_confidence": 39,
+        "secondary_candidates": [
+          "Web Server / Web Application Host"
+        ]
+      }
+    },
+    {
+      "name": "unknown_no_evidence",
+      "description": "No useful evidence should remain unknown.",
+      "host": {
+        "ip": "192.0.2.71",
+        "hostname": "",
+        "mac_vendor": "",
+        "ports": []
+      },
+      "expected": {
+        "primary_type": "Unknown / Ambiguous",
+        "decision": "unknown",
+        "min_confidence": 0,
+        "max_confidence": 20
+      }
+    }
+  ]
+}
