@@ -1,3 +1,38 @@
+## v1.6.0 - 2026-06-19
+
+### Added
+
+- Added calibrated classification confidence fields for SIEM consumers.
+- Added `confidence_band`, `calibrated_decision`, `siem_action`, and `calibration_reason`.
+- Added passive classification validators that summarize whether evidence is confirmed, inconclusive, contradictory, or not applicable.
+- Added contradiction-aware classification gating through `validation_state`, `contradiction_count`, and `siem_action: "contradiction_review"`.
+- Added service-text product validators for stronger product/vendor-backed classification evidence.
+- Added `validator_summary` with total, confirmed, inconclusive, refuted, not applicable, error, and validator name counts.
+- Added `tools/validate_v1_6_intelligence_gate.sh` as the v1.6 release validation gate.
+
+### Changed
+
+- Updated scanner version to `v1.6.0`.
+- Preserved legacy v1.x classification fields for compatibility with DeltaAegis and other downstream tools.
+- Improved SIEM suitability by separating weak evidence, possible evidence, likely classifications, confirmed classifications, and contradictory classifications.
+
+### Validation
+
+Validated with:
+
+- `tools/validate_v1_6_calibration.sh`
+- `tools/validate_v1_6_passive_validators.sh`
+- `tools/validate_v1_6_contradiction_gating.sh`
+- `tools/validate_v1_6_service_text_validators.sh`
+- `tools/validate_v1_6_validator_summary.sh`
+- `tools/validate_v1_6_intelligence_gate.sh`
+- `tools/validate_v1_5_behavior.sh`
+
+### Notes
+
+NetSniper v1.6.0 does not add aggressive active probing. It improves intelligence calibration and validation while preserving the existing scanning behavior.
+
+
 ## v1.5.0 - 2026-06-19
 
 ### Added
