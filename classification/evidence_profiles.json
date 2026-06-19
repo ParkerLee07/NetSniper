@@ -1,0 +1,499 @@
+{
+  "schema_version": "netsniper-evidence-profiles-v1",
+  "release_target": "v1.7.0",
+  "scoring_policy": {
+    "max_confidence": 100,
+    "contradiction_penalty_default": 35,
+    "strong_contradiction_penalty": 50,
+    "minimum_classified_score": 70,
+    "minimum_possible_score": 40,
+    "false_confidence_rule": "Prefer Unknown or Ambiguous Device over a confident wrong classification."
+  },
+  "profiles": [
+    {
+      "primary_type": "IP Camera / NVR",
+      "category": "IoT / Embedded",
+      "positive_evidence": [
+        {
+          "id": "rtsp_554",
+          "source": "port",
+          "value": "tcp/554",
+          "reliability": "medium",
+          "points": 25,
+          "reason": "RTSP service commonly appears on IP cameras and NVRs."
+        },
+        {
+          "id": "rtsp_alt_8554",
+          "source": "port",
+          "value": "tcp/8554",
+          "reliability": "medium",
+          "points": 20,
+          "reason": "Alternate RTSP service commonly appears on cameras or media devices."
+        },
+        {
+          "id": "onvif_hint",
+          "source": "service",
+          "value": "onvif",
+          "reliability": "high",
+          "points": 40,
+          "reason": "ONVIF-related service strongly indicates an IP camera or NVR."
+        },
+        {
+          "id": "camera_vendor_hint",
+          "source": "vendor",
+          "value": "hikvision|dahua|reolink|axis|amcrest|uniview|lorex",
+          "reliability": "medium",
+          "points": 25,
+          "reason": "Vendor hint matches common IP camera or NVR manufacturers."
+        },
+        {
+          "id": "camera_web_title",
+          "source": "http_title",
+          "value": "camera|nvr|dvr|surveillance|ipcam|webcam",
+          "reliability": "high",
+          "points": 35,
+          "reason": "HTTP title contains camera or recorder language."
+        }
+      ],
+      "contradictions": [
+        {
+          "id": "active_directory_domain_controller",
+          "penalty": 50,
+          "reason": "Kerberos, LDAP, SMB domain, and DNS evidence conflicts with a camera/NVR classification."
+        },
+        {
+          "id": "database_server_role",
+          "penalty": 35,
+          "reason": "Database server evidence conflicts with a camera/NVR classification."
+        },
+        {
+          "id": "container_infrastructure_role",
+          "penalty": 35,
+          "reason": "Docker, Kubernetes, or registry evidence conflicts with a camera/NVR classification."
+        }
+      ],
+      "default_siem_action": "review_queue"
+    },
+    {
+      "primary_type": "Network Printer / MFP",
+      "category": "IoT / Embedded",
+      "positive_evidence": [
+        {
+          "id": "jetdirect_9100",
+          "source": "port",
+          "value": "tcp/9100",
+          "reliability": "high",
+          "points": 40,
+          "reason": "JetDirect/raw print service is strong printer evidence."
+        },
+        {
+          "id": "ipp_631",
+          "source": "port",
+          "value": "tcp/631",
+          "reliability": "high",
+          "points": 35,
+          "reason": "IPP service is strong printer evidence."
+        },
+        {
+          "id": "lpd_515",
+          "source": "port",
+          "value": "tcp/515",
+          "reliability": "medium",
+          "points": 25,
+          "reason": "LPD service commonly appears on network printers."
+        },
+        {
+          "id": "printer_vendor_hint",
+          "source": "vendor",
+          "value": "hp|hewlett|canon|brother|epson|xerox|ricoh|kyocera|lexmark",
+          "reliability": "medium",
+          "points": 25,
+          "reason": "Vendor hint matches common printer or MFP manufacturers."
+        },
+        {
+          "id": "printer_web_title",
+          "source": "http_title",
+          "value": "printer|print|mfp|laserjet|officejet|web image monitor",
+          "reliability": "high",
+          "points": 35,
+          "reason": "HTTP title contains printer or MFP language."
+        }
+      ],
+      "contradictions": [
+        {
+          "id": "active_directory_domain_controller",
+          "penalty": 50,
+          "reason": "Domain controller evidence conflicts with a printer classification."
+        },
+        {
+          "id": "database_server_role",
+          "penalty": 35,
+          "reason": "Database server evidence conflicts with a printer classification."
+        },
+        {
+          "id": "container_infrastructure_role",
+          "penalty": 35,
+          "reason": "Container infrastructure evidence conflicts with a printer classification."
+        }
+      ],
+      "default_siem_action": "review_queue"
+    },
+    {
+      "primary_type": "Container Infrastructure",
+      "category": "Server Infrastructure",
+      "positive_evidence": [
+        {
+          "id": "docker_2375",
+          "source": "port",
+          "value": "tcp/2375",
+          "reliability": "high",
+          "points": 45,
+          "reason": "Docker API over cleartext is strong container infrastructure evidence."
+        },
+        {
+          "id": "docker_tls_2376",
+          "source": "port",
+          "value": "tcp/2376",
+          "reliability": "high",
+          "points": 45,
+          "reason": "Docker API over TLS is strong container infrastructure evidence."
+        },
+        {
+          "id": "registry_5000",
+          "source": "port",
+          "value": "tcp/5000",
+          "reliability": "medium",
+          "points": 30,
+          "reason": "Docker registry service suggests container infrastructure."
+        },
+        {
+          "id": "kubernetes_6443",
+          "source": "port",
+          "value": "tcp/6443",
+          "reliability": "high",
+          "points": 45,
+          "reason": "Kubernetes API server port is strong container orchestration evidence."
+        },
+        {
+          "id": "kubelet_10250",
+          "source": "port",
+          "value": "tcp/10250",
+          "reliability": "high",
+          "points": 45,
+          "reason": "Kubelet API port is strong Kubernetes node evidence."
+        },
+        {
+          "id": "portainer_9000",
+          "source": "port",
+          "value": "tcp/9000",
+          "reliability": "medium",
+          "points": 25,
+          "reason": "Portainer commonly exposes a management UI on tcp/9000."
+        },
+        {
+          "id": "portainer_9443",
+          "source": "port",
+          "value": "tcp/9443",
+          "reliability": "medium",
+          "points": 25,
+          "reason": "Portainer commonly exposes a TLS management UI on tcp/9443."
+        }
+      ],
+      "contradictions": [
+        {
+          "id": "printer_specific_services_only",
+          "penalty": 35,
+          "reason": "Printer-only evidence conflicts with a container infrastructure classification."
+        },
+        {
+          "id": "camera_specific_services_only",
+          "penalty": 35,
+          "reason": "Camera-only evidence conflicts with a container infrastructure classification."
+        }
+      ],
+      "default_siem_action": "alert_candidate"
+    },
+    {
+      "primary_type": "Active Directory / Domain Controller",
+      "category": "Server Infrastructure",
+      "positive_evidence": [
+        {
+          "id": "kerberos_88",
+          "source": "port",
+          "value": "tcp/88",
+          "reliability": "high",
+          "points": 35,
+          "reason": "Kerberos service is strong Active Directory evidence when combined with LDAP/SMB/DNS."
+        },
+        {
+          "id": "ldap_389",
+          "source": "port",
+          "value": "tcp/389",
+          "reliability": "high",
+          "points": 35,
+          "reason": "LDAP service is strong domain controller evidence when combined with Kerberos/SMB/DNS."
+        },
+        {
+          "id": "ldaps_636",
+          "source": "port",
+          "value": "tcp/636",
+          "reliability": "high",
+          "points": 30,
+          "reason": "LDAPS service supports Active Directory or directory-service classification."
+        },
+        {
+          "id": "smb_445",
+          "source": "port",
+          "value": "tcp/445",
+          "reliability": "medium",
+          "points": 20,
+          "reason": "SMB supports Windows server or domain-controller classification."
+        },
+        {
+          "id": "dns_53",
+          "source": "port",
+          "value": "tcp/53|udp/53",
+          "reliability": "medium",
+          "points": 20,
+          "reason": "DNS is commonly present on domain controllers."
+        },
+        {
+          "id": "domain_hint",
+          "source": "service",
+          "value": "domain|active directory|ldap|kerberos",
+          "reliability": "high",
+          "points": 40,
+          "reason": "Service metadata suggests a domain or directory role."
+        }
+      ],
+      "contradictions": [
+        {
+          "id": "printer_specific_services_only",
+          "penalty": 35,
+          "reason": "Printer-only evidence conflicts with domain controller classification."
+        },
+        {
+          "id": "camera_specific_services_only",
+          "penalty": 35,
+          "reason": "Camera-only evidence conflicts with domain controller classification."
+        }
+      ],
+      "default_siem_action": "alert_candidate"
+    },
+    {
+      "primary_type": "Database Server",
+      "category": "Server Infrastructure",
+      "positive_evidence": [
+        {
+          "id": "mysql_3306",
+          "source": "port",
+          "value": "tcp/3306",
+          "reliability": "high",
+          "points": 40,
+          "reason": "MySQL/MariaDB port indicates a database service."
+        },
+        {
+          "id": "postgres_5432",
+          "source": "port",
+          "value": "tcp/5432",
+          "reliability": "high",
+          "points": 40,
+          "reason": "PostgreSQL port indicates a database service."
+        },
+        {
+          "id": "mssql_1433",
+          "source": "port",
+          "value": "tcp/1433",
+          "reliability": "high",
+          "points": 40,
+          "reason": "Microsoft SQL Server port indicates a database service."
+        },
+        {
+          "id": "mongodb_27017",
+          "source": "port",
+          "value": "tcp/27017",
+          "reliability": "high",
+          "points": 40,
+          "reason": "MongoDB port indicates a database service."
+        },
+        {
+          "id": "redis_6379",
+          "source": "port",
+          "value": "tcp/6379",
+          "reliability": "high",
+          "points": 40,
+          "reason": "Redis port indicates a database/cache service."
+        },
+        {
+          "id": "elasticsearch_9200",
+          "source": "port",
+          "value": "tcp/9200",
+          "reliability": "high",
+          "points": 40,
+          "reason": "Elasticsearch port indicates a search/database service."
+        }
+      ],
+      "contradictions": [
+        {
+          "id": "printer_specific_services_only",
+          "penalty": 35,
+          "reason": "Printer-only evidence conflicts with database server classification."
+        },
+        {
+          "id": "camera_specific_services_only",
+          "penalty": 35,
+          "reason": "Camera-only evidence conflicts with database server classification."
+        }
+      ],
+      "default_siem_action": "alert_candidate"
+    },
+    {
+      "primary_type": "NAS / Storage Appliance",
+      "category": "IoT / Embedded",
+      "positive_evidence": [
+        {
+          "id": "smb_445",
+          "source": "port",
+          "value": "tcp/445",
+          "reliability": "medium",
+          "points": 25,
+          "reason": "SMB service may indicate network storage when combined with storage hints."
+        },
+        {
+          "id": "nfs_2049",
+          "source": "port",
+          "value": "tcp/2049",
+          "reliability": "high",
+          "points": 35,
+          "reason": "NFS service supports NAS or storage appliance classification."
+        },
+        {
+          "id": "storage_vendor_hint",
+          "source": "vendor",
+          "value": "synology|qnap|netgear|asustor|truenas|freenas|western digital",
+          "reliability": "medium",
+          "points": 30,
+          "reason": "Vendor hint matches common NAS or storage platforms."
+        },
+        {
+          "id": "nas_web_title",
+          "source": "http_title",
+          "value": "synology|qnap|nas|storage|truenas|freenas",
+          "reliability": "high",
+          "points": 35,
+          "reason": "HTTP title contains NAS or storage platform language."
+        }
+      ],
+      "contradictions": [
+        {
+          "id": "active_directory_domain_controller",
+          "penalty": 35,
+          "reason": "Domain controller evidence may indicate a Windows server rather than NAS."
+        }
+      ],
+      "default_siem_action": "review_queue"
+    },
+    {
+      "primary_type": "Router / Gateway",
+      "category": "Network Infrastructure",
+      "positive_evidence": [
+        {
+          "id": "default_gateway_role",
+          "source": "network_role",
+          "value": "default_gateway",
+          "reliability": "high",
+          "points": 45,
+          "reason": "Host is the observed default gateway."
+        },
+        {
+          "id": "dns_service",
+          "source": "port",
+          "value": "tcp/53|udp/53",
+          "reliability": "medium",
+          "points": 20,
+          "reason": "DNS service commonly appears on routers or gateways."
+        },
+        {
+          "id": "dhcp_service",
+          "source": "port",
+          "value": "udp/67|udp/68",
+          "reliability": "medium",
+          "points": 20,
+          "reason": "DHCP service commonly appears on routers or gateways."
+        },
+        {
+          "id": "router_vendor_hint",
+          "source": "vendor",
+          "value": "netgear|arris|asus|tp-link|ubiquiti|cisco|mikrotik|linksys|eero",
+          "reliability": "medium",
+          "points": 25,
+          "reason": "Vendor hint matches common router or gateway manufacturers."
+        },
+        {
+          "id": "web_admin_interface",
+          "source": "service",
+          "value": "http_admin|https_admin",
+          "reliability": "low",
+          "points": 10,
+          "reason": "Web administration interface may support router/gateway classification."
+        }
+      ],
+      "contradictions": [
+        {
+          "id": "active_directory_domain_controller",
+          "penalty": 35,
+          "reason": "Domain controller evidence conflicts with a simple router/gateway classification."
+        },
+        {
+          "id": "database_server_role",
+          "penalty": 35,
+          "reason": "Database server evidence conflicts with a simple router/gateway classification."
+        }
+      ],
+      "default_siem_action": "display_only"
+    },
+    {
+      "primary_type": "Wireless Access Point",
+      "category": "Network Infrastructure",
+      "positive_evidence": [
+        {
+          "id": "wireless_vendor_hint",
+          "source": "vendor",
+          "value": "ubiquiti|unifi|ruckus|aruba|meraki|tp-link|netgear|linksys|eero",
+          "reliability": "medium",
+          "points": 30,
+          "reason": "Vendor hint matches common wireless access point manufacturers."
+        },
+        {
+          "id": "ap_hostname_hint",
+          "source": "hostname",
+          "value": "ap|wap|unifi|access-point|wifi",
+          "reliability": "medium",
+          "points": 25,
+          "reason": "Hostname suggests a wireless access point."
+        },
+        {
+          "id": "web_admin_interface",
+          "source": "service",
+          "value": "http_admin|https_admin",
+          "reliability": "low",
+          "points": 10,
+          "reason": "Web administration interface may support access point classification."
+        }
+      ],
+      "contradictions": [
+        {
+          "id": "active_directory_domain_controller",
+          "penalty": 35,
+          "reason": "Domain controller evidence conflicts with access point classification."
+        },
+        {
+          "id": "database_server_role",
+          "penalty": 35,
+          "reason": "Database server evidence conflicts with access point classification."
+        }
+      ],
+      "default_siem_action": "display_only"
+    }
+  ]
+}
