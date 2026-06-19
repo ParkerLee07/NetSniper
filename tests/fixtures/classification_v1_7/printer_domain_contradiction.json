@@ -1,0 +1,23 @@
+{
+  "schema_version": "netsniper-classification-fixture-v1",
+  "fixture_id": "printer_domain_contradiction",
+  "description": "Synthetic host with printer evidence and domain-controller evidence. This should trigger contradiction review, not confident printer classification.",
+  "observed": {
+    "open_ports": ["tcp/88", "tcp/389", "tcp/445", "tcp/631", "tcp/9100"],
+    "service_hints": ["kerberos", "ldap", "domain", "ipp", "jetdirect"],
+    "vendor_hints": ["HP", "Microsoft"],
+    "http_titles": ["HP Printer"],
+    "hostname_hints": ["print-dc-test"],
+    "network_roles": []
+  },
+  "expected": {
+    "primary_type": "Ambiguous Device",
+    "category": "Unknown / Ambiguous",
+    "minimum_confidence": 1,
+    "allowed_confidence_bands": ["weak", "possible"],
+    "decision": "contradiction_review",
+    "siem_action": "contradiction_review",
+    "expected_contradiction_review": true,
+    "false_confidence_guard": true
+  }
+}

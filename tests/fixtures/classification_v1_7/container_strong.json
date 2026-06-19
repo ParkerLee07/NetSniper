@@ -1,0 +1,22 @@
+{
+  "schema_version": "netsniper-classification-fixture-v1",
+  "fixture_id": "container_strong",
+  "description": "Synthetic container infrastructure host with Docker API, registry, and Portainer-like management ports.",
+  "observed": {
+    "open_ports": ["tcp/2375", "tcp/5000", "tcp/9000"],
+    "service_hints": ["docker", "registry", "portainer"],
+    "vendor_hints": [],
+    "http_titles": ["Portainer"],
+    "hostname_hints": ["docker-host"],
+    "network_roles": []
+  },
+  "expected": {
+    "primary_type": "Container Infrastructure",
+    "category": "Server Infrastructure",
+    "minimum_confidence": 70,
+    "allowed_confidence_bands": ["strong", "high"],
+    "decision": "classified",
+    "siem_action": "alert_candidate",
+    "expected_contradiction_review": false
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "schema_version": "netsniper-classification-fixture-v1",
+  "fixture_id": "router_gateway_strong",
+  "description": "Synthetic router/gateway with default gateway role, DNS, and router vendor hint.",
+  "observed": {
+    "open_ports": ["tcp/53", "tcp/80", "tcp/443"],
+    "service_hints": ["http_admin", "https_admin"],
+    "vendor_hints": ["TP-Link"],
+    "http_titles": ["Router Login"],
+    "hostname_hints": ["gateway"],
+    "network_roles": ["default_gateway"]
+  },
+  "expected": {
+    "primary_type": "Router / Gateway",
+    "category": "Network Infrastructure",
+    "minimum_confidence": 70,
+    "allowed_confidence_bands": ["strong", "high"],
+    "decision": "classified",
+    "siem_action": "display_only",
+    "expected_contradiction_review": false
+  }
+}

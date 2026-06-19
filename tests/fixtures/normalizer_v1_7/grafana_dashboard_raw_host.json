@@ -1,0 +1,5 @@
+{
+  "ip": "192.168.4.159",
+  "open_ports": ["3000/tcp"],
+  "service": ["grafana", "Grafana or web dashboard service exposed"]
+}

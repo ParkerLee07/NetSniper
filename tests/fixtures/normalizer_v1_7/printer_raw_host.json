@@ -1,0 +1,25 @@
+{
+  "address": "192.168.4.60",
+  "hostnames": ["office-printer"],
+  "vendor": "HP",
+  "ports": [
+    {
+      "portid": "631",
+      "proto": "tcp",
+      "state": "open",
+      "name": "ipp"
+    },
+    {
+      "portid": "9100",
+      "proto": "tcp",
+      "state": "open",
+      "name": "jetdirect"
+    },
+    {
+      "portid": "80",
+      "proto": "tcp",
+      "state": "open",
+      "title": "HP LaserJet Printer"
+    }
+  ]
+}

@@ -1,0 +1,22 @@
+{
+  "schema_version": "netsniper-classification-fixture-v1",
+  "fixture_id": "database_strong",
+  "description": "Synthetic database server with multiple database services exposed.",
+  "observed": {
+    "open_ports": ["tcp/3306", "tcp/5432", "tcp/6379"],
+    "service_hints": ["mysql", "postgresql", "redis"],
+    "vendor_hints": [],
+    "http_titles": [],
+    "hostname_hints": ["db01"],
+    "network_roles": []
+  },
+  "expected": {
+    "primary_type": "Database Server",
+    "category": "Server Infrastructure",
+    "minimum_confidence": 70,
+    "allowed_confidence_bands": ["strong", "high"],
+    "decision": "classified",
+    "siem_action": "alert_candidate",
+    "expected_contradiction_review": false
+  }
+}

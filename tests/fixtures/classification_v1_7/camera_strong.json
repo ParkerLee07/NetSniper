@@ -1,0 +1,22 @@
+{
+  "schema_version": "netsniper-classification-fixture-v1",
+  "fixture_id": "camera_strong",
+  "description": "Synthetic IP camera/NVR with RTSP, camera vendor hint, and camera web title.",
+  "observed": {
+    "open_ports": ["tcp/80", "tcp/554"],
+    "service_hints": ["rtsp"],
+    "vendor_hints": ["Reolink"],
+    "http_titles": ["Reolink IP Camera"],
+    "hostname_hints": ["front-door-camera"],
+    "network_roles": []
+  },
+  "expected": {
+    "primary_type": "IP Camera / NVR",
+    "category": "IoT / Embedded",
+    "minimum_confidence": 70,
+    "allowed_confidence_bands": ["strong", "high"],
+    "decision": "classified",
+    "siem_action": "review_queue",
+    "expected_contradiction_review": false
+  }
+}

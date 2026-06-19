@@ -1,3 +1,38 @@
+## v1.7.0 - 2026-06-19
+
+### Added
+
+- Added formal device taxonomy for NetSniper v1.7 device intelligence.
+- Added evidence profiles with reliability levels, point weights, contradiction rules, and SIEM actions.
+- Added synthetic classification fixtures for camera, printer, container infrastructure, domain controller, database, router/gateway, generic web, and contradiction cases.
+- Added reusable v1.7 host classifier.
+- Added host normalizer for current and legacy NetSniper host record shapes.
+- Added safe analysis enhancer that writes enriched classification output without modifying the original `analysis.json`.
+- Added run artifacts:
+  - `analysis.enriched.json`
+  - `classification_quality.json`
+  - `classification_quality.md`
+- Added bundle manifest references for v1.7 classification artifacts.
+- Added `tools/validate_v1_7_release_gate.sh` as the v1.7 release validation gate.
+
+### Improved
+
+- Improved classification explainability with evidence IDs, matched values, reliability levels, point values, confidence bands, decisions, SIEM actions, contradictions, and secondary candidates.
+- Improved handling for real NetSniper analysis output by preserving host identity in enriched records.
+- Improved weak web/dashboard detection, including Grafana-style dashboard services, without overclassifying them.
+- Improved DeltaAegis readiness by making v1.7 artifacts stable and manifest-addressable.
+
+### Validation
+
+- Latest release-gate bundle validation passed with classified hosts present, no false-confidence candidates, and no unknown hosts with exposed services.
+- `analysis.json` remains the original compatibility artifact.
+- v1.7 enrichment artifacts are generated non-fatally during bundle finalization.
+
+### Notes
+
+NetSniper v1.7.0 does not add exploit checks or aggressive active probing. It improves local classification intelligence, explainability, and downstream SIEM readiness while preserving the existing scan workflow.
+
+
 ## v1.6.0 - 2026-06-19
 
 ### Added
