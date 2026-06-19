@@ -573,6 +573,25 @@ archive_deltaaegis_bundle() {
     [ -f "$SCAN_DIR/fast_scan.nmap" ] && cp "$SCAN_DIR/fast_scan.nmap" "$bundle_dir/services.nmap"
     cp "$analysis_json" "$bundle_dir/analysis.json"
     [ -n "$analysis_txt" ] && [ -f "$analysis_txt" ] && cp "$analysis_txt" "$bundle_dir/analysis.txt"
+
+    # NetSniper v1.7 device-intelligence artifacts.
+    #
+    # These artifacts are generated from the finalized bundle analysis.json so
+    # downstream tools such as DeltaAegis can consume enriched classifications
+    # without changing the original analysis.json contract.
+    #
+    # Artifact generation is intentionally non-fatal. A scan/bundle should not
+    # fail only because enrichment or reporting failed.
+    if [ -x "$BASE/tools/generate_v1_7_run_artifacts.sh" ]; then
+        echo "[*] Generating NetSniper v1.7 classification artifacts..."
+        if "$BASE/tools/generate_v1_7_run_artifacts.sh" "$bundle_dir" >/dev/null; then
+            echo "[+] NetSniper v1.7 classification artifacts generated."
+        else
+            echo "[!] Warning: NetSniper v1.7 classification artifact generation failed." >&2
+        fi
+    else
+        echo "[!] Warning: NetSniper v1.7 artifact generator not found or not executable." >&2
+    fi
     [ -f "$TARGET_DIR/hosts.txt" ] && cp "$TARGET_DIR/hosts.txt" "$bundle_dir/hosts.txt"
     [ -f "$TARGET_DIR/high_risk.txt" ] && cp "$TARGET_DIR/high_risk.txt" "$bundle_dir/high_risk.txt"
 
