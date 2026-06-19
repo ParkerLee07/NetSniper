@@ -36,6 +36,12 @@ if grep -q 'What v1.4.0 adds\|v1.4 validators\|NetSniper v1.4.0 uses the classif
 fi
 
 
+echo "[*] Checking README for stale v1.4 capability wording..."
+if grep -q 'What v1.4.0 adds\|v1.4 validators\|NetSniper v1.4.0 uses the classification schema' README.md; then
+  echo "[-] README still contains stale v1.4 capability wording."
+  exit 1
+fi
+
 echo "[*] Checking required validators..."
 required_validators=(
   tools/validate_v1_5_taxonomy.sh
