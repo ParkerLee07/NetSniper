@@ -20,9 +20,9 @@ Run:
 # NetSniper
 
 <!-- NETSNIPER_V140_README_START -->
-## NetSniper v1.4.0 Current Capabilities
+## NetSniper v1.5.0 Current Capabilities
 
-NetSniper v1.4.0 upgrades the scanner from simple device-type guessing into an evidence-based network classification sensor for DeltaAegis and other downstream tools.
+NetSniper v1.5.0 expands the scanner from evidence-based classification into a broader device-role identification sensor for DeltaAegis and other downstream tools.
 
 ### What v1.4.0 adds
 
@@ -69,10 +69,13 @@ NetSniper is also the active network sensor for **DeltaAegis**. Each completed f
 
 ## Current Release
 
-NetSniper v1.4.0
+Current release: **NetSniper v1.5.0 — Classification Accuracy Expansion**
 
----
+NetSniper v1.5.0 expands device classification accuracy with a broader taxonomy, weaker generic web-interface scoring, service-text evidence, synthetic classification fixtures, and behavior validation.
 
+Recommended validation before release or demo use:
+
+    ./tools/validate_v1_5_release_gate.sh
 
 ## Features
 

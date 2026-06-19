@@ -24,6 +24,11 @@ grep -q 'SCANNER_VERSION="v1.5.0"' netsniper.sh
 grep -q 'NETSNIPER v1.5' netsniper.sh
 grep -q 'NETSNIPER_CLASSIFICATION_ENGINE_V150' netsniper.sh
 grep -q 'NetSniper v1.5.0' README.md
+grep -q 'Current release: \*\*NetSniper v1.5.0' README.md
+if grep -A8 -i '^## Current Release' README.md | grep -q 'NetSniper v1.4'; then
+  echo "[-] README Current Release section still references v1.4."
+  exit 1
+fi
 grep -q '## v1.5.0' CHANGELOG.md
 
 echo "[*] Checking required validators..."
