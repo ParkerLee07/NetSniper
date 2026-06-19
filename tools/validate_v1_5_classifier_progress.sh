@@ -24,7 +24,7 @@ text = Path("netsniper.sh").read_text(encoding="utf-8")
 
 checks = {
     "web_demotion": [
-        "# NETSNIPER_CLASSIFICATION_ENGINE_V150_DEV",
+        "# NETSNIPER_CLASSIFICATION_ENGINE_V150",
         "HTTP service detected; treated as weak web-interface evidence",
         "HTTPS service detected; treated as weak web-interface evidence",
         'update_best_candidate "Web Server / Web Application Host" "$WEB_SCORE"',

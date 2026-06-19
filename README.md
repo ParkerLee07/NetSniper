@@ -1,3 +1,22 @@
+## NetSniper v1.5.0 — Classification Accuracy Expansion
+
+NetSniper v1.5.0 expands the evidence-based device classification engine with a broader device taxonomy, weaker generic web-interface scoring, service-text evidence, and synthetic behavior validation.
+
+### Highlights
+
+- Adds v1.5 classification categories for routers, access points, managed switches, NAS/file servers, VoIP devices, UPS/power devices, security appliances, hypervisors, Windows Server, Windows Workstation, Linux Server, development/admin interfaces, IoT/embedded devices, and web application hosts.
+- Treats generic HTTP/HTTPS as weak web-interface evidence instead of automatically labeling a device as a web server.
+- Adds service-text evidence for products such as Synology, Reolink, UniFi, APC, Proxmox, Kibana, Grafana, nginx, Windows Server, and Linux/OpenSSH.
+- Adds synthetic classification fixtures and behavior validation using generated .gnmap input.
+- Adds a v1.5 release gate validator.
+
+### Validation
+
+Run:
+
+    ./tools/validate_v1_5_release_gate.sh
+
+
 # NetSniper
 
 <!-- NETSNIPER_V140_README_START -->

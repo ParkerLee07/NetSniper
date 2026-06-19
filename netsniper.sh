@@ -5,8 +5,8 @@
 # License: MIT
 
 # =========================
-# NETSNIPER ENGINE v1.4.0
-# NETSNIPER_CLASSIFICATION_ENGINE_V150_DEV
+# NETSNIPER ENGINE v1.5.0
+# NETSNIPER_CLASSIFICATION_ENGINE_V150
 # TrueAegis-compatible telemetry output
 # =========================
 
@@ -65,7 +65,7 @@ CONFIG_FILE="$CONFIG_DIR/netsniper.conf"
 RUN_DIR="$BASE/runs"
 SOCK="/run/gvmd/gvmd.sock"
 
-SCANNER_VERSION="v1.4.0"
+SCANNER_VERSION="v1.5.0"
 
 # TrueAegis-aligned scan ports.
 # These are the ports NetSniper can reliably identify from nmap grepable output.
@@ -1441,7 +1441,7 @@ load_config
 while true; do
     echo ""
     echo "================================"
-    echo "        NETSNIPER v1.4"
+    echo "        NETSNIPER v1.5"
     echo "================================"
     echo "  1) Discover Hosts"
     echo "  2) TrueAegis-Aligned Scan"

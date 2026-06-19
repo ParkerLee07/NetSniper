@@ -19,6 +19,13 @@ if find . -maxdepth 2 -type f -name '*.backup-*' | grep -q .; then
   exit 1
 fi
 
+echo "[*] Checking v1.5 version markers..."
+grep -q 'SCANNER_VERSION="v1.5.0"' netsniper.sh
+grep -q 'NETSNIPER v1.5' netsniper.sh
+grep -q 'NETSNIPER_CLASSIFICATION_ENGINE_V150' netsniper.sh
+grep -q 'NetSniper v1.5.0' README.md
+grep -q '## v1.5.0' CHANGELOG.md
+
 echo "[*] Checking required validators..."
 required_validators=(
   tools/validate_v1_5_taxonomy.sh

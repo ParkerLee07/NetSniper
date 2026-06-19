@@ -1,3 +1,31 @@
+## v1.5.0 - 2026-06-19
+
+### Added
+
+- Expanded NetSniper classification taxonomy for device-role accuracy.
+- Added synthetic v1.5 classification fixtures covering 20 device categories.
+- Added weak generic web-interface scoring to prevent HTTP-only hosts from becoming overconfident web-server classifications.
+- Added Router/Gateway, NAS/File Server, VoIP/PBX, UPS/Power Device, Security Appliance, Hypervisor, Windows Server, Windows Workstation, Linux Server, Wireless AP, Managed Switch, Development/Admin Interface, IoT/Embedded Device, Container Infrastructure, and Database Server classification evidence.
+- Added service-text evidence for common products and platforms.
+- Added source-safe NETSNIPER_TEST_MODE for validator harnesses.
+- Added v1.5 synthetic behavior smoke validation.
+- Added v1.5 release gate validator.
+
+### Changed
+
+- SCANNER_VERSION is now v1.5.0.
+- Menu banner now reports NETSNIPER v1.5.
+- Kubernetes evidence is folded into Container Infrastructure instead of producing a standalone taxonomy label.
+
+### Validation
+
+- tools/validate_v1_5_release_gate.sh
+- tools/validate_v1_5_behavior.sh
+- tools/validate_v1_5_classifier_progress.sh
+- tools/validate_v1_5_fixtures.sh
+- tools/validate_v1_5_taxonomy.sh
+
+
 # Changelog
 
 <!-- NETSNIPER_V140_CHANGELOG_START -->
