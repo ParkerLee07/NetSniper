@@ -24,7 +24,7 @@ Run:
 
 NetSniper v1.5.0 expands the scanner from evidence-based classification into a broader device-role identification sensor for DeltaAegis and other downstream tools.
 
-### What v1.4.0 adds
+### What v1.5.0 adds
 
 - **Evidence-based classification** — assigns suspected device roles using weighted service evidence instead of one-off static port assumptions.
 - **Classification confidence** — records numeric confidence, confidence labels, and classification decisions such as `classified`, `possible`, and `unknown`.
@@ -33,11 +33,11 @@ NetSniper v1.5.0 expands the scanner from evidence-based classification into a b
 - **Secondary candidates** — preserves alternate likely roles for downstream review.
 - **DeltaAegis-ready schema aliases** — includes both canonical and compatibility fields such as `primary_type`, `type`, `secondary_candidates`, and `candidates`.
 - **Expanded monitored TCP profile** — scans a broader set of security-relevant ports for web, printer, camera/NVR, database, Windows, Active Directory, container, Kubernetes, mail, and network infrastructure signals.
-- **v1.4 validators** — includes validators for classification analysis files and immutable telemetry bundles.
+- **v1.5 validators** — includes taxonomy, fixture, classifier-progress, service-text, behavior, and release-gate validators.
 
 ### Classification schema
 
-NetSniper v1.4.0 uses the classification schema version `netsniper-classification-v1`.
+NetSniper v1.5.0 uses the classification schema version `netsniper-classification-v1`.
 
 Each analyzed host now includes a `classification` object with:
 
