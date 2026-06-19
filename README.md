@@ -111,17 +111,13 @@ NetSniper is a Bash-based network discovery and service-enumeration pipeline. It
 
 NetSniper is also the active network sensor for **DeltaAegis**. Each completed full-pipeline run creates an immutable telemetry bundle containing raw Nmap XML, discovery evidence, neighbor-table enrichment, interpreted findings, and a versioned manifest.
 
-## Current Release
+## Release Status
 
 Current release: **NetSniper v1.7.0 — Device Intelligence Expansion**
-
-NetSniper v1.6.0 expands device classification accuracy with a broader taxonomy, weaker generic web-interface scoring, service-text evidence, synthetic classification fixtures, and behavior validation.
 
 Recommended validation before release or demo use:
 
     ./tools/validate_v1_7_release_gate.sh
-
-
 ## NetSniper v1.6.0 Intelligence Validation
 
 NetSniper v1.6.0 improves classification intelligence for SIEM ingestion by adding calibrated confidence fields, validator results, contradiction-aware gating, service-text product validation, and validator summaries.
