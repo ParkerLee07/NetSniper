@@ -18,6 +18,7 @@ command -v python3 >/dev/null 2>&1 || fail "python3 is required"
 bash -n "$ROOT_DIR/netsniper.sh" || fail "netsniper.sh has shell syntax errors"
 
 "$ROOT_DIR/tools/validate_v1_7_all.sh"
+"$ROOT_DIR/tools/validate_v1_7_docs.sh"
 
 latest_bundle="$(
   find "$ROOT_DIR/runs" -mindepth 1 -maxdepth 1 -type d -printf '%T@ %p\n' 2>/dev/null \
