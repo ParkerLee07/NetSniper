@@ -101,6 +101,21 @@ checks = {
         'add_classification_evidence "database" "port-combination" "mysql+postgresql"',
         'add_classification_evidence "database" "port-combination" "rdbms+redis"',
     ],
+    "service_text_evidence": [
+        "line_has()",
+        "v1.5 service-text classification evidence",
+        'add_classification_evidence "nas" "service-text" "storage-product"',
+        'add_classification_evidence "printer" "service-text" "printer-product"',
+        'add_classification_evidence "camera" "service-text" "camera-product"',
+        'add_classification_evidence "wireless_ap" "service-text" "ap-product"',
+        'add_classification_evidence "managed_switch" "service-text" "switch-product"',
+        'add_classification_evidence "ups" "service-text" "power-product"',
+        'add_classification_evidence "security_appliance" "service-text" "security-product"',
+        'add_classification_evidence "hypervisor" "service-text" "hypervisor-product"',
+        'add_classification_evidence "dev_admin" "service-text" "admin-tool"',
+        'add_classification_evidence "iot" "service-text" "embedded-product"',
+        'add_classification_evidence "web" "service-text" "web-server-product"',
+    ],
 }
 
 failed = False

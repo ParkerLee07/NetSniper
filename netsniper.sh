@@ -760,6 +760,11 @@ analyze_hosts() {
             [[ "$line" =~ $pattern ]]
         }
 
+        line_has() {
+            local pattern="$1"
+            printf '%s\n' "$line" | grep -Eiq "$pattern"
+        }
+
         add_finding() {
             local id="$1"
             local name="$2"
@@ -925,6 +930,22 @@ analyze_hosts() {
 
         # Weighted evidence-based classification.
         # This preserves broad compatibility while adding explainable classification data.
+
+        # v1.5 service-text classification evidence.
+        # These checks use nmap service/version strings when available.
+        line_has 'synology|diskstation|qnap|truenas|freenas|openmediavault' && add_classification_evidence "nas" "service-text" "storage-product" 45 "Storage appliance product text suggests NAS/File Server role"
+        line_has 'hp laserjet|jetdirect|brother|canon|epson|xerox|printer|ipp|cups' && add_classification_evidence "printer" "service-text" "printer-product" 45 "Printer product or protocol text suggests network printer role"
+        line_has 'reolink|hikvision|dahua|axis|amcrest|onvif|nvr|dvr|ip camera' && add_classification_evidence "camera" "service-text" "camera-product" 45 "Camera/NVR product text suggests IP Camera or NVR role"
+        line_has 'ubiquiti|unifi|aruba|ruckus|meraki|access point|wireless ap' && add_classification_evidence "wireless_ap" "service-text" "ap-product" 45 "Wireless/AP product text suggests wireless access point role"
+        line_has 'cisco|procurve|edgeswitch|switch device|managed switch' && add_classification_evidence "managed_switch" "service-text" "switch-product" 40 "Switch product text suggests managed network infrastructure"
+        line_has 'apc|eaton|cyberpower|tripplite|ups|pdu|network management card' && add_classification_evidence "ups" "service-text" "power-product" 45 "Power-management product text suggests UPS or PDU role"
+        line_has 'pfsense|fortinet|sonicwall|palo alto|sophos|watchguard|firewall|vpn gateway' && add_classification_evidence "security_appliance" "service-text" "security-product" 45 "Firewall/VPN product text suggests security appliance role"
+        line_has 'proxmox|vmware|esxi|vcenter|hyper-v|xenserver|virtual environment' && add_classification_evidence "hypervisor" "service-text" "hypervisor-product" 50 "Virtualization product text suggests hypervisor role"
+        line_has 'jenkins|grafana|prometheus|kibana|gitlab|gitea|jupyter|webmin|cockpit|phpmyadmin|adminer' && add_classification_evidence "dev_admin" "service-text" "admin-tool" 45 "Admin/development tool text suggests development or admin interface"
+        line_has 'esp32|espressif|arduino|embedded|iot device|microcontroller' && add_classification_evidence "iot" "service-text" "embedded-product" 45 "Embedded product text suggests IoT or embedded device role"
+        line_has 'nginx|apache httpd|tomcat|iis|gunicorn|node.js|express' && add_classification_evidence "web" "service-text" "web-server-product" 35 "Web server product text strengthens web application host role"
+        line_has 'microsoft windows server|active directory|domain controller' && add_classification_evidence "windows_server" "service-text" "windows-server-product" 45 "Windows Server or directory-service text strengthens server classification"
+        line_has 'ubuntu|debian|centos|red hat|rocky linux|alma linux|openssh' && add_classification_evidence "linux_server" "service-text" "linux-unix-product" 25 "Linux/Unix service text strengthens Linux server classification"
 
         if has_port 88 && has_port 389 && has_port 445; then
             add_classification_evidence "windows_server" "port-combination" "tcp/88+389+445" 95 "Kerberos, LDAP, and SMB together strongly suggest Windows Server or domain controller infrastructure"
