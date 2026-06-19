@@ -1,0 +1,67 @@
+{
+  "schema_version": "netsniper-analysis-fixture-v1",
+  "scanner_version": "v1.7.0-dev",
+  "hosts": [
+    {
+      "ip": "192.168.4.60",
+      "hostname": "office-printer",
+      "vendor": "HP",
+      "classification": {
+        "primary_type": "Legacy Device",
+        "confidence": 20
+      },
+      "ports": [
+        {
+          "portid": "631",
+          "proto": "tcp",
+          "state": "open",
+          "name": "ipp"
+        },
+        {
+          "portid": "9100",
+          "proto": "tcp",
+          "state": "open",
+          "name": "jetdirect"
+        },
+        {
+          "portid": "80",
+          "proto": "tcp",
+          "state": "open",
+          "title": "HP LaserJet Printer"
+        }
+      ]
+    },
+    {
+      "ip": "192.168.4.50",
+      "hostname": "docker-host",
+      "services": [
+        {
+          "port": 2375,
+          "protocol": "tcp",
+          "state": "open",
+          "service": "docker"
+        },
+        {
+          "port": 5000,
+          "protocol": "tcp",
+          "state": "open",
+          "service": "registry"
+        },
+        {
+          "port": 9000,
+          "protocol": "tcp",
+          "state": "open",
+          "service": "http",
+          "http_title": "Portainer"
+        }
+      ]
+    },
+    {
+      "ip": "192.168.4.80",
+      "hostname": "generic-web-device",
+      "open_ports": ["80/tcp", "443/tcp"],
+      "service": ["http", "https"],
+      "http_title": "Login"
+    }
+  ]
+}
