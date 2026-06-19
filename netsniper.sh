@@ -733,6 +733,8 @@ analyze_hosts() {
         CLASSIFICATION_CALIBRATED_DECISION="unknown"
         CLASSIFICATION_SIEM_ACTION="no_action"
         CLASSIFICATION_CALIBRATION_REASON="No useful classification evidence was found."
+        CLASSIFICATION_VALIDATION_STATE="unknown"
+        CLASSIFICATION_CONTRADICTION_TOTAL=0
 
         AD_SCORE=0
         CONTAINER_SCORE=0
@@ -1029,6 +1031,43 @@ analyze_hosts() {
 
         classification_contradiction_count() {
             echo "$CLASSIFICATION_CONTRADICTIONS" | jq 'length'
+        }
+
+        classification_validation_state() {
+            local confidence="$1"
+            local primary="$2"
+            local primary_key
+            local high_count
+            local medium_count
+            local contradiction_total
+
+            if [ "$confidence" -eq 0 ]; then
+                printf 'unknown'
+                return
+            fi
+
+            contradiction_total="$(classification_contradiction_count)"
+
+            if [ "$contradiction_total" -gt 0 ]; then
+                printf 'conflicted'
+                return
+            fi
+
+            primary_key="$(candidate_key_for_type "$primary")"
+
+            if [ "$primary_key" = "unknown" ]; then
+                printf 'unvalidated'
+                return
+            fi
+
+            high_count="$(candidate_evidence_count "$primary_key" "high")"
+            medium_count="$(candidate_evidence_count "$primary_key" "medium")"
+
+            if [ "$high_count" -gt 0 ] || [ "$medium_count" -ge 2 ]; then
+                printf 'validated'
+            else
+                printf 'unvalidated'
+            fi
         }
 
         add_passive_classification_validators() {
@@ -1421,6 +1460,14 @@ analyze_hosts() {
         CLASSIFICATION_CALIBRATED_DECISION=$(calibrated_decision "$CLASSIFICATION_CONFIDENCE")
         CLASSIFICATION_SIEM_ACTION=$(siem_action "$CLASSIFICATION_CONFIDENCE")
         CLASSIFICATION_CALIBRATION_REASON=$(calibration_reason "$CLASSIFICATION_CONFIDENCE")
+        CLASSIFICATION_CONTRADICTION_TOTAL=$(classification_contradiction_count)
+        CLASSIFICATION_VALIDATION_STATE=$(classification_validation_state "$CLASSIFICATION_CONFIDENCE" "$CLASSIFICATION_PRIMARY")
+
+        if [ "$CLASSIFICATION_VALIDATION_STATE" = "conflicted" ]; then
+            CLASSIFICATION_CALIBRATED_DECISION="review_only"
+            CLASSIFICATION_SIEM_ACTION="contradiction_review"
+            CLASSIFICATION_CALIBRATION_REASON="$CLASSIFICATION_CALIBRATION_REASON Contradictory evidence was observed, so this classification requires operator review before SIEM escalation."
+        fi
 
         add_passive_classification_validators
 
@@ -1506,6 +1553,8 @@ analyze_hosts() {
             --arg classification_calibrated_decision "$CLASSIFICATION_CALIBRATED_DECISION" \
             --arg classification_siem_action "$CLASSIFICATION_SIEM_ACTION" \
             --arg classification_calibration_reason "$CLASSIFICATION_CALIBRATION_REASON" \
+            --arg classification_validation_state "$CLASSIFICATION_VALIDATION_STATE" \
+            --arg classification_contradiction_total "$CLASSIFICATION_CONTRADICTION_TOTAL" \
             --argjson findings "$FINDINGS_JSON" \
             --argjson classification_evidence "$CLASSIFICATION_EVIDENCE" \
             --argjson classification_contradictions "$CLASSIFICATION_CONTRADICTIONS" \
@@ -1534,6 +1583,8 @@ analyze_hosts() {
                     calibrated_decision: $classification_calibrated_decision,
                     siem_action: $classification_siem_action,
                     calibration_reason: $classification_calibration_reason,
+                    validation_state: $classification_validation_state,
+                    contradiction_count: ($classification_contradiction_total | tonumber),
 
                     # Legacy decision retained for v1.x compatibility.
                     decision: (
