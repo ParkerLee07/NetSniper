@@ -730,7 +730,6 @@ analyze_hosts() {
         CLASSIFICATION_LABEL="weak"
 
         AD_SCORE=0
-        KUBE_SCORE=0
         CONTAINER_SCORE=0
         ROUTER_GATEWAY_SCORE=0
         AP_SCORE=0
