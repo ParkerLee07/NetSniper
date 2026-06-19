@@ -65,7 +65,7 @@ CONFIG_FILE="$CONFIG_DIR/netsniper.conf"
 RUN_DIR="$BASE/runs"
 SOCK="/run/gvmd/gvmd.sock"
 
-SCANNER_VERSION="v1.5.0"
+SCANNER_VERSION="v1.6.0-dev"
 
 # TrueAegis-aligned scan ports.
 # These are the ports NetSniper can reliably identify from nmap grepable output.
@@ -725,9 +725,14 @@ analyze_hosts() {
         CLASSIFICATION_EVIDENCE="[]"
         CLASSIFICATION_CONTRADICTIONS="[]"
         CLASSIFICATION_SECONDARY="[]"
+        CLASSIFICATION_VALIDATORS="[]"
         CLASSIFICATION_PRIMARY="Unknown / Ambiguous"
         CLASSIFICATION_CONFIDENCE=0
-        CLASSIFICATION_LABEL="weak"
+        CLASSIFICATION_LABEL="unknown"
+        CLASSIFICATION_BAND="unknown"
+        CLASSIFICATION_CALIBRATED_DECISION="unknown"
+        CLASSIFICATION_SIEM_ACTION="no_action"
+        CLASSIFICATION_CALIBRATION_REASON="No useful classification evidence was found."
 
         AD_SCORE=0
         CONTAINER_SCORE=0
@@ -791,12 +796,45 @@ analyze_hosts() {
                 }]')
         }
 
+        evidence_reliability() {
+            local source="$1"
+            local points="$2"
+
+            case "$source" in
+                service-text)
+                    printf 'high'
+                    return
+                    ;;
+                port-combination)
+                    if [ "$points" -ge 35 ]; then
+                        printf 'high'
+                    elif [ "$points" -ge 20 ]; then
+                        printf 'medium'
+                    else
+                        printf 'low'
+                    fi
+                    return
+                    ;;
+            esac
+
+            if [ "$points" -ge 45 ]; then
+                printf 'high'
+            elif [ "$points" -ge 20 ]; then
+                printf 'medium'
+            else
+                printf 'low'
+            fi
+        }
+
         add_classification_evidence() {
             local candidate="$1"
             local source="$2"
             local value="$3"
             local points="$4"
             local reason="$5"
+            local reliability
+
+            reliability="$(evidence_reliability "$source" "$points")"
 
             CLASSIFICATION_EVIDENCE=$(echo "$CLASSIFICATION_EVIDENCE" | jq \
                 --arg candidate "$candidate" \
@@ -804,11 +842,13 @@ analyze_hosts() {
                 --arg value "$value" \
                 --arg points "$points" \
                 --arg reason "$reason" \
+                --arg reliability "$reliability" \
                 '. += [{
                     candidate: $candidate,
                     source: $source,
                     value: $value,
                     points: ($points | tonumber),
+                    reliability: $reliability,
                     reason: $reason
                 }]')
 
@@ -856,15 +896,91 @@ analyze_hosts() {
         confidence_label() {
             local confidence="$1"
 
-            if [ "$confidence" -ge 85 ]; then
-                printf 'high'
-            elif [ "$confidence" -ge 65 ]; then
+            if [ "$confidence" -ge 80 ]; then
+                printf 'confirmed'
+            elif [ "$confidence" -ge 60 ]; then
                 printf 'likely'
             elif [ "$confidence" -ge 40 ]; then
                 printf 'possible'
-            else
+            elif [ "$confidence" -gt 0 ]; then
                 printf 'weak'
+            else
+                printf 'unknown'
             fi
+        }
+
+        confidence_band() {
+            confidence_label "$1"
+        }
+
+        calibrated_decision() {
+            local confidence="$1"
+
+            if [ "$confidence" -ge 80 ]; then
+                printf 'classified'
+            elif [ "$confidence" -ge 60 ]; then
+                printf 'likely'
+            elif [ "$confidence" -ge 40 ]; then
+                printf 'possible'
+            elif [ "$confidence" -gt 0 ]; then
+                printf 'review_only'
+            else
+                printf 'unknown'
+            fi
+        }
+
+        siem_action() {
+            local confidence="$1"
+
+            if [ "$confidence" -ge 80 ]; then
+                printf 'alert_eligible'
+            elif [ "$confidence" -ge 60 ]; then
+                printf 'risk_context'
+            elif [ "$confidence" -ge 40 ]; then
+                printf 'review_queue'
+            elif [ "$confidence" -gt 0 ]; then
+                printf 'display_only'
+            else
+                printf 'no_action'
+            fi
+        }
+
+        calibration_reason() {
+            local confidence="$1"
+
+            if [ "$confidence" -ge 80 ]; then
+                printf 'Strong evidence supports this classification.'
+            elif [ "$confidence" -ge 60 ]; then
+                printf 'Multiple or moderately strong evidence supports this classification, but it should still be reviewed.'
+            elif [ "$confidence" -ge 40 ]; then
+                printf 'Some evidence supports this classification, but it should be treated as possible context only.'
+            elif [ "$confidence" -gt 0 ]; then
+                printf 'Weak evidence was observed, but there is not enough support to classify the device.'
+            else
+                printf 'No useful classification evidence was found.'
+            fi
+        }
+
+        add_classification_validator() {
+            local name="$1"
+            local status="$2"
+            local candidate="$3"
+            local confidence_delta="$4"
+            local reason="$5"
+
+            CLASSIFICATION_VALIDATORS=$(echo "$CLASSIFICATION_VALIDATORS" | jq \
+                --arg name "$name" \
+                --arg status "$status" \
+                --arg candidate "$candidate" \
+                --arg confidence_delta "$confidence_delta" \
+                --arg reason "$reason" \
+                '. += [{
+                    name: $name,
+                    status: $status,
+                    candidate: $candidate,
+                    confidence_delta: ($confidence_delta | tonumber),
+                    reason: $reason
+                }]')
         }
 
         # -------------------------
@@ -1169,6 +1285,10 @@ analyze_hosts() {
         fi
 
         CLASSIFICATION_LABEL=$(confidence_label "$CLASSIFICATION_CONFIDENCE")
+        CLASSIFICATION_BAND=$(confidence_band "$CLASSIFICATION_CONFIDENCE")
+        CLASSIFICATION_CALIBRATED_DECISION=$(calibrated_decision "$CLASSIFICATION_CONFIDENCE")
+        CLASSIFICATION_SIEM_ACTION=$(siem_action "$CLASSIFICATION_CONFIDENCE")
+        CLASSIFICATION_CALIBRATION_REASON=$(calibration_reason "$CLASSIFICATION_CONFIDENCE")
 
         if [ "$CLASSIFICATION_CONFIDENCE" -ge 40 ]; then
             DEVICE_TYPE="$CLASSIFICATION_PRIMARY"
@@ -1248,10 +1368,15 @@ analyze_hosts() {
             --arg classification_primary "$CLASSIFICATION_PRIMARY" \
             --arg classification_confidence "$CLASSIFICATION_CONFIDENCE" \
             --arg classification_label "$CLASSIFICATION_LABEL" \
+            --arg classification_band "$CLASSIFICATION_BAND" \
+            --arg classification_calibrated_decision "$CLASSIFICATION_CALIBRATED_DECISION" \
+            --arg classification_siem_action "$CLASSIFICATION_SIEM_ACTION" \
+            --arg classification_calibration_reason "$CLASSIFICATION_CALIBRATION_REASON" \
             --argjson findings "$FINDINGS_JSON" \
             --argjson classification_evidence "$CLASSIFICATION_EVIDENCE" \
             --argjson classification_contradictions "$CLASSIFICATION_CONTRADICTIONS" \
             --argjson classification_secondary "$CLASSIFICATION_SECONDARY" \
+            --argjson classification_validators "$CLASSIFICATION_VALIDATORS" \
             '{
                 host: $host,
                 device_type: $device,
@@ -1271,6 +1396,12 @@ analyze_hosts() {
 
                     confidence: ($classification_confidence | tonumber),
                     confidence_label: $classification_label,
+                    confidence_band: $classification_band,
+                    calibrated_decision: $classification_calibrated_decision,
+                    siem_action: $classification_siem_action,
+                    calibration_reason: $classification_calibration_reason,
+
+                    # Legacy decision retained for v1.x compatibility.
                     decision: (
                         if ($classification_confidence | tonumber) >= 40 then
                             "classified"
@@ -1283,6 +1414,7 @@ analyze_hosts() {
                     method: "weighted_evidence",
 
                     evidence: $classification_evidence,
+                    validators: $classification_validators,
                     contradictions: $classification_contradictions,
 
                     candidates: $classification_secondary,
@@ -1440,7 +1572,7 @@ load_config
 while true; do
     echo ""
     echo "================================"
-    echo "        NETSNIPER v1.5"
+    echo "        NETSNIPER v1.6"
     echo "================================"
     echo "  1) Discover Hosts"
     echo "  2) TrueAegis-Aligned Scan"
