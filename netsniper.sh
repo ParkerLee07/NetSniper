@@ -983,6 +983,138 @@ analyze_hosts() {
                 }]')
         }
 
+        candidate_key_for_type() {
+            local label="$1"
+
+            case "$label" in
+                "Windows Server") printf 'windows_server' ;;
+                "Container Infrastructure") printf 'container' ;;
+                "Router / Gateway") printf 'router_gateway' ;;
+                "Wireless Access Point") printf 'wireless_ap' ;;
+                "Managed Switch / Network Infrastructure") printf 'managed_switch' ;;
+                "NAS / File Server") printf 'nas' ;;
+                "VoIP Phone / PBX") printf 'voip' ;;
+                "UPS / Power Device") printf 'ups' ;;
+                "Security Appliance") printf 'security_appliance' ;;
+                "Hypervisor / Virtualization Host") printf 'hypervisor' ;;
+                "Windows Workstation") printf 'windows_workstation' ;;
+                "Database Server") printf 'database' ;;
+                "Network Printer / Multifunction Printer") printf 'printer' ;;
+                "IP Camera / NVR") printf 'camera' ;;
+                "Linux Server") printf 'linux_server' ;;
+                "Development / Admin Interface") printf 'dev_admin' ;;
+                "IoT / Embedded Device") printf 'iot' ;;
+                "Web Server / Web Application Host") printf 'web' ;;
+                "Network Infrastructure / Router") printf 'network' ;;
+                "Mail Server") printf 'mail' ;;
+                *) printf 'unknown' ;;
+            esac
+        }
+
+        candidate_evidence_count() {
+            local candidate="$1"
+            local reliability="${2:-}"
+
+            if [ -n "$reliability" ]; then
+                echo "$CLASSIFICATION_EVIDENCE" | jq \
+                    --arg candidate "$candidate" \
+                    --arg reliability "$reliability" \
+                    '[.[] | select(.candidate == $candidate and .reliability == $reliability)] | length'
+            else
+                echo "$CLASSIFICATION_EVIDENCE" | jq \
+                    --arg candidate "$candidate" \
+                    '[.[] | select(.candidate == $candidate)] | length'
+            fi
+        }
+
+        classification_contradiction_count() {
+            echo "$CLASSIFICATION_CONTRADICTIONS" | jq 'length'
+        }
+
+        add_passive_classification_validators() {
+            local primary_key
+            local evidence_count
+            local high_count
+            local medium_count
+            local contradiction_total
+
+            primary_key="$(candidate_key_for_type "$CLASSIFICATION_PRIMARY")"
+            contradiction_total="$(classification_contradiction_count)"
+
+            if [ "$CLASSIFICATION_CONFIDENCE" -eq 0 ] || [ "$primary_key" = "unknown" ]; then
+                add_classification_validator \
+                    "classification_calibration_validator" \
+                    "not_applicable" \
+                    "$CLASSIFICATION_PRIMARY" \
+                    0 \
+                    "No useful classification evidence was available to validate."
+
+                return
+            fi
+
+            evidence_count="$(candidate_evidence_count "$primary_key")"
+            high_count="$(candidate_evidence_count "$primary_key" "high")"
+            medium_count="$(candidate_evidence_count "$primary_key" "medium")"
+
+            if [ "$contradiction_total" -gt 0 ]; then
+                add_classification_validator \
+                    "contradiction_validator" \
+                    "inconclusive" \
+                    "$CLASSIFICATION_PRIMARY" \
+                    -20 \
+                    "Contradictory evidence was observed; classification should be reviewed before SIEM escalation."
+            fi
+
+            if [ "$high_count" -gt 0 ]; then
+                add_classification_validator \
+                    "high_reliability_evidence_validator" \
+                    "confirmed" \
+                    "$CLASSIFICATION_PRIMARY" \
+                    0 \
+                    "At least one high-reliability evidence item supports the primary classification."
+            elif [ "$medium_count" -ge 2 ]; then
+                add_classification_validator \
+                    "multi_signal_validator" \
+                    "confirmed" \
+                    "$CLASSIFICATION_PRIMARY" \
+                    0 \
+                    "Multiple medium-reliability signals support the primary classification."
+            elif [ "$CLASSIFICATION_CONFIDENCE" -lt 40 ]; then
+                add_classification_validator \
+                    "weak_evidence_validator" \
+                    "inconclusive" \
+                    "$CLASSIFICATION_PRIMARY" \
+                    0 \
+                    "Only weak evidence supports this classification; it should remain display-only SIEM context."
+            else
+                add_classification_validator \
+                    "possible_evidence_validator" \
+                    "inconclusive" \
+                    "$CLASSIFICATION_PRIMARY" \
+                    0 \
+                    "Some evidence supports this classification, but stronger validator evidence is needed before treating it as confirmed."
+            fi
+
+            if [ "$primary_key" = "web" ] && [ "$CLASSIFICATION_CONFIDENCE" -lt 40 ]; then
+                add_classification_validator \
+                    "generic_web_interface_validator" \
+                    "inconclusive" \
+                    "$CLASSIFICATION_PRIMARY" \
+                    0 \
+                    "A web service was observed, but no strong product, title, vendor, or application evidence confirmed a web-server role."
+            fi
+
+            if [ "$evidence_count" -eq 0 ]; then
+                add_classification_validator \
+                    "evidence_consistency_validator" \
+                    "error" \
+                    "$CLASSIFICATION_PRIMARY" \
+                    0 \
+                    "Primary classification had a nonzero score but no matching evidence records were found."
+            fi
+        }
+
+
         # -------------------------
         # TrueAegis Finding Checks
         # -------------------------
@@ -1289,6 +1421,8 @@ analyze_hosts() {
         CLASSIFICATION_CALIBRATED_DECISION=$(calibrated_decision "$CLASSIFICATION_CONFIDENCE")
         CLASSIFICATION_SIEM_ACTION=$(siem_action "$CLASSIFICATION_CONFIDENCE")
         CLASSIFICATION_CALIBRATION_REASON=$(calibration_reason "$CLASSIFICATION_CONFIDENCE")
+
+        add_passive_classification_validators
 
         if [ "$CLASSIFICATION_CONFIDENCE" -ge 40 ]; then
             DEVICE_TYPE="$CLASSIFICATION_PRIMARY"
