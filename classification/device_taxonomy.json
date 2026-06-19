@@ -1,0 +1,219 @@
+{
+  "schema_version": "netsniper-device-taxonomy-v1",
+  "release_target": "v1.7.0",
+  "confidence_bands": [
+    {
+      "name": "weak",
+      "min": 1,
+      "max": 39,
+      "default_decision": "possible",
+      "default_siem_action": "review_queue"
+    },
+    {
+      "name": "possible",
+      "min": 40,
+      "max": 69,
+      "default_decision": "possible",
+      "default_siem_action": "review_queue"
+    },
+    {
+      "name": "strong",
+      "min": 70,
+      "max": 89,
+      "default_decision": "classified",
+      "default_siem_action": "display_only"
+    },
+    {
+      "name": "high",
+      "min": 90,
+      "max": 100,
+      "default_decision": "classified",
+      "default_siem_action": "display_only"
+    }
+  ],
+  "evidence_reliability": {
+    "high": {
+      "description": "Protocol-specific or product-specific evidence",
+      "default_points": 35
+    },
+    "medium": {
+      "description": "Useful supporting evidence such as vendor, title, hostname, or nmap product guess",
+      "default_points": 20
+    },
+    "low": {
+      "description": "Weak evidence such as port-only matches",
+      "default_points": 10
+    }
+  },
+  "device_classes": [
+    {
+      "primary_type": "Router / Gateway",
+      "category": "Network Infrastructure",
+      "positive_evidence": [
+        "default_gateway_role",
+        "dns_service",
+        "dhcp_service",
+        "nat_or_routing_hint",
+        "router_vendor_hint",
+        "web_admin_interface"
+      ],
+      "contradictions": [
+        "active_directory_domain_controller",
+        "database_server_role",
+        "printer_specific_services"
+      ],
+      "default_siem_action": "display_only"
+    },
+    {
+      "primary_type": "Wireless Access Point",
+      "category": "Network Infrastructure",
+      "positive_evidence": [
+        "wireless_vendor_hint",
+        "ap_hostname_hint",
+        "web_admin_interface",
+        "open_management_ports"
+      ],
+      "contradictions": [
+        "active_directory_domain_controller",
+        "database_server_role"
+      ],
+      "default_siem_action": "display_only"
+    },
+    {
+      "primary_type": "Active Directory / Domain Controller",
+      "category": "Server Infrastructure",
+      "positive_evidence": [
+        "kerberos_88",
+        "ldap_389",
+        "ldaps_636",
+        "smb_445",
+        "dns_53",
+        "domain_hint"
+      ],
+      "contradictions": [
+        "printer_specific_services_only",
+        "camera_specific_services_only"
+      ],
+      "default_siem_action": "alert_candidate"
+    },
+    {
+      "primary_type": "Web Server / Web Application Host",
+      "category": "Server Infrastructure",
+      "positive_evidence": [
+        "http_80",
+        "https_443",
+        "http_alt_8080",
+        "http_title",
+        "server_header",
+        "tls_certificate"
+      ],
+      "contradictions": [],
+      "default_siem_action": "display_only"
+    },
+    {
+      "primary_type": "Container Infrastructure",
+      "category": "Server Infrastructure",
+      "positive_evidence": [
+        "docker_2375",
+        "docker_tls_2376",
+        "registry_5000",
+        "kubernetes_6443",
+        "kubelet_10250",
+        "portainer_9000",
+        "portainer_9443"
+      ],
+      "contradictions": [
+        "printer_specific_services_only",
+        "camera_specific_services_only"
+      ],
+      "default_siem_action": "alert_candidate"
+    },
+    {
+      "primary_type": "IP Camera / NVR",
+      "category": "IoT / Embedded",
+      "positive_evidence": [
+        "rtsp_554",
+        "rtsp_alt_8554",
+        "onvif_hint",
+        "camera_vendor_hint",
+        "camera_web_title",
+        "nvr_web_title"
+      ],
+      "contradictions": [
+        "active_directory_domain_controller",
+        "database_server_role",
+        "container_infrastructure_role"
+      ],
+      "default_siem_action": "review_queue"
+    },
+    {
+      "primary_type": "Network Printer / MFP",
+      "category": "IoT / Embedded",
+      "positive_evidence": [
+        "jetdirect_9100",
+        "ipp_631",
+        "lpd_515",
+        "printer_vendor_hint",
+        "printer_web_title",
+        "snmp_printer_hint"
+      ],
+      "contradictions": [
+        "active_directory_domain_controller",
+        "database_server_role",
+        "container_infrastructure_role"
+      ],
+      "default_siem_action": "review_queue"
+    },
+    {
+      "primary_type": "NAS / Storage Appliance",
+      "category": "IoT / Embedded",
+      "positive_evidence": [
+        "smb_445",
+        "nfs_2049",
+        "ftp_21",
+        "web_admin_interface",
+        "storage_vendor_hint",
+        "nas_web_title"
+      ],
+      "contradictions": [
+        "active_directory_domain_controller"
+      ],
+      "default_siem_action": "review_queue"
+    },
+    {
+      "primary_type": "Database Server",
+      "category": "Server Infrastructure",
+      "positive_evidence": [
+        "mysql_3306",
+        "postgres_5432",
+        "mssql_1433",
+        "mongodb_27017",
+        "redis_6379",
+        "elasticsearch_9200"
+      ],
+      "contradictions": [
+        "printer_specific_services_only",
+        "camera_specific_services_only"
+      ],
+      "default_siem_action": "alert_candidate"
+    },
+    {
+      "primary_type": "Unknown",
+      "category": "Unknown / Ambiguous",
+      "positive_evidence": [],
+      "contradictions": [],
+      "default_siem_action": "display_only"
+    },
+    {
+      "primary_type": "Ambiguous Device",
+      "category": "Unknown / Ambiguous",
+      "positive_evidence": [
+        "multiple_competing_candidates",
+        "low_confidence_only",
+        "strong_contradiction"
+      ],
+      "contradictions": [],
+      "default_siem_action": "review_queue"
+    }
+  ]
+}
