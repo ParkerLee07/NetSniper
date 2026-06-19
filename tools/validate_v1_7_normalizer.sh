@@ -95,7 +95,19 @@ jq -e '.observed.network_roles | index("default_gateway")' "$gateway_norm" >/dev
 [[ "$(jq -r '.primary_type' "$gateway_class")" == "Router / Gateway" ]] \
   || fail "gateway_raw_host did not classify as Router / Gateway"
 
-[[ "$fixture_count" -ge 3 ]] || fail "Expected at least 3 normalizer fixtures, found $fixture_count"
+grafana_norm="$tmp_dir/grafana_dashboard_raw_host.normalized.json"
+grafana_class="$tmp_dir/grafana_dashboard_raw_host.classified.json"
+
+jq -e '.observed.open_ports | index("tcp/3000")' "$grafana_norm" >/dev/null \
+  || fail "grafana_dashboard_raw_host did not normalize tcp/3000"
+
+[[ "$(jq -r '.primary_type' "$grafana_class")" == "Web Server / Web Application Host" ]] \
+  || fail "grafana_dashboard_raw_host did not classify as Web Server / Web Application Host"
+
+[[ "$(jq -r '.decision' "$grafana_class")" == "possible" ]] \
+  || fail "grafana_dashboard_raw_host should remain possible, not overconfident"
+
+[[ "$fixture_count" -ge 5 ]] || fail "Expected at least 5 normalizer fixtures, found $fixture_count"
 
 pass "NetSniper v1.7 host normalizer produced valid observed records"
 pass "Normalizer fixtures: $fixture_count"

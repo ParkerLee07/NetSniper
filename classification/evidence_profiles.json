@@ -538,6 +538,30 @@
           "reliability": "medium",
           "points": 25,
           "reason": "Service metadata contains a recognizable web server header or product."
+        },
+        {
+          "id": "http_dev_3000",
+          "source": "port",
+          "value": "tcp/3000",
+          "reliability": "low",
+          "points": 15,
+          "reason": "tcp/3000 commonly hosts development dashboards or web applications, but port-only evidence is weak."
+        },
+        {
+          "id": "dashboard_service_hint",
+          "source": "service",
+          "value": "grafana|prometheus|dashboard|web dashboard|admin dashboard|kibana",
+          "reliability": "medium",
+          "points": 25,
+          "reason": "Service metadata suggests a web dashboard or web application."
+        },
+        {
+          "id": "dashboard_title_hint",
+          "source": "http_title",
+          "value": "grafana|prometheus|kibana|dashboard|admin dashboard",
+          "reliability": "medium",
+          "points": 25,
+          "reason": "HTTP title suggests a dashboard or web application."
         }
       ],
       "contradictions": [],
