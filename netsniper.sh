@@ -668,6 +668,9 @@ archive_deltaaegis_bundle() {
                 discovery_xml: "discovery.xml",
                 services_xml: "services.xml",
                 analysis_json: "analysis.json",
+                analysis_enriched_json: "analysis.enriched.json",
+                classification_quality_json: "classification_quality.json",
+                classification_quality_markdown: "classification_quality.md",
                 neighbors: "neighbors.txt"
             }
         }' > "$manifest_tmp"

@@ -13,5 +13,6 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 "$ROOT_DIR/tools/validate_v1_7_quality_report.sh"
 "$ROOT_DIR/tools/validate_v1_7_run_artifacts.sh"
 "$ROOT_DIR/tools/validate_v1_7_pipeline_hook.sh"
+"$ROOT_DIR/tools/validate_v1_7_manifest_awareness.sh"
 
 echo "[PASS] All NetSniper v1.7 device-intelligence validators passed"
