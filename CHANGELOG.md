@@ -26,6 +26,7 @@ Validated with:
 - `tools/validate_v1_6_service_text_validators.sh`
 - `tools/validate_v1_6_validator_summary.sh`
 - `tools/validate_v1_6_intelligence_gate.sh`
+- `tools/validate_v1_6_release_gate.sh`
 - `tools/validate_v1_5_behavior.sh`
 
 ### Notes

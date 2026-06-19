@@ -1,21 +1,21 @@
-## NetSniper v1.6.0 — Classification Accuracy Expansion
+## NetSniper v1.6.0 — Intelligence Validation and Confidence Calibration
 
-NetSniper v1.6.0 expands the evidence-based device classification engine with a broader device taxonomy, weaker generic web-interface scoring, service-text evidence, and synthetic behavior validation.
+NetSniper v1.6.0 improves classification intelligence for SIEM ingestion by adding calibrated confidence fields, validator-style evidence checks, contradiction-aware gating, service-text product validation, and validator summaries.
 
 ### Highlights
 
-- Adds v1.5 classification categories for routers, access points, managed switches, NAS/file servers, VoIP devices, UPS/power devices, security appliances, hypervisors, Windows Server, Windows Workstation, Linux Server, development/admin interfaces, IoT/embedded devices, and web application hosts.
-- Treats generic HTTP/HTTPS as weak web-interface evidence instead of automatically labeling a device as a web server.
-- Adds service-text evidence for products such as Synology, Reolink, UniFi, APC, Proxmox, Kibana, Grafana, nginx, Windows Server, and Linux/OpenSSH.
-- Adds synthetic classification fixtures and behavior validation using generated .gnmap input.
-- Adds a v1.5 release gate validator.
+- Adds calibrated confidence fields: `confidence_band`, `calibrated_decision`, `siem_action`, and `calibration_reason`.
+- Adds passive classification validators for confirmed, inconclusive, contradictory, and not-applicable evidence states.
+- Adds contradiction-aware gating with `validation_state`, `contradiction_count`, and `siem_action: "contradiction_review"`.
+- Adds service-text product validators for product/vendor-backed classification evidence.
+- Adds `validator_summary` so downstream SIEM tools can quickly evaluate validation status.
+- Preserves legacy v1.x classification fields for DeltaAegis compatibility.
 
 ### Validation
 
 Run:
 
     ./tools/validate_v1_6_release_gate.sh
-
 
 # NetSniper
 
