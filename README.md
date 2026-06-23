@@ -6,23 +6,23 @@ NetSniper is a Bash-based network discovery and service-enumeration pipeline. It
 
 ## Current Release
 
-Current release: **NetSniper v1.7.0 — Device Intelligence Expansion**
+Current release: **NetSniper v1.8.0 — Headless Full-Inventory Telemetry**
 
-NetSniper v1.7.0 expands the scanner from calibrated scan analysis into a stronger device-intelligence producer. It adds a formal taxonomy, evidence-profile scoring, reusable classification tooling, enriched run artifacts, classification quality reporting, and release-gated validation for device identity confidence.
+NetSniper v1.8.0 makes NetSniper a stronger upstream telemetry producer for DeltaAegis and other
+defensive workflows. It adds headless/non-interactive scan execution for automation and preserves
+the full discovered host inventory inside run bundles, including hosts with no monitored open
+services.
 
-## v1.7.0 Highlights
+## v1.8.0 Highlights
 
-- Formal device taxonomy under `classification/device_taxonomy.json`.
-- Evidence-profile scoring under `classification/evidence_profiles.json`.
-- Reusable v1.7 host classifier.
-- Host normalizer for current and legacy NetSniper analysis shapes.
-- Safe analysis enrichment through `analysis.enriched.json`.
-- Run-level classification quality reports:
-  - `classification_quality.json`
-  - `classification_quality.md`
-- Manifest-addressable v1.7 artifacts for downstream tools.
-- Conservative dashboard/web evidence handling, including Grafana-style dashboard services, without overclassifying them.
-- Full v1.7 release gate validation.
+- Headless scan mode with `--non-interactive`.
+- Required private-CIDR target validation with `--target <private-cidr>`.
+- Optional machine-readable completion status with `--json-status`.
+- Explicit Greenbone behavior in headless mode.
+- Full discovered inventory preservation in `analysis.json`.
+- Bundle manifest counts for discovered hosts, service-scan hosts, and relevant hosts.
+- DeltaAegis-ready telemetry where discovered-but-quiet hosts remain visible instead of disappearing.
+- v1.8 validation coverage for headless CLI behavior and full-inventory bundle preservation.
 
 ## Bundle Artifacts
 

@@ -1,3 +1,30 @@
+## v1.8.0 - 2026-06-23
+
+### Added
+
+- Added headless/non-interactive scan execution with `--non-interactive`.
+- Added required private-CIDR target validation with `--target <private-cidr>`.
+- Added optional `--json-status` output for automation-friendly scan completion status.
+- Added explicit headless Greenbone handling.
+- Added full discovered inventory preservation in bundle `analysis.json`.
+- Added validation for v1.8 headless CLI behavior.
+- Added validation for v1.8 full-inventory bundle preservation.
+
+### Changed
+
+- Finalized `SCANNER_VERSION` as `v1.8.0`.
+- Updated the banner to `NETSNIPER v1.8`.
+- Kept v1.7 device-intelligence enrichment intact while making v1.8 bundles safer for DeltaAegis ingest.
+- Changed scan completion wording from `Scan completes` to `Scan complete`.
+
+### Validation
+
+- Verified v1.8 headless CLI validation.
+- Verified v1.8 full-inventory bundle validation against run `20260623-123007`.
+- Verified 49 discovered hosts were preserved in the bundle.
+- Verified all v1.7 device-intelligence validators still pass.
+
+
 ## v1.7.0 - 2026-06-19
 
 ### Added
