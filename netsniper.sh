@@ -252,9 +252,12 @@ run_headless_pipeline() {
     init_workspace
     check_dirs
 
+    local rc
+
     if run_full_pipeline; then
         if [ -z "$LAST_BUNDLE_DIR" ]; then
-            LAST_BUNDLE_DIR=$(find "$RUN_DIR" -maxdepth 1 -mindepth 1 -type d -printf '%T@ %p\n' 2>/dev/null | sort -nr | awk 'NR == 1 {print $2}')
+            LAST_BUNDLE_DIR=$(find "$RUN_DIR" -maxdepth 1 -mindepth 1 -type d -printf '%T@ %p
+' 2>/dev/null | sort -nr | awk 'NR == 1 {print $2}')
         fi
 
         if [ -z "$LAST_BUNDLE_DIR" ] || [ ! -f "$LAST_BUNDLE_DIR/manifest.json" ]; then
@@ -267,12 +270,12 @@ run_headless_pipeline() {
         echo "[+] Manifest: $LAST_BUNDLE_DIR/manifest.json"
         emit_headless_status "completed" 0 "$LAST_BUNDLE_DIR"
         return 0
+    else
+        rc=$?
+        echo "[-] Headless pipeline failed with return code $rc." >&2
+        emit_headless_status "failed" "$rc" "${LAST_BUNDLE_DIR:-}"
+        return "$rc"
     fi
-
-    local rc=$?
-    echo "[-] Headless pipeline failed with return code $rc." >&2
-    emit_headless_status "failed" "$rc" "${LAST_BUNDLE_DIR:-}"
-    return "$rc"
 }
 
 
@@ -489,6 +492,106 @@ run_scan() {
 
     echo -e "${GREEN}[+] Scan complete${RESET}"
 }
+
+
+ensure_full_inventory_analysis_json() {
+    local json_file="$1"
+    local hosts_file="$TARGET_DIR/hosts.txt"
+    local tmp_file
+
+    if [ ! -s "$json_file" ]; then
+        echo -e "${RED}[-] Analysis JSON is missing; cannot preserve full inventory.${RESET}"
+        return 1
+    fi
+
+    if [ ! -s "$hosts_file" ]; then
+        echo -e "${RED}[-] hosts.txt is missing; cannot preserve full inventory.${RESET}"
+        return 1
+    fi
+
+    tmp_file="${json_file}.full_inventory.tmp"
+
+    jq -n \
+        --slurpfile existing "$json_file" \
+        --rawfile hosts "$hosts_file" \
+        --arg scanner_version "$SCANNER_VERSION" \
+        --arg timestamp "$(date +%Y%m%d-%H%M%S)" '
+        def host_key($item):
+            ($item.host // $item.ip // $item.ip_address // $item.host_id // "");
+
+        def unknown_host($ip):
+            {
+                host: $ip,
+                device_type: "Unknown",
+                device_type_confidence: 0,
+                severity: "INFO",
+                score: 0,
+                scanner_version: $scanner_version,
+                timestamp: $timestamp,
+                classification: {
+                    schema_version: "netsniper-classification-v1",
+                    type: "Unknown / Ambiguous",
+                    primary_type: "Unknown / Ambiguous",
+                    confidence: 0,
+                    confidence_label: "unknown",
+                    confidence_band: "unknown",
+                    calibrated_decision: "unknown",
+                    siem_action: "no_action",
+                    calibration_reason: "Host was discovered alive, but no monitored service evidence was observed during the service scan.",
+                    validation_state: "not_applicable",
+                    contradiction_count: 0,
+                    decision: "unknown",
+                    method: "full_inventory_preservation",
+                    evidence: [],
+                    validators: [],
+                    validator_summary: {
+                        total: 0,
+                        confirmed: 0,
+                        inconclusive: 0,
+                        refuted: 0,
+                        not_applicable: 0,
+                        error: 0,
+                        names: []
+                    },
+                    contradictions: [],
+                    candidates: [],
+                    secondary_candidates: []
+                },
+                findings: []
+            };
+
+        ($existing[0] // []) as $items
+        | ($hosts
+            | split("\n")
+            | map(gsub("^\\s+|\\s+$"; ""))
+            | map(select(length > 0))
+          ) as $all_hosts
+        | ($items | map(host_key(.))) as $seen
+        | ($all_hosts | map(select(. as $ip | ($seen | index($ip) | not)))) as $missing
+        | ($items + ($missing | map(unknown_host(.))))
+        | sort_by(.host // .ip // .ip_address // .host_id)
+        ' /dev/null > "$tmp_file"
+
+    mv "$tmp_file" "$json_file"
+
+    local total_count
+    local missing_added
+    total_count=$(jq 'length' "$json_file")
+    missing_added=$(
+        comm -23 \
+            <(LC_ALL=C sort "$hosts_file") \
+            <(jq -r '.[] | .host // .ip // .ip_address // .host_id // empty' "$json_file" | LC_ALL=C sort) \
+            | wc -l
+    )
+
+    if [ "$missing_added" -ne 0 ]; then
+        echo -e "${RED}[-] Full inventory preservation failed; hosts are still missing from analysis JSON.${RESET}"
+        return 1
+    fi
+
+    echo -e "${GREEN}[+] Full inventory preserved in analysis JSON:${RESET} $total_count hosts"
+}
+
 
 extract_high_risk() {
     echo -e "${YELLOW}[3]${RESET} Extracting TrueAegis-relevant hosts..."
@@ -1971,6 +2074,10 @@ analyze_hosts() {
 
     jq -s '.' "$JSON_FILE.tmp" > "$JSON_FILE"
     rm "$JSON_FILE.tmp"
+
+    if ! ensure_full_inventory_analysis_json "$JSON_FILE"; then
+        return 1
+    fi
 
     echo -e "${GREEN}[+] Analysis complete${RESET}"
     echo -e "${YELLOW}[*] TXT Report:${RESET} $ANALYSIS_FILE"
