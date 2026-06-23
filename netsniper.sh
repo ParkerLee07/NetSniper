@@ -67,7 +67,7 @@ CONFIG_FILE="$CONFIG_DIR/netsniper.conf"
 RUN_DIR="$BASE/runs"
 SOCK="/run/gvmd/gvmd.sock"
 
-SCANNER_VERSION="v1.8.0-dev"
+SCANNER_VERSION="v1.8.0"
 
 # TrueAegis-aligned scan ports.
 # These are the ports NetSniper can reliably identify from nmap grepable output.
@@ -2217,7 +2217,7 @@ load_config
 while true; do
     echo ""
     echo "================================"
-    echo "        NETSNIPER v1.7"
+    echo "        NETSNIPER v1.8"
     echo "================================"
     echo "  1) Discover Hosts"
     echo "  2) TrueAegis-Aligned Scan"
