@@ -67,13 +67,214 @@ CONFIG_FILE="$CONFIG_DIR/netsniper.conf"
 RUN_DIR="$BASE/runs"
 SOCK="/run/gvmd/gvmd.sock"
 
-SCANNER_VERSION="v1.7.0"
+SCANNER_VERSION="v1.8.0-dev"
 
 # TrueAegis-aligned scan ports.
 # These are the ports NetSniper can reliably identify from nmap grepable output.
 TRUEAEGIS_PORTS="21,22,23,25,53,80,88,389,110,139,143,443,445,465,554,587,631,993,995,1433,1521,1900,2375,2376,3000,3306,3389,5000,5432,5555,5601,5900,6379,6443,7547,8000,8080,8081,8443,8888,9000,9090,9100,9200,9300,9443,10250,10255,27017,3268,3269"
 
 HIGH_RISK_PATTERN="21/open|22/open|23/open|25/open|53/open|80/open|88/open|110/open|111/open|135/open|139/open|143/open|161/open|389/open|443/open|445/open|465/open|500/open|554/open|587/open|631/open|993/open|995/open|1433/open|1521/open|1900/open|2049/open|2375/open|2376/open|3000/open|3268/open|3269/open|3306/open|3389/open|4500/open|5000/open|5060/open|5061/open|5432/open|5555/open|5601/open|5900/open|6379/open|6443/open|7547/open|8000/open|8006/open|8080/open|8081/open|8443/open|8888/open|9000/open|9090/open|9100/open|9200/open|9300/open|9443/open|10250/open|10255/open|27017/open"
+
+# =========================
+# HEADLESS CLI CONFIGURATION
+# =========================
+
+HEADLESS_MODE=0
+HEADLESS_TARGET=""
+HEADLESS_GREENBONE="no"
+JSON_STATUS=0
+LAST_BUNDLE_DIR=""
+
+print_usage() {
+    cat <<'EOF'
+NetSniper - Network Recon & Exposure Intelligence Engine
+
+Usage:
+  ./netsniper.sh
+  ./netsniper.sh --non-interactive --target <private-cidr> [--greenbone no] [--json-status]
+  ./netsniper.sh --help
+
+Interactive mode:
+  Launches the normal NetSniper setup prompt and menu.
+
+Headless mode:
+  Runs the full NetSniper pipeline without prompting. This is intended for automation
+  and future DeltaAegis dashboard scan control.
+
+Options:
+  --non-interactive        Run the full pipeline without the interactive menu.
+  --target <CIDR>          Target private IPv4 subnet, such as 192.168.5.0/24.
+  --greenbone yes|no       Optional Greenbone integration setting. Headless v1.8
+                           currently supports no; use the interactive menu for Greenbone.
+  --json-status            Print a final machine-readable status object.
+  -h, --help               Show this help text.
+
+Safety:
+  Headless mode rejects non-private targets by default.
+EOF
+}
+
+validate_private_cidr() {
+    local target="$1"
+
+    command -v python3 >/dev/null 2>&1 || {
+        echo "python3 required for target validation" >&2
+        return 1
+    }
+
+    python3 - "$target" <<'PY'
+import ipaddress
+import sys
+
+target = sys.argv[1]
+
+try:
+    network = ipaddress.ip_network(target, strict=False)
+except ValueError:
+    sys.exit(1)
+
+if network.version != 4:
+    sys.exit(2)
+
+if not network.is_private:
+    sys.exit(3)
+
+if network.prefixlen < 16:
+    sys.exit(4)
+
+sys.exit(0)
+PY
+}
+
+emit_headless_status() {
+    local status="$1"
+    local return_code="$2"
+    local run_dir="${3:-}"
+    local manifest_path=""
+
+    if [ -n "$run_dir" ]; then
+        manifest_path="$run_dir/manifest.json"
+    fi
+
+    if [ "$JSON_STATUS" = "1" ]; then
+        jq -n \
+            --arg status "$status" \
+            --arg target "${NET:-$HEADLESS_TARGET}" \
+            --arg run_dir "$run_dir" \
+            --arg manifest_path "$manifest_path" \
+            --argjson return_code "$return_code" \
+            '{
+                status: $status,
+                target: $target,
+                return_code: $return_code,
+                run_dir: $run_dir,
+                manifest_path: $manifest_path
+            }'
+    fi
+}
+
+parse_cli_args() {
+    while [ "$#" -gt 0 ]; do
+        case "$1" in
+            -h|--help)
+                print_usage
+                exit 0
+                ;;
+            --non-interactive)
+                HEADLESS_MODE=1
+                shift
+                ;;
+            --target)
+                if [ "$#" -lt 2 ]; then
+                    echo "[-] --target requires a CIDR value." >&2
+                    exit 1
+                fi
+                HEADLESS_TARGET="$2"
+                shift 2
+                ;;
+            --greenbone)
+                if [ "$#" -lt 2 ]; then
+                    echo "[-] --greenbone requires yes or no." >&2
+                    exit 1
+                fi
+                case "$2" in
+                    yes|no)
+                        HEADLESS_GREENBONE="$2"
+                        ;;
+                    *)
+                        echo "[-] --greenbone must be yes or no." >&2
+                        exit 1
+                        ;;
+                esac
+                shift 2
+                ;;
+            --json-status)
+                JSON_STATUS=1
+                shift
+                ;;
+            *)
+                echo "[-] Unknown argument: $1" >&2
+                echo "Use --help for usage." >&2
+                exit 1
+                ;;
+        esac
+    done
+
+    if [ "$HEADLESS_MODE" = "1" ]; then
+        if [ -z "$HEADLESS_TARGET" ]; then
+            echo "[-] --non-interactive requires --target <private-cidr>." >&2
+            emit_headless_status "failed" 1 ""
+            exit 1
+        fi
+
+        if ! validate_private_cidr "$HEADLESS_TARGET"; then
+            echo "[-] Invalid or unsafe target. Headless mode requires a private IPv4 CIDR with prefix /16 or smaller scope." >&2
+            emit_headless_status "failed" 1 ""
+            exit 1
+        fi
+
+        if [ "$HEADLESS_GREENBONE" = "yes" ]; then
+            echo "[-] Headless Greenbone launch is not enabled in this v1.8 checkpoint. Use --greenbone no." >&2
+            emit_headless_status "failed" 1 ""
+            exit 1
+        fi
+    fi
+}
+
+run_headless_pipeline() {
+    NET="$HEADLESS_TARGET"
+    GREENBONE_USER=""
+    GREENBONE_PASS=""
+
+    echo "[*] Running NetSniper in headless mode."
+    echo "[*] Target: $NET"
+
+    init_workspace
+    check_dirs
+
+    if run_full_pipeline; then
+        if [ -z "$LAST_BUNDLE_DIR" ]; then
+            LAST_BUNDLE_DIR=$(find "$RUN_DIR" -maxdepth 1 -mindepth 1 -type d -printf '%T@ %p\n' 2>/dev/null | sort -nr | awk 'NR == 1 {print $2}')
+        fi
+
+        if [ -z "$LAST_BUNDLE_DIR" ] || [ ! -f "$LAST_BUNDLE_DIR/manifest.json" ]; then
+            echo "[-] Pipeline completed but manifest.json was not found." >&2
+            emit_headless_status "failed" 4 "${LAST_BUNDLE_DIR:-}"
+            return 4
+        fi
+
+        echo "[+] Headless pipeline completed."
+        echo "[+] Manifest: $LAST_BUNDLE_DIR/manifest.json"
+        emit_headless_status "completed" 0 "$LAST_BUNDLE_DIR"
+        return 0
+    fi
+
+    local rc=$?
+    echo "[-] Headless pipeline failed with return code $rc." >&2
+    emit_headless_status "failed" "$rc" "${LAST_BUNDLE_DIR:-}"
+    return "$rc"
+}
+
 
 # =========================
 # FUNCTIONS
@@ -676,6 +877,7 @@ archive_deltaaegis_bundle() {
         }' > "$manifest_tmp"
 
     mv "$manifest_tmp" "$bundle_dir/manifest.json"
+    LAST_BUNDLE_DIR="$bundle_dir"
     echo -e "${GREEN}[+] DeltaAegis telemetry bundle archived:${RESET}"
     echo "$bundle_dir"
 }
@@ -1889,6 +2091,13 @@ EOF
 # Allows validators to source this file without launching the interactive menu.
 if [ "${NETSNIPER_TEST_MODE:-0}" = "1" ]; then
     return 0 2>/dev/null || exit 0
+fi
+
+parse_cli_args "$@"
+
+if [ "$HEADLESS_MODE" = "1" ]; then
+    run_headless_pipeline
+    exit $?
 fi
 
 boot_screen
