@@ -68,6 +68,9 @@ RUN_DIR="$BASE/runs"
 SOCK="/run/gvmd/gvmd.sock"
 
 SCANNER_VERSION="v1.8.0"
+SCAN_PROFILE="${NETSNIPER_SCAN_PROFILE:-balanced}"
+SCAN_PROFILE_RESOLVED_JSON=""
+SCAN_PROFILE_CONFIG="$BASE/config/scan_profiles.json"
 
 # TrueAegis-aligned scan ports.
 # These are the ports NetSniper can reliably identify from nmap grepable output.
@@ -91,7 +94,7 @@ NetSniper - Network Recon & Exposure Intelligence Engine
 
 Usage:
   ./netsniper.sh
-  ./netsniper.sh --non-interactive --target <private-cidr> [--greenbone no] [--json-status]
+  ./netsniper.sh --non-interactive --target <private-cidr> [--greenbone no] [--json-status] [--profile balanced]
   ./netsniper.sh --help
 
 Interactive mode:
@@ -107,6 +110,8 @@ Options:
   --greenbone yes|no       Optional Greenbone integration setting. Headless v1.8
                            currently supports no; use the interactive menu for Greenbone.
   --json-status            Print a final machine-readable status object.
+  --profile <name>          Optional v1.9 scan profile: quick, balanced, accurate, or deep.
+  --scan-profile <name>     Alias for --profile. Balanced remains the default.
   -h, --help               Show this help text.
 
 Safety:
@@ -208,6 +213,14 @@ parse_cli_args() {
                 esac
                 shift 2
                 ;;
+            --profile|--scan-profile)
+                if [ $# -lt 2 ]; then
+                    echo "[-] --profile requires quick, balanced, accurate, or deep." >&2
+                    exit 2
+                fi
+                SCAN_PROFILE="$2"
+                shift 2
+                ;;
             --json-status)
                 JSON_STATUS=1
                 shift
@@ -225,6 +238,12 @@ parse_cli_args() {
             echo "[-] --non-interactive requires --target <private-cidr>." >&2
             emit_headless_status "failed" 1 ""
             exit 1
+        fi
+
+        if ! SCAN_PROFILE_RESOLVED_JSON="$(python3 "$BASE/tools/resolve_v1_9_scan_profile.py" "$SCAN_PROFILE" --profiles-file "$SCAN_PROFILE_CONFIG" 2>&1)"; then
+            echo "[-] Invalid scan profile: $SCAN_PROFILE" >&2
+            echo "$SCAN_PROFILE_RESOLVED_JSON" >&2
+            exit 2
         fi
 
         if ! validate_private_cidr "$HEADLESS_TARGET"; then
