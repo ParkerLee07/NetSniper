@@ -962,6 +962,9 @@ archive_deltaaegis_bundle() {
         --arg scan_id "$run_id" \
         --arg scanner_version "$SCANNER_VERSION" \
         --arg scan_profile "FAST_MONITORED_TCP" \
+        --arg scan_profile_requested "$SCAN_PROFILE" \
+        --arg scan_profile_effective "$SCAN_PROFILE_EFFECTIVE" \
+        --arg scan_profile_contract_schema "netsniper-scan-profiles-v1" \
         --arg target "$NET" \
         --arg status "COMPLETE" \
         --arg created_at "$archived_at" \
@@ -981,6 +984,9 @@ archive_deltaaegis_bundle() {
             scan_id: $scan_id,
             scanner_version: $scanner_version,
             scan_profile: $scan_profile,
+            scan_profile_requested: $scan_profile_requested,
+            scan_profile_effective: $scan_profile_effective,
+            scan_profile_contract_schema: $scan_profile_contract_schema,
             target: $target,
             status: $status,
             created_at: $created_at,
