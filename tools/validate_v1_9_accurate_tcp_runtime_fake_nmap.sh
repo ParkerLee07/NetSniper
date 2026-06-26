@@ -189,10 +189,11 @@ grep -F -- '-sV -T4 --version-intensity 7 -p' "$command_log" >/dev/null \
         fail "accurate runtime command did not include --version-intensity 7"
     }
 
-if grep -F -- ' -O ' "$command_log" >/dev/null; then
-    cat "$command_log" >&2
-    fail "fake runtime unexpectedly used OS detection"
-fi
+grep -F -- '-O --osscan-limit' "$command_log" >/dev/null \
+    || {
+        cat "$command_log" >&2
+        fail "accurate runtime command did not include non-fatal OS evidence pass"
+    }
 
 if grep -F -- ' -sU ' "$command_log" >/dev/null; then
     cat "$command_log" >&2
@@ -216,8 +217,12 @@ jq -e '
   .scan_profile == "FAST_MONITORED_TCP"
   and .scan_profile_requested == "accurate"
   and .scan_profile_effective == "accurate"
-  and .scan_profile_runtime_stage == "accurate_tcp_service_depth"
+  and .scan_profile_runtime_stage == "accurate_tcp_service_depth_os_evidence"
   and .scan_profile_contract_schema == "netsniper-scan-profiles-v1"
+  and .os_detection_available == true
+  and .files.os_detection_xml == "os_detection.xml"
+  and .files.os_detection_gnmap == "os_detection.gnmap"
+  and .files.os_detection_nmap == "os_detection.nmap"
 ' "$manifest" >/dev/null \
     || {
         jq . "$manifest" >&2

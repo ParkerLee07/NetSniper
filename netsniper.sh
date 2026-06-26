@@ -254,7 +254,7 @@ parse_cli_args() {
                 SCAN_PROFILE_RUNTIME_STAGE="v1_8_compatible_tcp"
                 ;;
             accurate)
-                SCAN_PROFILE_RUNTIME_STAGE="accurate_tcp_service_depth"
+                SCAN_PROFILE_RUNTIME_STAGE="accurate_tcp_service_depth_os_evidence"
                 echo "[!] Accurate profile currently enables TCP service-depth probing only; OS and UDP evidence passes are planned for a later checkpoint." >&2
                 ;;
             deep)
@@ -496,7 +496,10 @@ run_scan() {
     rm -f \
         "$SCAN_DIR/fast_scan.gnmap" \
         "$SCAN_DIR/fast_scan.nmap" \
-        "$SCAN_DIR/fast_scan.xml"
+        "$SCAN_DIR/fast_scan.xml" \
+        "$SCAN_DIR/os_detection.gnmap" \
+        "$SCAN_DIR/os_detection.nmap" \
+        "$SCAN_DIR/os_detection.xml"
 
     echo -e "${PURPLE}[2]${RESET} Running TrueAegis-aligned scan..."
     echo -e "${YELLOW}[*] Ports:${RESET} $TRUEAEGIS_PORTS"
@@ -552,6 +555,31 @@ run_scan() {
     if ! grep -qE '<finished[^>]+exit="success"' "$SCAN_DIR/fast_scan.xml"; then
         echo -e "${RED}[-] Nmap XML did not report a successful completion.${RESET}"
         return 1
+    fi
+
+    if [ "$SCAN_PROFILE_EFFECTIVE" = "accurate" ]; then
+        if [ "$(printf '%s' "$SCAN_PROFILE_PLAN_JSON" | jq -r '.os_detection.enabled')" = "true" ]; then
+            mapfile -t OS_DETECTION_ARGS < <(printf '%s' "$SCAN_PROFILE_PLAN_JSON" | jq -r '.os_detection.args[]')
+
+            if [ "${#OS_DETECTION_ARGS[@]}" -gt 0 ]; then
+                echo "[*] Running non-fatal OS evidence pass for accurate profile..."
+
+                if nmap "${OS_DETECTION_ARGS[@]}" --osscan-limit \
+                    -iL "$TARGET_DIR/hosts.txt" \
+                    -oA "$SCAN_DIR/os_detection" \
+                    > /dev/null 2>&1; then
+
+                    if [ -s "$SCAN_DIR/os_detection.xml" ] \
+                        && grep -qE '<finished[^>]+exit="success"' "$SCAN_DIR/os_detection.xml"; then
+                        echo "[+] OS evidence pass complete"
+                    else
+                        echo "[!] OS evidence pass did not produce successful XML; continuing without OS evidence." >&2
+                    fi
+                else
+                    echo "[!] OS evidence pass failed or requires elevated privileges; continuing without OS evidence." >&2
+                fi
+            fi
+        fi
     fi
 
     echo -e "${GREEN}[+] Scan complete${RESET}"
@@ -904,6 +932,7 @@ archive_deltaaegis_bundle() {
     local archived_at neighbors_captured_at discovered_count relevant_count service_hosts_up
     local profile_ports_json profile_hash nmap_version discovery_interface
     local service_started_epoch service_completed_epoch service_started_at service_completed_at
+    local os_detection_available
 
     if [ ! -s "$DISCOVERY_DIR/live.xml" ]; then
         echo -e "${RED}[-] Discovery XML is missing; refusing to archive telemetry.${RESET}"
@@ -939,6 +968,13 @@ archive_deltaaegis_bundle() {
     cp "$SCAN_DIR/fast_scan.xml" "$bundle_dir/services.xml"
     [ -f "$SCAN_DIR/fast_scan.gnmap" ] && cp "$SCAN_DIR/fast_scan.gnmap" "$bundle_dir/services.gnmap"
     [ -f "$SCAN_DIR/fast_scan.nmap" ] && cp "$SCAN_DIR/fast_scan.nmap" "$bundle_dir/services.nmap"
+    os_detection_available=false
+    if [ -s "$SCAN_DIR/os_detection.xml" ]; then
+        cp "$SCAN_DIR/os_detection.xml" "$bundle_dir/os_detection.xml"
+        [ -f "$SCAN_DIR/os_detection.gnmap" ] && cp "$SCAN_DIR/os_detection.gnmap" "$bundle_dir/os_detection.gnmap"
+        [ -f "$SCAN_DIR/os_detection.nmap" ] && cp "$SCAN_DIR/os_detection.nmap" "$bundle_dir/os_detection.nmap"
+        os_detection_available=true
+    fi
     cp "$analysis_json" "$bundle_dir/analysis.json"
     [ -n "$analysis_txt" ] && [ -f "$analysis_txt" ] && cp "$analysis_txt" "$bundle_dir/analysis.txt"
 
@@ -993,6 +1029,7 @@ archive_deltaaegis_bundle() {
         --arg scan_profile_requested "$SCAN_PROFILE" \
         --arg scan_profile_effective "$SCAN_PROFILE_EFFECTIVE" \
         --arg scan_profile_runtime_stage "$SCAN_PROFILE_RUNTIME_STAGE" \
+        --argjson os_detection_available "$os_detection_available" \
         --arg scan_profile_contract_schema "netsniper-scan-profiles-v1" \
         --arg target "$NET" \
         --arg status "COMPLETE" \
@@ -1016,6 +1053,7 @@ archive_deltaaegis_bundle() {
             scan_profile_requested: $scan_profile_requested,
             scan_profile_effective: $scan_profile_effective,
             scan_profile_runtime_stage: $scan_profile_runtime_stage,
+            os_detection_available: $os_detection_available,
             scan_profile_contract_schema: $scan_profile_contract_schema,
             target: $target,
             status: $status,
@@ -1043,6 +1081,9 @@ archive_deltaaegis_bundle() {
             files: {
                 discovery_xml: "discovery.xml",
                 services_xml: "services.xml",
+                os_detection_xml: (if $os_detection_available then "os_detection.xml" else null end),
+                os_detection_gnmap: (if $os_detection_available then "os_detection.gnmap" else null end),
+                os_detection_nmap: (if $os_detection_available then "os_detection.nmap" else null end),
                 analysis_json: "analysis.json",
                 analysis_enriched_json: "analysis.enriched.json",
                 classification_quality_json: "classification_quality.json",

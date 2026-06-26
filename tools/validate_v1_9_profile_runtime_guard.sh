@@ -27,17 +27,23 @@ grep -Fq 'quick|balanced)' netsniper.sh \
     || fail "runtime guard does not allow quick/balanced"
 
 grep -Fq 'accurate)' netsniper.sh \
-    || fail "runtime guard does not allow accurate TCP stage"
+    || fail "runtime guard does not allow accurate"
 
-grep -Fq 'accurate_tcp_service_depth' netsniper.sh \
-    || fail "accurate TCP runtime stage marker missing"
+grep -Fq 'accurate_tcp_service_depth_os_evidence' netsniper.sh \
+    || fail "accurate OS evidence runtime stage marker missing"
 
 grep -Fq 'deep)' netsniper.sh \
     || fail "runtime guard does not explicitly block deep"
 
 if grep -Fq 'accurate|deep)' netsniper.sh; then
-    fail "accurate should no longer be blocked with deep"
+    fail "accurate should not be blocked with deep"
 fi
+
+grep -Fq 'Running non-fatal OS evidence pass for accurate profile' netsniper.sh \
+    || fail "accurate OS evidence runtime pass is missing"
+
+grep -Fq -- '--osscan-limit' netsniper.sh \
+    || fail "OS evidence pass should use --osscan-limit"
 
 python3 tools/plan_v1_9_scan_command.py accurate >/tmp/netsniper-accurate-plan.json
 
@@ -45,9 +51,11 @@ jq -e '
   .profile == "accurate"
   and (.tcp.args == ["-sV", "-T4", "--version-intensity", "7", "-p", "$TRUEAEGIS_PORTS"])
   and .os_detection.enabled == true
+  and .os_detection.evidence_only == true
+  and (.os_detection.args == ["-O"])
   and .udp_lite.enabled == true
 ' /tmp/netsniper-accurate-plan.json >/dev/null \
-    || fail "accurate planner no longer contains expected TCP service-depth plan"
+    || fail "accurate planner no longer contains expected TCP plus OS evidence plan"
 
 if ./netsniper.sh \
     --non-interactive \
@@ -63,11 +71,6 @@ fi
 grep -Fq "Scan profile 'deep' is planned but runtime execution is not enabled" \
     /tmp/netsniper-deep-guard.out \
     || fail "deep guard message missing"
-
-# OS detection and UDP-lite should still not be wired into netsniper.sh runtime.
-if grep -Fq -- ' -O ' netsniper.sh; then
-    fail "OS detection should not be added to runtime scan behavior in this stage"
-fi
 
 if grep -Fq -- ' -sU ' netsniper.sh; then
     fail "UDP-lite should not be added to runtime scan behavior in this stage"

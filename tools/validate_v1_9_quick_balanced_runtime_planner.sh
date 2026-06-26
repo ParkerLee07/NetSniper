@@ -66,11 +66,7 @@ jq -e '
 ' /tmp/netsniper-runtime-plan-accurate.json >/dev/null \
     || fail "accurate TCP service-depth plan is incorrect"
 
-# OS detection and UDP-lite should still not be wired into netsniper.sh runtime.
-if grep -Fq -- ' -O ' netsniper.sh; then
-    fail "runtime netsniper.sh should not use OS detection yet"
-fi
-
+# OS evidence is now wired for accurate only; UDP-lite should still not be wired.
 if grep -Fq -- ' -sU ' netsniper.sh; then
     fail "runtime netsniper.sh should not use UDP-lite yet"
 fi

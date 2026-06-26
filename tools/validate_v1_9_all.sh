@@ -22,5 +22,6 @@ bash -n netsniper.sh || fail "netsniper.sh has shell syntax errors"
 ./tools/validate_v1_9_manifest_profile_metadata.sh
 ./tools/validate_v1_9_quick_balanced_runtime_planner.sh
 ./tools/validate_v1_9_accurate_tcp_runtime_fake_nmap.sh
+./tools/validate_v1_9_accurate_os_evidence_fake_nmap.sh
 
 pass "All NetSniper v1.9 fast validators passed"
