@@ -167,10 +167,10 @@ run_profile() {
             fail "$profile fake-nmap headless run failed"
         }
 
-    grep -Fq '"status": "complete"' "$output_file" \
+    grep -Eq '"status"[[:space:]]*:[[:space:]]*"completed"' "$output_file" \
         || {
             cat "$output_file" >&2
-            fail "$profile run did not emit complete json-status"
+            fail "$profile run did not emit completed json-status"
         }
 }
 
