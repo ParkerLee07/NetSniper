@@ -4,9 +4,11 @@
 
 - Added v1.9 scan profiles with `quick`, `balanced`, `accurate`, and planned/manual `deep`.
 - Added `--profile` and `--scan-profile` CLI options.
+- Added interactive setup and menu selection for scan profiles.
 - Added `config/scan_profiles.json` as the profile contract.
 - Added profile-aware scan command planning through `tools/plan_v1_9_scan_command.py`.
 - Added scan profile resolution through `tools/resolve_v1_9_scan_profile.py`.
+- Added saved-config persistence for the selected scan profile.
 - Added accurate TCP service-depth probing with Nmap `--version-intensity 7`.
 - Added non-fatal OS evidence collection for the `accurate` profile.
 - Added non-fatal UDP-lite evidence collection for selected UDP discovery/service ports.

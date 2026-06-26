@@ -17,6 +17,7 @@ bash -n netsniper.sh || fail "netsniper.sh has shell syntax errors"
 
 ./tools/validate_v1_9_scan_profile_contract.sh
 ./tools/validate_v1_9_profile_cli_parsing.sh
+./tools/validate_v1_9_interactive_profile_config.sh
 ./tools/validate_v1_9_scan_command_planner.sh
 ./tools/validate_v1_9_profile_runtime_guard.sh
 ./tools/validate_v1_9_manifest_profile_metadata.sh

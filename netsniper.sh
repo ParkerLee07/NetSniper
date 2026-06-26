@@ -121,6 +121,37 @@ Safety:
 EOF
 }
 
+resolve_selected_scan_profile() {
+    local resolved_profile_json
+
+    if ! resolved_profile_json="$(python3 "$BASE/tools/resolve_v1_9_scan_profile.py" "$SCAN_PROFILE" --profiles-file "$SCAN_PROFILE_CONFIG" 2>&1)"; then
+        echo "[-] Invalid scan profile: $SCAN_PROFILE" >&2
+        echo "$resolved_profile_json" >&2
+        return 1
+    fi
+
+    SCAN_PROFILE_RESOLVED_JSON="$resolved_profile_json"
+    SCAN_PROFILE_EFFECTIVE="$(printf '%s' "$SCAN_PROFILE_RESOLVED_JSON" | jq -r '.name')"
+
+    case "$SCAN_PROFILE_EFFECTIVE" in
+        quick|balanced)
+            SCAN_PROFILE_RUNTIME_STAGE="v1_8_compatible_tcp"
+            ;;
+        accurate)
+            SCAN_PROFILE_RUNTIME_STAGE="accurate_tcp_service_depth_os_udp_lite"
+            ;;
+        deep)
+            echo "[-] Scan profile 'deep' is planned but runtime execution is not enabled in this v1.9 release." >&2
+            echo "[-] Use quick, balanced, or accurate." >&2
+            return 1
+            ;;
+        *)
+            echo "[-] Unexpected resolved scan profile: $SCAN_PROFILE_EFFECTIVE" >&2
+            return 1
+            ;;
+    esac
+}
+
 validate_private_cidr() {
     local target="$1"
 
@@ -490,6 +521,10 @@ run_scan() {
         return 1
     fi
 
+    if ! resolve_selected_scan_profile; then
+        return 1
+    fi
+
     mkdir -p "$SCAN_DIR"
 
     # Remove previous outputs first so a failed scan cannot reuse stale evidence.
@@ -844,6 +879,7 @@ load_saved_config() {
     local net_b64
     local user_b64
     local pass_b64
+    local profile_b64
 
     format=$(read_config_value "CONFIG_FORMAT")
     if [ "$format" != "NETSNIPER_CONFIG_V2" ]; then
@@ -853,6 +889,7 @@ load_saved_config() {
     net_b64=$(read_config_value "NET_B64")
     user_b64=$(read_config_value "GREENBONE_USER_B64")
     pass_b64=$(read_config_value "GREENBONE_PASS_B64")
+    profile_b64=$(read_config_value "SCAN_PROFILE_B64")
 
     if [ -z "$net_b64" ]; then
         return 1
@@ -861,12 +898,67 @@ load_saved_config() {
     NET=$(b64_decode "$net_b64") || return 1
     GREENBONE_USER=$(b64_decode "$user_b64") || return 1
     GREENBONE_PASS=$(b64_decode "$pass_b64") || return 1
+
+    if [ -n "$profile_b64" ]; then
+        SCAN_PROFILE=$(b64_decode "$profile_b64") || SCAN_PROFILE="${NETSNIPER_SCAN_PROFILE:-balanced}"
+    else
+        SCAN_PROFILE="${NETSNIPER_SCAN_PROFILE:-balanced}"
+    fi
+
+    resolve_selected_scan_profile || return 1
+}
+
+configure_scan_profile() {
+    local choice
+    local selected
+
+    echo "[*] Select NetSniper scan profile:"
+    echo "  1) quick    - TCP-only, fastest profile"
+    echo "  2) balanced - default v1.8-compatible TCP profile"
+    echo "  3) accurate - deeper TCP plus non-fatal OS and UDP-lite evidence"
+    echo "  4) keep current (${SCAN_PROFILE:-balanced})"
+
+    read -r -p "Scan profile [balanced]: " choice
+    choice="$(printf '%s' "$choice" | tr '[:upper:]' '[:lower:]')"
+
+    case "$choice" in
+        ""|2|balanced|b)
+            selected="balanced"
+            ;;
+        1|quick|q)
+            selected="quick"
+            ;;
+        3|accurate|a)
+            selected="accurate"
+            ;;
+        4|current|keep)
+            selected="${SCAN_PROFILE:-balanced}"
+            ;;
+        deep|d)
+            echo "[-] Deep profile is planned but not runtime-enabled in this release."
+            echo "[-] Choose quick, balanced, or accurate."
+            return 1
+            ;;
+        *)
+            echo "[-] Invalid scan profile selection: $choice"
+            return 1
+            ;;
+    esac
+
+    SCAN_PROFILE="$selected"
+
+    if ! resolve_selected_scan_profile; then
+        return 1
+    fi
+
+    echo "[+] Scan profile set to: $SCAN_PROFILE_EFFECTIVE"
 }
 
 save_config() {
     local net_b64
     local user_b64
     local pass_b64
+    local profile_b64
 
     mkdir -p "$CONFIG_DIR"
     umask 077
@@ -874,12 +966,14 @@ save_config() {
     net_b64=$(b64_encode "$NET")
     user_b64=$(b64_encode "$GREENBONE_USER")
     pass_b64=$(b64_encode "$GREENBONE_PASS")
+    profile_b64=$(b64_encode "$SCAN_PROFILE")
 
     cat > "$CONFIG_FILE" <<EOF
 CONFIG_FORMAT=NETSNIPER_CONFIG_V2
 NET_B64=$net_b64
 GREENBONE_USER_B64=$user_b64
 GREENBONE_PASS_B64=$pass_b64
+SCAN_PROFILE_B64=$profile_b64
 EOF
 
     chmod 600 "$CONFIG_FILE"
@@ -914,6 +1008,10 @@ load_config() {
 
     if [ -z "$NET" ]; then
         echo "[-] Target network cannot be empty."
+        return 1
+    fi
+
+    if ! configure_scan_profile; then
         return 1
     fi
 
@@ -2371,6 +2469,7 @@ while true; do
     echo ""
     echo "================================"
     echo "        NETSNIPER v1.9"
+    echo "        Profile: $SCAN_PROFILE_EFFECTIVE"
     echo "================================"
     echo "  1) Discover Hosts"
     echo "  2) TrueAegis-Aligned Scan"
@@ -2380,6 +2479,7 @@ while true; do
     echo "  6) Show TrueAegis-Relevant Targets"
     echo "  7) Generate Report"
     echo "  8) Analyze Hosts"
+    echo "  9) Change Scan Profile"
     echo "  0) Exit"
     echo "================================"
 
@@ -2394,6 +2494,7 @@ while true; do
         6) show_targets ;;
         7) generate_report ;;
         8) analyze_hosts ;;
+        9) configure_scan_profile && save_config ;;
         0) echo "Goodbye"; exit 0 ;;
         *) echo "Invalid option" ;;
     esac

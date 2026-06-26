@@ -46,11 +46,20 @@ grep -q 'udp_lite.xml' README.md \
 grep -q 'accurate_tcp_service_depth_os_udp_lite' netsniper.sh \
     || fail "accurate runtime stage marker missing"
 
+grep -q 'Change Scan Profile' netsniper.sh \
+    || fail "interactive menu does not expose profile selection"
+
+grep -q 'SCAN_PROFILE_B64=' netsniper.sh \
+    || fail "saved config does not persist scan profile"
+
 [ -x tools/validate_v1_9_all.sh ] \
     || fail "Missing executable v1.9 all validator"
 
 [ -x tools/validate_v1_9_accurate_udp_lite_fake_nmap.sh ] \
     || fail "Missing executable v1.9 UDP-lite fake-Nmap validator"
+
+[ -x tools/validate_v1_9_interactive_profile_config.sh ] \
+    || fail "Missing executable v1.9 interactive profile config validator"
 
 ./tools/validate_v1_9_all.sh
 ./tools/validate_v1_8_headless_cli.sh

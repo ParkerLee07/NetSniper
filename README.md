@@ -19,6 +19,7 @@ DeltaAegis.
 - Added scan profiles: `quick`, `balanced`, `accurate`, and planned/manual `deep`.
 - Kept `balanced` as the default v1.8-compatible TCP profile.
 - Added `--profile` and `--scan-profile` CLI options for headless profile selection.
+- Added interactive setup/menu scan-profile selection.
 - Added profile-aware scan command planning from `config/scan_profiles.json`.
 - Added accurate TCP service-depth probing with `--version-intensity 7`.
 - Added non-fatal OS evidence capture for the `accurate` profile.
@@ -81,6 +82,7 @@ The v1.9 release gate checks:
 - Archived discovery XML and neighbor-table telemetry for MAC-backed identity correlation.
 - v1.7 enriched classification and quality-report artifacts.
 - v1.9 profile-aware scan planning with conservative accuracy-focused evidence passes.
+- Interactive mode shows the active scan profile and can save profile changes to the local config.
 
 ## Requirements
 
