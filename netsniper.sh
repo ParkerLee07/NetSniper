@@ -70,6 +70,7 @@ SOCK="/run/gvmd/gvmd.sock"
 SCANNER_VERSION="v1.8.0"
 SCAN_PROFILE="${NETSNIPER_SCAN_PROFILE:-balanced}"
 SCAN_PROFILE_RESOLVED_JSON=""
+SCAN_PROFILE_EFFECTIVE="balanced"
 SCAN_PROFILE_CONFIG="$BASE/config/scan_profiles.json"
 
 # TrueAegis-aligned scan ports.
@@ -245,6 +246,22 @@ parse_cli_args() {
             echo "$SCAN_PROFILE_RESOLVED_JSON" >&2
             exit 2
         fi
+
+        SCAN_PROFILE_EFFECTIVE="$(printf '%s' "$SCAN_PROFILE_RESOLVED_JSON" | jq -r '.name')"
+        case "$SCAN_PROFILE_EFFECTIVE" in
+            quick|balanced)
+                ;;
+            accurate|deep)
+                echo "[-] Scan profile '$SCAN_PROFILE_EFFECTIVE' is planned but runtime execution is not enabled in this v1.9 checkpoint." >&2
+                echo "[-] Use --profile balanced until the profile-specific scan command wiring is validated." >&2
+                exit 2
+                ;;
+            *)
+                echo "[-] Unexpected resolved scan profile: $SCAN_PROFILE_EFFECTIVE" >&2
+                exit 2
+                ;;
+        esac
+
 
         if ! validate_private_cidr "$HEADLESS_TARGET"; then
             echo "[-] Invalid or unsafe target. Headless mode requires a private IPv4 CIDR with prefix /16 or smaller scope." >&2
