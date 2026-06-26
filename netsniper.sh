@@ -521,7 +521,7 @@ run_scan() {
         fi
     done
 
-    echo -e "${CYAN}[*] Using scan profile: $SCAN_PROFILE_EFFECTIVE${RESET}"
+    echo "[*] Using scan profile: $SCAN_PROFILE_EFFECTIVE"
 
     nmap "${TCP_SCAN_ARGS[@]}" \
         -iL "$TARGET_DIR/hosts.txt" \
