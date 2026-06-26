@@ -42,6 +42,9 @@ fi
 grep -Fq 'Running non-fatal OS evidence pass for accurate profile' netsniper.sh \
     || fail "accurate OS evidence runtime pass is missing"
 
+grep -Fq 'Accurate profile enables TCP service-depth plus non-fatal OS evidence; UDP-lite is planned for a later checkpoint.' netsniper.sh \
+    || fail "accurate runtime message is stale or missing"
+
 grep -Fq -- '--osscan-limit' netsniper.sh \
     || fail "OS evidence pass should use --osscan-limit"
 

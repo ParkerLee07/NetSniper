@@ -255,7 +255,7 @@ parse_cli_args() {
                 ;;
             accurate)
                 SCAN_PROFILE_RUNTIME_STAGE="accurate_tcp_service_depth_os_evidence"
-                echo "[!] Accurate profile currently enables TCP service-depth probing only; OS and UDP evidence passes are planned for a later checkpoint." >&2
+                echo "[!] Accurate profile enables TCP service-depth plus non-fatal OS evidence; UDP-lite is planned for a later checkpoint." >&2
                 ;;
             deep)
                 echo "[-] Scan profile 'deep' is planned but runtime execution is not enabled in this v1.9 checkpoint." >&2
