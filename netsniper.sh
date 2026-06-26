@@ -254,8 +254,8 @@ parse_cli_args() {
                 SCAN_PROFILE_RUNTIME_STAGE="v1_8_compatible_tcp"
                 ;;
             accurate)
-                SCAN_PROFILE_RUNTIME_STAGE="accurate_tcp_service_depth_os_evidence"
-                echo "[!] Accurate profile enables TCP service-depth plus non-fatal OS evidence; UDP-lite is planned for a later checkpoint." >&2
+                SCAN_PROFILE_RUNTIME_STAGE="accurate_tcp_service_depth_os_udp_lite"
+                echo "[!] Accurate profile enables TCP service-depth plus non-fatal OS and UDP-lite evidence." >&2
                 ;;
             deep)
                 echo "[-] Scan profile 'deep' is planned but runtime execution is not enabled in this v1.9 checkpoint." >&2
@@ -499,7 +499,10 @@ run_scan() {
         "$SCAN_DIR/fast_scan.xml" \
         "$SCAN_DIR/os_detection.gnmap" \
         "$SCAN_DIR/os_detection.nmap" \
-        "$SCAN_DIR/os_detection.xml"
+        "$SCAN_DIR/os_detection.xml" \
+        "$SCAN_DIR/udp_lite.gnmap" \
+        "$SCAN_DIR/udp_lite.nmap" \
+        "$SCAN_DIR/udp_lite.xml"
 
     echo -e "${PURPLE}[2]${RESET} Running TrueAegis-aligned scan..."
     echo -e "${YELLOW}[*] Ports:${RESET} $TRUEAEGIS_PORTS"
@@ -577,6 +580,31 @@ run_scan() {
                     fi
                 else
                     echo "[!] OS evidence pass failed or requires elevated privileges; continuing without OS evidence." >&2
+                fi
+            fi
+        fi
+    fi
+
+    if [ "$SCAN_PROFILE_EFFECTIVE" = "accurate" ]; then
+        if [ "$(printf '%s' "$SCAN_PROFILE_PLAN_JSON" | jq -r '.udp_lite.enabled')" = "true" ]; then
+            mapfile -t UDP_LITE_ARGS < <(printf '%s' "$SCAN_PROFILE_PLAN_JSON" | jq -r '.udp_lite.args[]')
+
+            if [ "${#UDP_LITE_ARGS[@]}" -gt 0 ]; then
+                echo "[*] Running non-fatal UDP-lite evidence pass for accurate profile..."
+
+                if nmap "${UDP_LITE_ARGS[@]}" \
+                    -iL "$TARGET_DIR/hosts.txt" \
+                    -oA "$SCAN_DIR/udp_lite" \
+                    > /dev/null 2>&1; then
+
+                    if [ -s "$SCAN_DIR/udp_lite.xml" ] \
+                        && grep -qE '<finished[^>]+exit="success"' "$SCAN_DIR/udp_lite.xml"; then
+                        echo "[+] UDP-lite evidence pass complete"
+                    else
+                        echo "[!] UDP-lite evidence pass did not produce successful XML; continuing without UDP-lite evidence." >&2
+                    fi
+                else
+                    echo "[!] UDP-lite evidence pass failed or requires elevated privileges; continuing without UDP-lite evidence." >&2
                 fi
             fi
         fi
@@ -932,7 +960,7 @@ archive_deltaaegis_bundle() {
     local archived_at neighbors_captured_at discovered_count relevant_count service_hosts_up
     local profile_ports_json profile_hash nmap_version discovery_interface
     local service_started_epoch service_completed_epoch service_started_at service_completed_at
-    local os_detection_available
+    local os_detection_available udp_lite_available
 
     if [ ! -s "$DISCOVERY_DIR/live.xml" ]; then
         echo -e "${RED}[-] Discovery XML is missing; refusing to archive telemetry.${RESET}"
@@ -974,6 +1002,13 @@ archive_deltaaegis_bundle() {
         [ -f "$SCAN_DIR/os_detection.gnmap" ] && cp "$SCAN_DIR/os_detection.gnmap" "$bundle_dir/os_detection.gnmap"
         [ -f "$SCAN_DIR/os_detection.nmap" ] && cp "$SCAN_DIR/os_detection.nmap" "$bundle_dir/os_detection.nmap"
         os_detection_available=true
+    fi
+    udp_lite_available=false
+    if [ -s "$SCAN_DIR/udp_lite.xml" ]; then
+        cp "$SCAN_DIR/udp_lite.xml" "$bundle_dir/udp_lite.xml"
+        [ -f "$SCAN_DIR/udp_lite.gnmap" ] && cp "$SCAN_DIR/udp_lite.gnmap" "$bundle_dir/udp_lite.gnmap"
+        [ -f "$SCAN_DIR/udp_lite.nmap" ] && cp "$SCAN_DIR/udp_lite.nmap" "$bundle_dir/udp_lite.nmap"
+        udp_lite_available=true
     fi
     cp "$analysis_json" "$bundle_dir/analysis.json"
     [ -n "$analysis_txt" ] && [ -f "$analysis_txt" ] && cp "$analysis_txt" "$bundle_dir/analysis.txt"
@@ -1030,6 +1065,7 @@ archive_deltaaegis_bundle() {
         --arg scan_profile_effective "$SCAN_PROFILE_EFFECTIVE" \
         --arg scan_profile_runtime_stage "$SCAN_PROFILE_RUNTIME_STAGE" \
         --argjson os_detection_available "$os_detection_available" \
+        --argjson udp_lite_available "$udp_lite_available" \
         --arg scan_profile_contract_schema "netsniper-scan-profiles-v1" \
         --arg target "$NET" \
         --arg status "COMPLETE" \
@@ -1054,6 +1090,7 @@ archive_deltaaegis_bundle() {
             scan_profile_effective: $scan_profile_effective,
             scan_profile_runtime_stage: $scan_profile_runtime_stage,
             os_detection_available: $os_detection_available,
+            udp_lite_available: $udp_lite_available,
             scan_profile_contract_schema: $scan_profile_contract_schema,
             target: $target,
             status: $status,
@@ -1084,6 +1121,9 @@ archive_deltaaegis_bundle() {
                 os_detection_xml: (if $os_detection_available then "os_detection.xml" else null end),
                 os_detection_gnmap: (if $os_detection_available then "os_detection.gnmap" else null end),
                 os_detection_nmap: (if $os_detection_available then "os_detection.nmap" else null end),
+                udp_lite_xml: (if $udp_lite_available then "udp_lite.xml" else null end),
+                udp_lite_gnmap: (if $udp_lite_available then "udp_lite.gnmap" else null end),
+                udp_lite_nmap: (if $udp_lite_available then "udp_lite.nmap" else null end),
                 analysis_json: "analysis.json",
                 analysis_enriched_json: "analysis.enriched.json",
                 classification_quality_json: "classification_quality.json",

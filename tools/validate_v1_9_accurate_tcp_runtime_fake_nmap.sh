@@ -195,10 +195,11 @@ grep -F -- '-O --osscan-limit' "$command_log" >/dev/null \
         fail "accurate runtime command did not include non-fatal OS evidence pass"
     }
 
-if grep -F -- ' -sU ' "$command_log" >/dev/null; then
-    cat "$command_log" >&2
-    fail "fake runtime unexpectedly used UDP-lite"
-fi
+grep -F -- '-sU -p' "$command_log" >/dev/null \
+    || {
+        cat "$command_log" >&2
+        fail "accurate runtime command did not include non-fatal UDP-lite evidence pass"
+    }
 
 latest_run="$(
     find runs -mindepth 1 -maxdepth 1 -type d -newermt "@$before_marker" -printf '%T@ %p\n' \
@@ -217,12 +218,16 @@ jq -e '
   .scan_profile == "FAST_MONITORED_TCP"
   and .scan_profile_requested == "accurate"
   and .scan_profile_effective == "accurate"
-  and .scan_profile_runtime_stage == "accurate_tcp_service_depth_os_evidence"
+  and .scan_profile_runtime_stage == "accurate_tcp_service_depth_os_udp_lite"
   and .scan_profile_contract_schema == "netsniper-scan-profiles-v1"
   and .os_detection_available == true
   and .files.os_detection_xml == "os_detection.xml"
   and .files.os_detection_gnmap == "os_detection.gnmap"
   and .files.os_detection_nmap == "os_detection.nmap"
+  and .udp_lite_available == true
+  and .files.udp_lite_xml == "udp_lite.xml"
+  and .files.udp_lite_gnmap == "udp_lite.gnmap"
+  and .files.udp_lite_nmap == "udp_lite.nmap"
 ' "$manifest" >/dev/null \
     || {
         jq . "$manifest" >&2

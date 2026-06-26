@@ -29,8 +29,8 @@ grep -Fq 'quick|balanced)' netsniper.sh \
 grep -Fq 'accurate)' netsniper.sh \
     || fail "runtime guard does not allow accurate"
 
-grep -Fq 'accurate_tcp_service_depth_os_evidence' netsniper.sh \
-    || fail "accurate OS evidence runtime stage marker missing"
+grep -Fq 'accurate_tcp_service_depth_os_udp_lite' netsniper.sh \
+    || fail "accurate OS/UDP-lite runtime stage marker missing"
 
 grep -Fq 'deep)' netsniper.sh \
     || fail "runtime guard does not explicitly block deep"
@@ -42,7 +42,10 @@ fi
 grep -Fq 'Running non-fatal OS evidence pass for accurate profile' netsniper.sh \
     || fail "accurate OS evidence runtime pass is missing"
 
-grep -Fq 'Accurate profile enables TCP service-depth plus non-fatal OS evidence; UDP-lite is planned for a later checkpoint.' netsniper.sh \
+grep -Fq 'Running non-fatal UDP-lite evidence pass for accurate profile' netsniper.sh \
+    || fail "accurate UDP-lite evidence runtime pass is missing"
+
+grep -Fq 'Accurate profile enables TCP service-depth plus non-fatal OS and UDP-lite evidence.' netsniper.sh \
     || fail "accurate runtime message is stale or missing"
 
 grep -Fq -- '--osscan-limit' netsniper.sh \
@@ -57,8 +60,9 @@ jq -e '
   and .os_detection.evidence_only == true
   and (.os_detection.args == ["-O"])
   and .udp_lite.enabled == true
+  and (.udp_lite.args == ["-sU", "-p", "53,67,68,123,137,161,1900,5353,5355"])
 ' /tmp/netsniper-accurate-plan.json >/dev/null \
-    || fail "accurate planner no longer contains expected TCP plus OS evidence plan"
+    || fail "accurate planner no longer contains expected TCP, OS, and UDP-lite evidence plan"
 
 if ./netsniper.sh \
     --non-interactive \
@@ -74,9 +78,5 @@ fi
 grep -Fq "Scan profile 'deep' is planned but runtime execution is not enabled" \
     /tmp/netsniper-deep-guard.out \
     || fail "deep guard message missing"
-
-if grep -Fq -- ' -sU ' netsniper.sh; then
-    fail "UDP-lite should not be added to runtime scan behavior in this stage"
-fi
 
 pass "NetSniper v1.9 profile runtime guard validation passed"
