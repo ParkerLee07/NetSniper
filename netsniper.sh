@@ -67,7 +67,12 @@ CONFIG_FILE="$CONFIG_DIR/netsniper.conf"
 RUN_DIR="$BASE/runs"
 SOCK="/run/gvmd/gvmd.sock"
 
-SCANNER_VERSION="v1.8.0"
+SCANNER_VERSION="v1.9.0"
+SCAN_PROFILE="${NETSNIPER_SCAN_PROFILE:-balanced}"
+SCAN_PROFILE_RESOLVED_JSON=""
+SCAN_PROFILE_EFFECTIVE="balanced"
+SCAN_PROFILE_RUNTIME_STAGE="v1_8_compatible_tcp"
+SCAN_PROFILE_CONFIG="$BASE/config/scan_profiles.json"
 
 # TrueAegis-aligned scan ports.
 # These are the ports NetSniper can reliably identify from nmap grepable output.
@@ -91,7 +96,7 @@ NetSniper - Network Recon & Exposure Intelligence Engine
 
 Usage:
   ./netsniper.sh
-  ./netsniper.sh --non-interactive --target <private-cidr> [--greenbone no] [--json-status]
+  ./netsniper.sh --non-interactive --target <private-cidr> [--greenbone no] [--json-status] [--profile balanced]
   ./netsniper.sh --help
 
 Interactive mode:
@@ -104,14 +109,47 @@ Headless mode:
 Options:
   --non-interactive        Run the full pipeline without the interactive menu.
   --target <CIDR>          Target private IPv4 subnet, such as 192.168.5.0/24.
-  --greenbone yes|no       Optional Greenbone integration setting. Headless v1.8
+  --greenbone yes|no       Optional Greenbone integration setting. Headless mode
                            currently supports no; use the interactive menu for Greenbone.
   --json-status            Print a final machine-readable status object.
+  --profile <name>          Optional v1.9 scan profile: quick, balanced, accurate, or deep.
+  --scan-profile <name>     Alias for --profile. Balanced remains the default.
   -h, --help               Show this help text.
 
 Safety:
   Headless mode rejects non-private targets by default.
 EOF
+}
+
+resolve_selected_scan_profile() {
+    local resolved_profile_json
+
+    if ! resolved_profile_json="$(python3 "$BASE/tools/resolve_v1_9_scan_profile.py" "$SCAN_PROFILE" --profiles-file "$SCAN_PROFILE_CONFIG" 2>&1)"; then
+        echo "[-] Invalid scan profile: $SCAN_PROFILE" >&2
+        echo "$resolved_profile_json" >&2
+        return 1
+    fi
+
+    SCAN_PROFILE_RESOLVED_JSON="$resolved_profile_json"
+    SCAN_PROFILE_EFFECTIVE="$(printf '%s' "$SCAN_PROFILE_RESOLVED_JSON" | jq -r '.name')"
+
+    case "$SCAN_PROFILE_EFFECTIVE" in
+        quick|balanced)
+            SCAN_PROFILE_RUNTIME_STAGE="v1_8_compatible_tcp"
+            ;;
+        accurate)
+            SCAN_PROFILE_RUNTIME_STAGE="accurate_tcp_service_depth_os_udp_lite"
+            ;;
+        deep)
+            echo "[-] Scan profile 'deep' is planned but runtime execution is not enabled in this v1.9 release." >&2
+            echo "[-] Use quick, balanced, or accurate." >&2
+            return 1
+            ;;
+        *)
+            echo "[-] Unexpected resolved scan profile: $SCAN_PROFILE_EFFECTIVE" >&2
+            return 1
+            ;;
+    esac
 }
 
 validate_private_cidr() {
@@ -208,6 +246,14 @@ parse_cli_args() {
                 esac
                 shift 2
                 ;;
+            --profile|--scan-profile)
+                if [ $# -lt 2 ]; then
+                    echo "[-] --profile requires quick, balanced, accurate, or deep." >&2
+                    exit 2
+                fi
+                SCAN_PROFILE="$2"
+                shift 2
+                ;;
             --json-status)
                 JSON_STATUS=1
                 shift
@@ -226,6 +272,33 @@ parse_cli_args() {
             emit_headless_status "failed" 1 ""
             exit 1
         fi
+
+        if ! SCAN_PROFILE_RESOLVED_JSON="$(python3 "$BASE/tools/resolve_v1_9_scan_profile.py" "$SCAN_PROFILE" --profiles-file "$SCAN_PROFILE_CONFIG" 2>&1)"; then
+            echo "[-] Invalid scan profile: $SCAN_PROFILE" >&2
+            echo "$SCAN_PROFILE_RESOLVED_JSON" >&2
+            exit 2
+        fi
+
+        SCAN_PROFILE_EFFECTIVE="$(printf '%s' "$SCAN_PROFILE_RESOLVED_JSON" | jq -r '.name')"
+        case "$SCAN_PROFILE_EFFECTIVE" in
+            quick|balanced)
+                SCAN_PROFILE_RUNTIME_STAGE="v1_8_compatible_tcp"
+                ;;
+            accurate)
+                SCAN_PROFILE_RUNTIME_STAGE="accurate_tcp_service_depth_os_udp_lite"
+                echo "[!] Accurate profile enables TCP service-depth plus non-fatal OS and UDP-lite evidence." >&2
+                ;;
+            deep)
+                echo "[-] Scan profile 'deep' is planned but runtime execution is not enabled in this v1.9 checkpoint." >&2
+                echo "[-] Use --profile balanced or --profile accurate until deep scan wiring is validated." >&2
+                exit 2
+                ;;
+            *)
+                echo "[-] Unexpected resolved scan profile: $SCAN_PROFILE_EFFECTIVE" >&2
+                exit 2
+                ;;
+        esac
+
 
         if ! validate_private_cidr "$HEADLESS_TARGET"; then
             echo "[-] Invalid or unsafe target. Headless mode requires a private IPv4 CIDR with prefix /16 or smaller scope." >&2
@@ -448,18 +521,50 @@ run_scan() {
         return 1
     fi
 
+    if ! resolve_selected_scan_profile; then
+        return 1
+    fi
+
     mkdir -p "$SCAN_DIR"
 
     # Remove previous outputs first so a failed scan cannot reuse stale evidence.
     rm -f \
         "$SCAN_DIR/fast_scan.gnmap" \
         "$SCAN_DIR/fast_scan.nmap" \
-        "$SCAN_DIR/fast_scan.xml"
+        "$SCAN_DIR/fast_scan.xml" \
+        "$SCAN_DIR/os_detection.gnmap" \
+        "$SCAN_DIR/os_detection.nmap" \
+        "$SCAN_DIR/os_detection.xml" \
+        "$SCAN_DIR/udp_lite.gnmap" \
+        "$SCAN_DIR/udp_lite.nmap" \
+        "$SCAN_DIR/udp_lite.xml"
 
     echo -e "${PURPLE}[2]${RESET} Running TrueAegis-aligned scan..."
     echo -e "${YELLOW}[*] Ports:${RESET} $TRUEAEGIS_PORTS"
 
-    nmap -sV -T4 -p "$TRUEAEGIS_PORTS" \
+    # v1.8-compatible quick/balanced planner emits: nmap -sV -T4 -p "$TRUEAEGIS_PORTS"
+    if ! SCAN_PROFILE_PLAN_JSON="$(python3 "$BASE/tools/plan_v1_9_scan_command.py" "$SCAN_PROFILE_EFFECTIVE" --profiles-file "$SCAN_PROFILE_CONFIG" 2>&1)"; then
+        echo -e "${RED}[-] Failed to build scan command plan for profile: $SCAN_PROFILE_EFFECTIVE${RESET}"
+        echo "$SCAN_PROFILE_PLAN_JSON" >&2
+        return 1
+    fi
+
+    mapfile -t TCP_SCAN_ARGS < <(printf '%s' "$SCAN_PROFILE_PLAN_JSON" | jq -r '.tcp.args[]')
+
+    if [ "${#TCP_SCAN_ARGS[@]}" -eq 0 ]; then
+        echo -e "${RED}[-] Scan command planner produced no TCP scan arguments.${RESET}"
+        return 1
+    fi
+
+    for arg_index in "${!TCP_SCAN_ARGS[@]}"; do
+        if [ "${TCP_SCAN_ARGS[$arg_index]}" = '$TRUEAEGIS_PORTS' ]; then
+            TCP_SCAN_ARGS[$arg_index]="$TRUEAEGIS_PORTS"
+        fi
+    done
+
+    echo "[*] Using scan profile: $SCAN_PROFILE_EFFECTIVE"
+
+    nmap "${TCP_SCAN_ARGS[@]}" \
         -iL "$TARGET_DIR/hosts.txt" \
         -oA "$SCAN_DIR/fast_scan" \
         > /dev/null 2>&1 &
@@ -488,6 +593,56 @@ run_scan() {
     if ! grep -qE '<finished[^>]+exit="success"' "$SCAN_DIR/fast_scan.xml"; then
         echo -e "${RED}[-] Nmap XML did not report a successful completion.${RESET}"
         return 1
+    fi
+
+    if [ "$SCAN_PROFILE_EFFECTIVE" = "accurate" ]; then
+        if [ "$(printf '%s' "$SCAN_PROFILE_PLAN_JSON" | jq -r '.os_detection.enabled')" = "true" ]; then
+            mapfile -t OS_DETECTION_ARGS < <(printf '%s' "$SCAN_PROFILE_PLAN_JSON" | jq -r '.os_detection.args[]')
+
+            if [ "${#OS_DETECTION_ARGS[@]}" -gt 0 ]; then
+                echo "[*] Running non-fatal OS evidence pass for accurate profile..."
+
+                if nmap "${OS_DETECTION_ARGS[@]}" --osscan-limit \
+                    -iL "$TARGET_DIR/hosts.txt" \
+                    -oA "$SCAN_DIR/os_detection" \
+                    > /dev/null 2>&1; then
+
+                    if [ -s "$SCAN_DIR/os_detection.xml" ] \
+                        && grep -qE '<finished[^>]+exit="success"' "$SCAN_DIR/os_detection.xml"; then
+                        echo "[+] OS evidence pass complete"
+                    else
+                        echo "[!] OS evidence pass did not produce successful XML; continuing without OS evidence." >&2
+                    fi
+                else
+                    echo "[!] OS evidence pass failed or requires elevated privileges; continuing without OS evidence." >&2
+                fi
+            fi
+        fi
+    fi
+
+    if [ "$SCAN_PROFILE_EFFECTIVE" = "accurate" ]; then
+        if [ "$(printf '%s' "$SCAN_PROFILE_PLAN_JSON" | jq -r '.udp_lite.enabled')" = "true" ]; then
+            mapfile -t UDP_LITE_ARGS < <(printf '%s' "$SCAN_PROFILE_PLAN_JSON" | jq -r '.udp_lite.args[]')
+
+            if [ "${#UDP_LITE_ARGS[@]}" -gt 0 ]; then
+                echo "[*] Running non-fatal UDP-lite evidence pass for accurate profile..."
+
+                if nmap "${UDP_LITE_ARGS[@]}" \
+                    -iL "$TARGET_DIR/hosts.txt" \
+                    -oA "$SCAN_DIR/udp_lite" \
+                    > /dev/null 2>&1; then
+
+                    if [ -s "$SCAN_DIR/udp_lite.xml" ] \
+                        && grep -qE '<finished[^>]+exit="success"' "$SCAN_DIR/udp_lite.xml"; then
+                        echo "[+] UDP-lite evidence pass complete"
+                    else
+                        echo "[!] UDP-lite evidence pass did not produce successful XML; continuing without UDP-lite evidence." >&2
+                    fi
+                else
+                    echo "[!] UDP-lite evidence pass failed or requires elevated privileges; continuing without UDP-lite evidence." >&2
+                fi
+            fi
+        fi
     fi
 
     echo -e "${GREEN}[+] Scan complete${RESET}"
@@ -724,6 +879,7 @@ load_saved_config() {
     local net_b64
     local user_b64
     local pass_b64
+    local profile_b64
 
     format=$(read_config_value "CONFIG_FORMAT")
     if [ "$format" != "NETSNIPER_CONFIG_V2" ]; then
@@ -733,6 +889,7 @@ load_saved_config() {
     net_b64=$(read_config_value "NET_B64")
     user_b64=$(read_config_value "GREENBONE_USER_B64")
     pass_b64=$(read_config_value "GREENBONE_PASS_B64")
+    profile_b64=$(read_config_value "SCAN_PROFILE_B64")
 
     if [ -z "$net_b64" ]; then
         return 1
@@ -741,12 +898,67 @@ load_saved_config() {
     NET=$(b64_decode "$net_b64") || return 1
     GREENBONE_USER=$(b64_decode "$user_b64") || return 1
     GREENBONE_PASS=$(b64_decode "$pass_b64") || return 1
+
+    if [ -n "$profile_b64" ]; then
+        SCAN_PROFILE=$(b64_decode "$profile_b64") || SCAN_PROFILE="${NETSNIPER_SCAN_PROFILE:-balanced}"
+    else
+        SCAN_PROFILE="${NETSNIPER_SCAN_PROFILE:-balanced}"
+    fi
+
+    resolve_selected_scan_profile || return 1
+}
+
+configure_scan_profile() {
+    local choice
+    local selected
+
+    echo "[*] Select NetSniper scan profile:"
+    echo "  1) quick    - TCP-only, fastest profile"
+    echo "  2) balanced - default v1.8-compatible TCP profile"
+    echo "  3) accurate - deeper TCP plus non-fatal OS and UDP-lite evidence"
+    echo "  4) keep current (${SCAN_PROFILE:-balanced})"
+
+    read -r -p "Scan profile [balanced]: " choice
+    choice="$(printf '%s' "$choice" | tr '[:upper:]' '[:lower:]')"
+
+    case "$choice" in
+        ""|2|balanced|b)
+            selected="balanced"
+            ;;
+        1|quick|q)
+            selected="quick"
+            ;;
+        3|accurate|a)
+            selected="accurate"
+            ;;
+        4|current|keep)
+            selected="${SCAN_PROFILE:-balanced}"
+            ;;
+        deep|d)
+            echo "[-] Deep profile is planned but not runtime-enabled in this release."
+            echo "[-] Choose quick, balanced, or accurate."
+            return 1
+            ;;
+        *)
+            echo "[-] Invalid scan profile selection: $choice"
+            return 1
+            ;;
+    esac
+
+    SCAN_PROFILE="$selected"
+
+    if ! resolve_selected_scan_profile; then
+        return 1
+    fi
+
+    echo "[+] Scan profile set to: $SCAN_PROFILE_EFFECTIVE"
 }
 
 save_config() {
     local net_b64
     local user_b64
     local pass_b64
+    local profile_b64
 
     mkdir -p "$CONFIG_DIR"
     umask 077
@@ -754,12 +966,14 @@ save_config() {
     net_b64=$(b64_encode "$NET")
     user_b64=$(b64_encode "$GREENBONE_USER")
     pass_b64=$(b64_encode "$GREENBONE_PASS")
+    profile_b64=$(b64_encode "$SCAN_PROFILE")
 
     cat > "$CONFIG_FILE" <<EOF
 CONFIG_FORMAT=NETSNIPER_CONFIG_V2
 NET_B64=$net_b64
 GREENBONE_USER_B64=$user_b64
 GREENBONE_PASS_B64=$pass_b64
+SCAN_PROFILE_B64=$profile_b64
 EOF
 
     chmod 600 "$CONFIG_FILE"
@@ -794,6 +1008,10 @@ load_config() {
 
     if [ -z "$NET" ]; then
         echo "[-] Target network cannot be empty."
+        return 1
+    fi
+
+    if ! configure_scan_profile; then
         return 1
     fi
 
@@ -840,6 +1058,7 @@ archive_deltaaegis_bundle() {
     local archived_at neighbors_captured_at discovered_count relevant_count service_hosts_up
     local profile_ports_json profile_hash nmap_version discovery_interface
     local service_started_epoch service_completed_epoch service_started_at service_completed_at
+    local os_detection_available udp_lite_available
 
     if [ ! -s "$DISCOVERY_DIR/live.xml" ]; then
         echo -e "${RED}[-] Discovery XML is missing; refusing to archive telemetry.${RESET}"
@@ -875,6 +1094,20 @@ archive_deltaaegis_bundle() {
     cp "$SCAN_DIR/fast_scan.xml" "$bundle_dir/services.xml"
     [ -f "$SCAN_DIR/fast_scan.gnmap" ] && cp "$SCAN_DIR/fast_scan.gnmap" "$bundle_dir/services.gnmap"
     [ -f "$SCAN_DIR/fast_scan.nmap" ] && cp "$SCAN_DIR/fast_scan.nmap" "$bundle_dir/services.nmap"
+    os_detection_available=false
+    if [ -s "$SCAN_DIR/os_detection.xml" ]; then
+        cp "$SCAN_DIR/os_detection.xml" "$bundle_dir/os_detection.xml"
+        [ -f "$SCAN_DIR/os_detection.gnmap" ] && cp "$SCAN_DIR/os_detection.gnmap" "$bundle_dir/os_detection.gnmap"
+        [ -f "$SCAN_DIR/os_detection.nmap" ] && cp "$SCAN_DIR/os_detection.nmap" "$bundle_dir/os_detection.nmap"
+        os_detection_available=true
+    fi
+    udp_lite_available=false
+    if [ -s "$SCAN_DIR/udp_lite.xml" ]; then
+        cp "$SCAN_DIR/udp_lite.xml" "$bundle_dir/udp_lite.xml"
+        [ -f "$SCAN_DIR/udp_lite.gnmap" ] && cp "$SCAN_DIR/udp_lite.gnmap" "$bundle_dir/udp_lite.gnmap"
+        [ -f "$SCAN_DIR/udp_lite.nmap" ] && cp "$SCAN_DIR/udp_lite.nmap" "$bundle_dir/udp_lite.nmap"
+        udp_lite_available=true
+    fi
     cp "$analysis_json" "$bundle_dir/analysis.json"
     [ -n "$analysis_txt" ] && [ -f "$analysis_txt" ] && cp "$analysis_txt" "$bundle_dir/analysis.txt"
 
@@ -926,6 +1159,12 @@ archive_deltaaegis_bundle() {
         --arg scan_id "$run_id" \
         --arg scanner_version "$SCANNER_VERSION" \
         --arg scan_profile "FAST_MONITORED_TCP" \
+        --arg scan_profile_requested "$SCAN_PROFILE" \
+        --arg scan_profile_effective "$SCAN_PROFILE_EFFECTIVE" \
+        --arg scan_profile_runtime_stage "$SCAN_PROFILE_RUNTIME_STAGE" \
+        --argjson os_detection_available "$os_detection_available" \
+        --argjson udp_lite_available "$udp_lite_available" \
+        --arg scan_profile_contract_schema "netsniper-scan-profiles-v1" \
         --arg target "$NET" \
         --arg status "COMPLETE" \
         --arg created_at "$archived_at" \
@@ -945,6 +1184,12 @@ archive_deltaaegis_bundle() {
             scan_id: $scan_id,
             scanner_version: $scanner_version,
             scan_profile: $scan_profile,
+            scan_profile_requested: $scan_profile_requested,
+            scan_profile_effective: $scan_profile_effective,
+            scan_profile_runtime_stage: $scan_profile_runtime_stage,
+            os_detection_available: $os_detection_available,
+            udp_lite_available: $udp_lite_available,
+            scan_profile_contract_schema: $scan_profile_contract_schema,
             target: $target,
             status: $status,
             created_at: $created_at,
@@ -971,6 +1216,12 @@ archive_deltaaegis_bundle() {
             files: {
                 discovery_xml: "discovery.xml",
                 services_xml: "services.xml",
+                os_detection_xml: (if $os_detection_available then "os_detection.xml" else null end),
+                os_detection_gnmap: (if $os_detection_available then "os_detection.gnmap" else null end),
+                os_detection_nmap: (if $os_detection_available then "os_detection.nmap" else null end),
+                udp_lite_xml: (if $udp_lite_available then "udp_lite.xml" else null end),
+                udp_lite_gnmap: (if $udp_lite_available then "udp_lite.gnmap" else null end),
+                udp_lite_nmap: (if $udp_lite_available then "udp_lite.nmap" else null end),
                 analysis_json: "analysis.json",
                 analysis_enriched_json: "analysis.enriched.json",
                 classification_quality_json: "classification_quality.json",
@@ -2217,7 +2468,8 @@ load_config
 while true; do
     echo ""
     echo "================================"
-    echo "        NETSNIPER v1.8"
+    echo "        NETSNIPER v1.9"
+    echo "        Profile: $SCAN_PROFILE_EFFECTIVE"
     echo "================================"
     echo "  1) Discover Hosts"
     echo "  2) TrueAegis-Aligned Scan"
@@ -2227,6 +2479,7 @@ while true; do
     echo "  6) Show TrueAegis-Relevant Targets"
     echo "  7) Generate Report"
     echo "  8) Analyze Hosts"
+    echo "  9) Change Scan Profile"
     echo "  0) Exit"
     echo "================================"
 
@@ -2241,6 +2494,7 @@ while true; do
         6) show_targets ;;
         7) generate_report ;;
         8) analyze_hosts ;;
+        9) configure_scan_profile && save_config ;;
         0) echo "Goodbye"; exit 0 ;;
         *) echo "Invalid option" ;;
     esac

@@ -6,23 +6,28 @@ NetSniper is a Bash-based network discovery and service-enumeration pipeline. It
 
 ## Current Release
 
-Current release: **NetSniper v1.8.0 — Headless Full-Inventory Telemetry**
+Current release: **NetSniper v1.9.0 — Accuracy Profiles and Evidence Passes**
 
-NetSniper v1.8.0 makes NetSniper a stronger upstream telemetry producer for DeltaAegis and other
-defensive workflows. It adds headless/non-interactive scan execution for automation and preserves
-the full discovered host inventory inside run bundles, including hosts with no monitored open
-services.
+NetSniper v1.9.0 adds profile-aware scan planning for safer accuracy control while preserving
+NetSniper's lightweight CLI/headless role. The default `balanced` profile remains compatible with
+the v1.8 monitored TCP workflow. The `accurate` profile adds deeper TCP service probing plus
+non-fatal OS and UDP-lite evidence passes, archived separately for downstream tools such as
+DeltaAegis.
 
-## v1.8.0 Highlights
+## v1.9.0 Highlights
 
-- Headless scan mode with `--non-interactive`.
-- Required private-CIDR target validation with `--target <private-cidr>`.
-- Optional machine-readable completion status with `--json-status`.
-- Explicit Greenbone behavior in headless mode.
-- Full discovered inventory preservation in `analysis.json`.
-- Bundle manifest counts for discovered hosts, service-scan hosts, and relevant hosts.
-- DeltaAegis-ready telemetry where discovered-but-quiet hosts remain visible instead of disappearing.
-- v1.8 validation coverage for headless CLI behavior and full-inventory bundle preservation.
+- Added scan profiles: `quick`, `balanced`, `accurate`, and planned/manual `deep`.
+- Kept `balanced` as the default v1.8-compatible TCP profile.
+- Added `--profile` and `--scan-profile` CLI options for headless profile selection.
+- Added interactive setup/menu scan-profile selection.
+- Added profile-aware scan command planning from `config/scan_profiles.json`.
+- Added accurate TCP service-depth probing with `--version-intensity 7`.
+- Added non-fatal OS evidence capture for the `accurate` profile.
+- Added non-fatal UDP-lite evidence capture for selected discovery-oriented UDP ports.
+- Archived `os_detection.*` and `udp_lite.*` evidence artifacts when available.
+- Added manifest metadata for requested/effective scan profile, runtime stage, OS evidence availability, and UDP-lite availability.
+- Added fake-Nmap runtime validators so profile behavior can be tested without sending packets.
+- Preserved full-inventory bundle compatibility for DeltaAegis ingestion.
 
 ## Bundle Artifacts
 
@@ -33,8 +38,10 @@ Finalized NetSniper run bundles can include:
     classification_quality.json
     classification_quality.md
     manifest.json
+    os_detection.xml / os_detection.gnmap / os_detection.nmap
+    udp_lite.xml / udp_lite.gnmap / udp_lite.nmap
 
-`analysis.json` remains the compatibility artifact.
+`analysis.json` remains the compatibility artifact. OS and UDP-lite evidence are archived as separate artifacts when produced by the `accurate` profile; they should be treated as supporting evidence, not standalone device identity.
 
 `analysis.enriched.json` contains v1.7 classification details, evidence, contradictions, confidence bands, SIEM actions, secondary candidates, and explanations.
 
@@ -42,7 +49,7 @@ Finalized NetSniper run bundles can include:
 
 ## Classification Philosophy
 
-NetSniper v1.7.0 is intentionally conservative.
+NetSniper v1.9.0 remains intentionally conservative.
 
 A weak or generic service should remain `possible` or `review_queue` instead of becoming a confident but unreliable classification. The goal is to produce explainable network intelligence for review, not pretend that every open port proves device identity.
 
@@ -50,23 +57,18 @@ A weak or generic service should remain `possible` or `review_queue` instead of 
 
 Before release, demo use, or downstream DeltaAegis ingestion, run:
 
-    ./tools/validate_v1_7_release_gate.sh
+    ./tools/validate_v1_9_release.sh
 
-The v1.7 release gate checks:
+The v1.9 release gate checks:
 
 - shell syntax
-- taxonomy contract
-- evidence profiles
-- synthetic fixtures
-- reusable host classification
-- host normalization
-- safe analysis enhancement
-- quality report generation
-- run artifact generation
-- bundle manifest awareness
-- docs/version markers
-- latest bundle artifacts
-- false-confidence review metrics
+- finalized v1.9 version and banner markers
+- v1.9 README and CHANGELOG release metadata
+- scan profile contract and CLI parsing
+- profile-aware scan command planning
+- accurate TCP, OS evidence, and UDP-lite fake-Nmap runtime behavior
+- v1.8 headless/full-inventory compatibility behavior
+- v1.7 device-intelligence artifact compatibility
 
 ## Features
 
@@ -79,6 +81,8 @@ The v1.7 release gate checks:
 - Exact monitored-port profile fingerprinting to prevent false historical deltas after scan-profile changes.
 - Archived discovery XML and neighbor-table telemetry for MAC-backed identity correlation.
 - v1.7 enriched classification and quality-report artifacts.
+- v1.9 profile-aware scan planning with conservative accuracy-focused evidence passes.
+- Interactive mode shows the active scan profile and can save profile changes to the local config.
 
 ## Requirements
 
