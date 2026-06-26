@@ -67,7 +67,7 @@ CONFIG_FILE="$CONFIG_DIR/netsniper.conf"
 RUN_DIR="$BASE/runs"
 SOCK="/run/gvmd/gvmd.sock"
 
-SCANNER_VERSION="v1.8.0"
+SCANNER_VERSION="v1.9.0"
 SCAN_PROFILE="${NETSNIPER_SCAN_PROFILE:-balanced}"
 SCAN_PROFILE_RESOLVED_JSON=""
 SCAN_PROFILE_EFFECTIVE="balanced"
@@ -109,7 +109,7 @@ Headless mode:
 Options:
   --non-interactive        Run the full pipeline without the interactive menu.
   --target <CIDR>          Target private IPv4 subnet, such as 192.168.5.0/24.
-  --greenbone yes|no       Optional Greenbone integration setting. Headless v1.8
+  --greenbone yes|no       Optional Greenbone integration setting. Headless mode
                            currently supports no; use the interactive menu for Greenbone.
   --json-status            Print a final machine-readable status object.
   --profile <name>          Optional v1.9 scan profile: quick, balanced, accurate, or deep.
@@ -2370,7 +2370,7 @@ load_config
 while true; do
     echo ""
     echo "================================"
-    echo "        NETSNIPER v1.8"
+    echo "        NETSNIPER v1.9"
     echo "================================"
     echo "  1) Discover Hosts"
     echo "  2) TrueAegis-Aligned Scan"

@@ -1,3 +1,40 @@
+## v1.9.0 - 2026-06-26
+
+### Added
+
+- Added v1.9 scan profiles with `quick`, `balanced`, `accurate`, and planned/manual `deep`.
+- Added `--profile` and `--scan-profile` CLI options.
+- Added `config/scan_profiles.json` as the profile contract.
+- Added profile-aware scan command planning through `tools/plan_v1_9_scan_command.py`.
+- Added scan profile resolution through `tools/resolve_v1_9_scan_profile.py`.
+- Added accurate TCP service-depth probing with Nmap `--version-intensity 7`.
+- Added non-fatal OS evidence collection for the `accurate` profile.
+- Added non-fatal UDP-lite evidence collection for selected UDP discovery/service ports.
+- Added manifest metadata for requested profile, effective profile, runtime profile stage, OS evidence availability, and UDP-lite availability.
+- Added archived `os_detection.*` and `udp_lite.*` bundle artifacts when evidence passes produce output.
+- Added fake-Nmap runtime validators for accurate TCP, OS evidence, and UDP-lite behavior.
+- Added `tools/validate_v1_9_all.sh` and `tools/validate_v1_9_release.sh`.
+
+### Changed
+
+- Finalized `SCANNER_VERSION` as `v1.9.0`.
+- Updated the interactive banner to `NETSNIPER v1.9`.
+- Kept `balanced` as the default v1.8-compatible TCP scan profile.
+- Kept OS and UDP-lite evidence passes non-fatal so scan bundles remain usable if elevated probes fail.
+- Preserved DeltaAegis-compatible bundle artifacts and full-inventory behavior.
+
+### Validation
+
+- Verified all v1.9 fast validators.
+- Verified v1.9 accurate fake-Nmap runtime behavior for TCP service-depth, OS evidence, and UDP-lite evidence.
+- Verified v1.8 headless CLI and full-inventory behavior remain compatible.
+- Verified v1.7 device-intelligence validators still pass.
+
+### Notes
+
+NetSniper v1.9.0 does not add a web dashboard, background service, scheduler, exploit checks, or intrusive probing. It improves scan accuracy by making evidence depth explicit, profile-controlled, and separately archived for downstream review.
+
+
 ## v1.8.0 - 2026-06-23
 
 ### Added
