@@ -1,0 +1,107 @@
+{
+  "schema_version": "netsniper-scan-profiles-v1",
+  "release_target": "v1.9.0",
+  "default_profile": "balanced",
+  "profiles": [
+    {
+      "name": "quick",
+      "description": "Fast lightweight inventory scan for quick local visibility.",
+      "default": false,
+      "manual_only": false,
+      "nmap_timing": "-T4",
+      "tcp_port_mode": "curated",
+      "service_detection": true,
+      "version_intensity": null,
+      "os_detection": false,
+      "udp_lite": false,
+      "full_tcp": false,
+      "intrusive_scripts": false,
+      "deltaaegis_safe_default": true,
+      "accuracy_notes": [
+        "Prioritizes speed over evidence depth.",
+        "May leave more hosts unknown or weakly classified."
+      ]
+    },
+    {
+      "name": "balanced",
+      "description": "Default v1.8-compatible profile for routine DeltaAegis telemetry.",
+      "default": true,
+      "manual_only": false,
+      "nmap_timing": "-T4",
+      "tcp_port_mode": "curated",
+      "service_detection": true,
+      "version_intensity": null,
+      "os_detection": false,
+      "udp_lite": false,
+      "full_tcp": false,
+      "intrusive_scripts": false,
+      "deltaaegis_safe_default": true,
+      "accuracy_notes": [
+        "Preserves lightweight behavior expected by DeltaAegis.",
+        "Uses curated TCP service detection without expensive optional probes."
+      ]
+    },
+    {
+      "name": "accurate",
+      "description": "Higher-evidence profile for improved local device classification.",
+      "default": false,
+      "manual_only": false,
+      "nmap_timing": "-T4",
+      "tcp_port_mode": "curated",
+      "service_detection": true,
+      "version_intensity": 7,
+      "os_detection": true,
+      "os_detection_evidence_only": true,
+      "udp_lite": true,
+      "full_tcp": false,
+      "intrusive_scripts": false,
+      "deltaaegis_safe_default": false,
+      "accuracy_notes": [
+        "Adds stronger service probing and optional OS evidence.",
+        "OS detection must be treated as weak/supporting evidence only.",
+        "UDP-lite is limited to common local-network discovery services."
+      ]
+    },
+    {
+      "name": "deep",
+      "description": "Slow manual-only profile for explicit operator-driven deep inspection.",
+      "default": false,
+      "manual_only": true,
+      "nmap_timing": "-T3",
+      "tcp_port_mode": "full",
+      "service_detection": true,
+      "version_intensity": 9,
+      "os_detection": true,
+      "os_detection_evidence_only": true,
+      "udp_lite": true,
+      "full_tcp": true,
+      "intrusive_scripts": false,
+      "deltaaegis_safe_default": false,
+      "accuracy_notes": [
+        "Manual-only due to scan cost.",
+        "Must not be used as the DeltaAegis default scheduled profile.",
+        "Still avoids intrusive scripts by default."
+      ]
+    }
+  ],
+  "udp_lite_ports": [
+    53,
+    67,
+    68,
+    123,
+    137,
+    161,
+    1900,
+    5353,
+    5355
+  ],
+  "forbidden_defaults": [
+    "full_tcp",
+    "full_udp",
+    "intrusive_scripts",
+    "credential_checks",
+    "exploit_checks",
+    "default_password_checks",
+    "web_dashboard"
+  ]
+}
