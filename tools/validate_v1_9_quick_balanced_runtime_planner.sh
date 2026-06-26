@@ -42,31 +42,37 @@ for profile in quick balanced; do
         || fail "$profile profile is no longer v1.8-compatible"
 done
 
-# accurate and deep must still be blocked until their runtime paths are explicitly validated.
-for profile in accurate deep; do
-    if ./netsniper.sh \
-        --non-interactive \
-        --target 192.168.56.0/30 \
-        --greenbone no \
-        --json-status \
-        --profile "$profile" \
-        >/tmp/netsniper-"$profile"-runtime-block.out 2>&1; then
-        cat /tmp/netsniper-"$profile"-runtime-block.out >&2
-        fail "$profile profile unexpectedly executed before runtime wiring"
-    fi
-
-    grep -Fq "Scan profile '$profile' is planned but runtime execution is not enabled" \
-        /tmp/netsniper-"$profile"-runtime-block.out \
-        || fail "$profile block message missing"
-done
-
-# Runtime netsniper.sh should still not contain the higher-cost accurate/deep probes.
-if grep -Fq -- '--version-intensity' netsniper.sh; then
-    fail "runtime netsniper.sh should not use --version-intensity yet"
+# Deep must still be blocked until its runtime path is explicitly validated.
+if ./netsniper.sh \
+    --non-interactive \
+    --target 192.168.56.0/30 \
+    --greenbone no \
+    --json-status \
+    --profile deep \
+    >/tmp/netsniper-deep-runtime-block.out 2>&1; then
+    cat /tmp/netsniper-deep-runtime-block.out >&2
+    fail "deep profile unexpectedly executed before runtime wiring"
 fi
 
+grep -Fq "Scan profile 'deep' is planned but runtime execution is not enabled" \
+    /tmp/netsniper-deep-runtime-block.out \
+    || fail "deep block message missing"
+
+python3 tools/plan_v1_9_scan_command.py accurate >/tmp/netsniper-runtime-plan-accurate.json
+jq -e '
+  .tcp.args == ["-sV", "-T4", "--version-intensity", "7", "-p", "$TRUEAEGIS_PORTS"]
+  and .os_detection.enabled == true
+  and .udp_lite.enabled == true
+' /tmp/netsniper-runtime-plan-accurate.json >/dev/null \
+    || fail "accurate TCP service-depth plan is incorrect"
+
+# OS detection and UDP-lite should still not be wired into netsniper.sh runtime.
 if grep -Fq -- ' -O ' netsniper.sh; then
     fail "runtime netsniper.sh should not use OS detection yet"
+fi
+
+if grep -Fq -- ' -sU ' netsniper.sh; then
+    fail "runtime netsniper.sh should not use UDP-lite yet"
 fi
 
 pass "NetSniper v1.9 quick/balanced runtime planner validation passed"

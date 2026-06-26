@@ -71,6 +71,7 @@ SCANNER_VERSION="v1.8.0"
 SCAN_PROFILE="${NETSNIPER_SCAN_PROFILE:-balanced}"
 SCAN_PROFILE_RESOLVED_JSON=""
 SCAN_PROFILE_EFFECTIVE="balanced"
+SCAN_PROFILE_RUNTIME_STAGE="v1_8_compatible_tcp"
 SCAN_PROFILE_CONFIG="$BASE/config/scan_profiles.json"
 
 # TrueAegis-aligned scan ports.
@@ -250,10 +251,15 @@ parse_cli_args() {
         SCAN_PROFILE_EFFECTIVE="$(printf '%s' "$SCAN_PROFILE_RESOLVED_JSON" | jq -r '.name')"
         case "$SCAN_PROFILE_EFFECTIVE" in
             quick|balanced)
+                SCAN_PROFILE_RUNTIME_STAGE="v1_8_compatible_tcp"
                 ;;
-            accurate|deep)
-                echo "[-] Scan profile '$SCAN_PROFILE_EFFECTIVE' is planned but runtime execution is not enabled in this v1.9 checkpoint." >&2
-                echo "[-] Use --profile balanced until the profile-specific scan command wiring is validated." >&2
+            accurate)
+                SCAN_PROFILE_RUNTIME_STAGE="accurate_tcp_service_depth"
+                echo "[!] Accurate profile currently enables TCP service-depth probing only; OS and UDP evidence passes are planned for a later checkpoint." >&2
+                ;;
+            deep)
+                echo "[-] Scan profile 'deep' is planned but runtime execution is not enabled in this v1.9 checkpoint." >&2
+                echo "[-] Use --profile balanced or --profile accurate until deep scan wiring is validated." >&2
                 exit 2
                 ;;
             *)
@@ -986,6 +992,7 @@ archive_deltaaegis_bundle() {
         --arg scan_profile "FAST_MONITORED_TCP" \
         --arg scan_profile_requested "$SCAN_PROFILE" \
         --arg scan_profile_effective "$SCAN_PROFILE_EFFECTIVE" \
+        --arg scan_profile_runtime_stage "$SCAN_PROFILE_RUNTIME_STAGE" \
         --arg scan_profile_contract_schema "netsniper-scan-profiles-v1" \
         --arg target "$NET" \
         --arg status "COMPLETE" \
@@ -1008,6 +1015,7 @@ archive_deltaaegis_bundle() {
             scan_profile: $scan_profile,
             scan_profile_requested: $scan_profile_requested,
             scan_profile_effective: $scan_profile_effective,
+            scan_profile_runtime_stage: $scan_profile_runtime_stage,
             scan_profile_contract_schema: $scan_profile_contract_schema,
             target: $target,
             status: $status,
