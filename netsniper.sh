@@ -495,7 +495,29 @@ run_scan() {
     echo -e "${PURPLE}[2]${RESET} Running TrueAegis-aligned scan..."
     echo -e "${YELLOW}[*] Ports:${RESET} $TRUEAEGIS_PORTS"
 
-    nmap -sV -T4 -p "$TRUEAEGIS_PORTS" \
+    # v1.8-compatible quick/balanced planner emits: nmap -sV -T4 -p "$TRUEAEGIS_PORTS"
+    if ! SCAN_PROFILE_PLAN_JSON="$(python3 "$BASE/tools/plan_v1_9_scan_command.py" "$SCAN_PROFILE_EFFECTIVE" --profiles-file "$SCAN_PROFILE_CONFIG" 2>&1)"; then
+        echo -e "${RED}[-] Failed to build scan command plan for profile: $SCAN_PROFILE_EFFECTIVE${RESET}"
+        echo "$SCAN_PROFILE_PLAN_JSON" >&2
+        return 1
+    fi
+
+    mapfile -t TCP_SCAN_ARGS < <(printf '%s' "$SCAN_PROFILE_PLAN_JSON" | jq -r '.tcp.args[]')
+
+    if [ "${#TCP_SCAN_ARGS[@]}" -eq 0 ]; then
+        echo -e "${RED}[-] Scan command planner produced no TCP scan arguments.${RESET}"
+        return 1
+    fi
+
+    for arg_index in "${!TCP_SCAN_ARGS[@]}"; do
+        if [ "${TCP_SCAN_ARGS[$arg_index]}" = '$TRUEAEGIS_PORTS' ]; then
+            TCP_SCAN_ARGS[$arg_index]="$TRUEAEGIS_PORTS"
+        fi
+    done
+
+    echo -e "${CYAN}[*] Using scan profile: $SCAN_PROFILE_EFFECTIVE${RESET}"
+
+    nmap "${TCP_SCAN_ARGS[@]}" \
         -iL "$TARGET_DIR/hosts.txt" \
         -oA "$SCAN_DIR/fast_scan" \
         > /dev/null 2>&1 &
