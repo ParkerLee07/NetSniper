@@ -1,0 +1,73 @@
+{
+  "bundle_path": "examples/deltaaegis-fixtures/balanced-complete",
+  "checked_at": "2026-06-29T19:55:18.537818+00:00",
+  "classification_quality_valid": true,
+  "counts": {
+    "analysis_enriched_json": 2,
+    "analysis_json": 2,
+    "classification_false_confidence_candidates": 0,
+    "hosts_txt": 2
+  },
+  "counts_valid": true,
+  "deltaaegis_ready": true,
+  "errors": [],
+  "manifest_path": "examples/deltaaegis-fixtures/balanced-complete/manifest.json",
+  "manifest_valid": true,
+  "network_scope": "192.168.56.0/30",
+  "profile": {
+    "budget_exceeded": false,
+    "duration_seconds": 8,
+    "effective_profile": "balanced",
+    "host_timeout_seconds": 60,
+    "profile_contract": "FAST_MONITORED_TCP",
+    "requested_profile": "balanced",
+    "runtime_budget_seconds": 900
+  },
+  "profile_fields_valid": true,
+  "required_files": [
+    {
+      "allow_empty": false,
+      "exists": true,
+      "non_empty": true,
+      "path": "manifest.json"
+    },
+    {
+      "allow_empty": false,
+      "exists": true,
+      "non_empty": true,
+      "path": "hosts.txt"
+    },
+    {
+      "allow_empty": false,
+      "exists": true,
+      "non_empty": true,
+      "path": "analysis.json"
+    },
+    {
+      "allow_empty": false,
+      "exists": true,
+      "non_empty": true,
+      "path": "analysis.enriched.json"
+    },
+    {
+      "allow_empty": false,
+      "exists": true,
+      "non_empty": true,
+      "path": "classification_quality.json"
+    },
+    {
+      "allow_empty": false,
+      "exists": true,
+      "non_empty": true,
+      "path": "services.xml"
+    }
+  ],
+  "required_files_present": true,
+  "scan_id": "fixture-balanced-complete",
+  "scanner_version": "v2.0.0-fixture",
+  "schema_version": "netsniper-bundle-quality-v1",
+  "status_complete": true,
+  "target": "192.168.56.0/30",
+  "target_scope_valid": true,
+  "warnings": []
+}

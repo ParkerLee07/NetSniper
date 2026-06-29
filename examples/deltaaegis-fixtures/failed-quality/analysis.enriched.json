@@ -1,0 +1,64 @@
+{
+  "hosts": [
+    {
+      "classification": {
+        "confidence": 35,
+        "confidence_label": "possible",
+        "contradictions": [],
+        "decision": "possible",
+        "evidence": [
+          {
+            "candidate": "Router / Gateway",
+            "points": 35,
+            "reason": "Synthetic DeltaAegis fixture evidence",
+            "source": "fixture",
+            "value": "quick"
+          }
+        ],
+        "method": "fixture_weighted_evidence",
+        "primary_type": "Unknown / Ambiguous",
+        "schema_version": "netsniper-classification-v1",
+        "secondary_candidates": [],
+        "siem_action": "review"
+      },
+      "device_type": "Unknown",
+      "device_type_confidence": 35,
+      "findings": [
+        {
+          "evidence": "Port 22 open in synthetic fixture",
+          "id": "SSH_EXPOSED",
+          "name": "SSH service exposed",
+          "port": 22,
+          "score": 2,
+          "service": "ssh"
+        }
+      ],
+      "host": "192.168.56.1",
+      "ip": "192.168.56.1",
+      "score": 4,
+      "severity": "MEDIUM"
+    },
+    {
+      "classification": {
+        "confidence": 0,
+        "confidence_label": "weak",
+        "contradictions": [],
+        "decision": "possible",
+        "evidence": [],
+        "method": "full_inventory_preservation",
+        "primary_type": "Unknown / Ambiguous",
+        "schema_version": "netsniper-classification-v1",
+        "secondary_candidates": [],
+        "siem_action": "no_action"
+      },
+      "device_type": "Unknown",
+      "device_type_confidence": 0,
+      "findings": [],
+      "host": "192.168.56.2",
+      "ip": "192.168.56.2",
+      "score": 0,
+      "severity": "INFO"
+    }
+  ],
+  "schema_version": "netsniper-analysis-enriched-v1"
+}
