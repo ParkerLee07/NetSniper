@@ -15,6 +15,29 @@ cd "$(dirname "$0")/.." || exit 1
 ./tools/validate_v2_0_all.sh \
     || fail "v2.0 all-in validator failed"
 
+
+grep -Fq 'SCANNER_VERSION="v2.0.0"' netsniper.sh \
+    || fail "SCANNER_VERSION is not finalized as v2.0.0"
+
+if grep -Fq 'SCANNER_VERSION="v2.0.0-dev"' netsniper.sh; then
+    fail "development scanner version marker is still present"
+fi
+
+grep -Fq 'Current release: **NetSniper v2.0.0 — Reliable Telemetry Sensor for DeltaAegis**' README.md \
+    || fail "README current release does not point to v2.0.0"
+
+grep -Fq '## v2.0.0 - 2026-06-29' CHANGELOG.md \
+    || fail "CHANGELOG missing v2.0.0 entry"
+
+python3 - <<'PY'
+import json
+from pathlib import Path
+
+data = json.loads(Path("config/scan_profiles.json").read_text(encoding="utf-8"))
+assert data["release_target"] == "v2.0.0", data
+print("[PASS] v2.0 release metadata JSON checks passed")
+PY
+
 for required_doc in \
     docs/V2_0_TELEMETRY_CONTRACT.md \
     docs/V2_0_RELEASE_CHECKLIST.md \

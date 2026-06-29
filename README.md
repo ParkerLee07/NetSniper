@@ -6,69 +6,72 @@ NetSniper is a Bash-based network discovery and service-enumeration pipeline. It
 
 ## Current Release
 
-Current release: **NetSniper v1.9.0 — Accuracy Profiles and Evidence Passes**
+Current release: **NetSniper v2.0.0 — Reliable Telemetry Sensor for DeltaAegis**
 
-NetSniper v1.9.0 adds profile-aware scan planning for safer accuracy control while preserving
-NetSniper's lightweight CLI/headless role. The default `balanced` profile remains compatible with
-the v1.8 monitored TCP workflow. The `accurate` profile adds deeper TCP service probing plus
-non-fatal OS and UDP-lite evidence passes, archived separately for downstream tools such as
-DeltaAegis.
+NetSniper v2.0.0 promotes NetSniper from a scan-output generator into a stable
+telemetry sensor for DeltaAegis and other defensive consumers. The release adds
+machine-readable headless status, a v3 bundle manifest contract, profile runtime
+budgets, bundle quality reports, and synthetic DeltaAegis fixture bundles while
+preserving the v1.9 accuracy-profile behavior.
 
-## v1.9.0 Highlights
+## v2.0.0 Highlights
 
-- Added scan profiles: `quick`, `balanced`, `accurate`, and planned/manual `deep`.
-- Kept `balanced` as the default v1.8-compatible TCP profile.
-- Added `--profile` and `--scan-profile` CLI options for headless profile selection.
-- Added interactive setup/menu scan-profile selection.
-- Added profile-aware scan command planning from `config/scan_profiles.json`.
-- Added accurate TCP service-depth probing with `--version-intensity 7`.
-- Added non-fatal OS evidence capture for the `accurate` profile.
-- Added non-fatal UDP-lite evidence capture for selected discovery-oriented UDP ports.
-- Archived `os_detection.*` and `udp_lite.*` evidence artifacts when available.
-- Added manifest metadata for requested/effective scan profile, runtime stage, OS evidence availability, and UDP-lite availability.
-- Added fake-Nmap runtime validators so profile behavior can be tested without sending packets.
-- Preserved full-inventory bundle compatibility for DeltaAegis ingestion.
+- Added `--json-status-file <path>` for machine-readable headless orchestration.
+- Added the `netsniper-status-v1` status contract.
+- Added the `netsniper-run-v3` manifest contract with v2 compatibility aliases.
+- Preserved legacy manifest fields such as `scan_profile_requested` and `scan_profile_effective`.
+- Added profile runtime budget metadata for `quick`, `balanced`, and `accurate`.
+- Added budget duration tracking and budget-exceeded reporting.
+- Added `bundle_quality.json` using the `netsniper-bundle-quality-v1` schema.
+- Embedded the bundle quality report into `manifest.quality`.
+- Added synthetic DeltaAegis fixture bundles for complete and failed-quality ingestion tests.
+- Added `tools/validate_v2_0_all.sh` and `tools/validate_v2_0_release_gate.sh`.
+- Preserved v1.9 compatibility validators and profile behavior.
 
 ## Bundle Artifacts
 
-Finalized NetSniper run bundles can include:
+Finalized NetSniper v2.0 run bundles can include:
 
     analysis.json
     analysis.enriched.json
+    bundle_quality.json
     classification_quality.json
     classification_quality.md
     manifest.json
     os_detection.xml / os_detection.gnmap / os_detection.nmap
     udp_lite.xml / udp_lite.gnmap / udp_lite.nmap
 
-`analysis.json` remains the compatibility artifact. OS and UDP-lite evidence are archived as separate artifacts when produced by the `accurate` profile; they should be treated as supporting evidence, not standalone device identity.
+`analysis.json` remains the compatibility artifact. OS and UDP-lite evidence are archived as
+separate artifacts when produced by the `accurate` profile; they should be treated as supporting
+evidence, not standalone device identity.
 
-`analysis.enriched.json` contains v1.7 classification details, evidence, contradictions, confidence bands, SIEM actions, secondary candidates, and explanations.
-
-`classification_quality.json` and `classification_quality.md` summarize classification quality, review-queue items, false-confidence candidates, unknown hosts with exposed services, top device types, confidence-band distribution, and sample explanations.
+`bundle_quality.json` tells downstream tools whether the bundle is safe to ingest. DeltaAegis
+should treat `deltaaegis_ready: false` as a rejection or quarantine condition, not as valid telemetry.
 
 ## Classification Philosophy
 
-NetSniper v1.9.0 remains intentionally conservative.
+NetSniper v2.0.0 remains intentionally conservative.
 
-A weak or generic service should remain `possible` or `review_queue` instead of becoming a confident but unreliable classification. The goal is to produce explainable network intelligence for review, not pretend that every open port proves device identity.
+A weak or generic service should remain `possible` or `review_queue` instead of becoming a
+confident but unreliable classification. The goal is to produce explainable network intelligence
+for review, not pretend that every open port proves device identity.
 
 ## Recommended Validation
 
 Before release, demo use, or downstream DeltaAegis ingestion, run:
 
-    ./tools/validate_v1_9_release.sh
+    ./tools/validate_v2_0_release_gate.sh
 
-The v1.9 release gate checks:
+The v2.0 release gate checks:
 
 - shell syntax
-- finalized v1.9 version and banner markers
-- v1.9 README and CHANGELOG release metadata
-- scan profile contract and CLI parsing
-- profile-aware scan command planning
-- accurate TCP, OS evidence, and UDP-lite fake-Nmap runtime behavior
-- v1.8 headless/full-inventory compatibility behavior
-- v1.7 device-intelligence artifact compatibility
+- finalized v2.0 version and README/CHANGELOG metadata
+- status contract compatibility
+- manifest v3 compatibility
+- profile runtime budget metadata
+- bundle quality reports
+- DeltaAegis fixture bundles
+- v1.9 compatibility validators
 
 ## Features
 
@@ -77,12 +80,14 @@ The v1.9 release gate checks:
 - Device classification and exposure scoring.
 - Structured JSON analysis output for automation.
 - Optional Greenbone integration for deeper assessment.
-- Immutable `netsniper-run-v2` telemetry bundles for DeltaAegis.
+- Immutable `netsniper-run-v3` telemetry bundles for DeltaAegis with v2 compatibility aliases.
 - Exact monitored-port profile fingerprinting to prevent false historical deltas after scan-profile changes.
 - Archived discovery XML and neighbor-table telemetry for MAC-backed identity correlation.
 - v1.7 enriched classification and quality-report artifacts.
 - v1.9 profile-aware scan planning with conservative accuracy-focused evidence passes.
 - Interactive mode shows the active scan profile and can save profile changes to the local config.
+- v2.0 machine-readable headless status and bundle quality reports for DeltaAegis orchestration.
+- Synthetic DeltaAegis fixture bundles under `examples/deltaaegis-fixtures/`.
 
 ## Requirements
 
@@ -146,14 +151,17 @@ A finalized `runs/<scan_id>/manifest.json` file marks a telemetry bundle as read
 
 Current immutable bundles use:
 
-    netsniper-run-v2
+    netsniper-run-v3
 
-The versioned manifest records:
+The v3 manifest records:
 
+- machine-readable status compatibility through `netsniper-status-v1`
 - exact monitored TCP ports
 - SHA-256 scan-profile fingerprint
+- requested and effective scan profiles
+- profile runtime budgets and measured duration
 - NetSniper and Nmap versions
-- target subnet
+- target subnet and network scope
 - discovery interface
 - scan timestamps and host counts
 - archived discovery XML
@@ -162,12 +170,15 @@ The versioned manifest records:
 - neighbor telemetry
 - v1.7 enriched analysis artifact paths
 - v1.7 classification quality report paths
+- `bundle_quality.json` readiness and diagnostic fields
 
-See [`Docs/deltaaegis-integration.md`](Docs/deltaaegis-integration.md).
+Compatibility aliases from `netsniper-run-v2` are intentionally preserved for downstream migration.
+
+See [`docs/V2_0_TELEMETRY_CONTRACT.md`](docs/V2_0_TELEMETRY_CONTRACT.md).
 
 ## Changelog
 
-See [`CHANGELOG.md`](CHANGELOG.md) for previous release history, including v1.6.0 and earlier.
+See [`CHANGELOG.md`](CHANGELOG.md) for full release history.
 
 ## Scope and Limitations
 

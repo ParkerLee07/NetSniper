@@ -1,3 +1,30 @@
+# Changelog
+
+## v2.0.0 - 2026-06-29
+
+### Added
+
+- Added the `netsniper-status-v1` headless status contract.
+- Added `--json-status-file <path>` for orchestration-friendly status output.
+- Added the `netsniper-run-v3` manifest contract with v2 compatibility aliases.
+- Added profile runtime budgets and budget-exceeded reporting.
+- Added `bundle_quality.json` using the `netsniper-bundle-quality-v1` schema.
+- Added synthetic DeltaAegis fixture bundles under `examples/deltaaegis-fixtures/`.
+- Added all-in v2.0 validation through `tools/validate_v2_0_all.sh`.
+- Added final release validation through `tools/validate_v2_0_release_gate.sh`.
+
+### Changed
+
+- Updated scan profile metadata for the v2.0.0 release target.
+- Updated README documentation for the v2.0 telemetry contract.
+- Preserved v1.9 profile behavior and compatibility validation.
+
+### Compatibility
+
+- DeltaAegis should prefer v3 manifest fields but may continue using preserved v2 aliases during migration.
+- `quick`, `balanced`, and `accurate` remain the supported safe orchestration profiles.
+- `deep` remains blocked for non-interactive DeltaAegis-style workflows.
+
 ## v1.9.0 - 2026-06-26
 
 ### Added

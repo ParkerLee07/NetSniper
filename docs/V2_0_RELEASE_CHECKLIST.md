@@ -29,7 +29,7 @@ The release should include documentation for:
 Before tagging:
 
 1. Confirm the working tree is clean.
-2. Update `SCANNER_VERSION` from `v2.0.0-dev` to `v2.0.0`.
+2. Confirm `SCANNER_VERSION` is finalized as `v2.0.0`.
 3. Update README release references.
 4. Update changelog or release notes.
 5. Run `tools/validate_v2_0_release_gate.sh`.

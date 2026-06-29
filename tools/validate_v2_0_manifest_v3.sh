@@ -15,8 +15,8 @@ cd "$(dirname "$0")/.." || exit 1
 bash -n netsniper.sh \
     || fail "netsniper.sh has a syntax error"
 
-grep -Fq 'SCANNER_VERSION="v2.0.0-dev"' netsniper.sh \
-    || fail "scanner version is not v2.0.0-dev"
+grep -Eq 'SCANNER_VERSION="v2\.0\.0(-dev)?"' netsniper.sh \
+    || fail "scanner version is not v2.0.0-dev or v2.0.0"
 
 grep -Fq 'netsniper-run-v3' netsniper.sh \
     || fail "manifest v3 schema marker missing"
@@ -63,7 +63,7 @@ jq -e '
   .schema_version == "netsniper-run-v3"
   and .manifest_contract == "netsniper-run-v3"
   and .legacy_schema_version == "netsniper-run-v2"
-  and .scanner_version == "v2.0.0-dev"
+  and (.scanner_version == "v2.0.0-dev" or .scanner_version == "v2.0.0")
   and .target == "192.168.56.0/30"
   and .network_scope == .target
   and .scan_profile == "FAST_MONITORED_TCP"
