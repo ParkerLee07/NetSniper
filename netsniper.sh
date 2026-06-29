@@ -67,7 +67,7 @@ CONFIG_FILE="$CONFIG_DIR/netsniper.conf"
 RUN_DIR="$BASE/runs"
 SOCK="/run/gvmd/gvmd.sock"
 
-SCANNER_VERSION="v1.9.0"
+SCANNER_VERSION="v2.0.0-dev"
 SCAN_PROFILE="${NETSNIPER_SCAN_PROFILE:-balanced}"
 SCAN_PROFILE_RESOLVED_JSON=""
 SCAN_PROFILE_EFFECTIVE="balanced"
@@ -88,6 +88,7 @@ HEADLESS_MODE=0
 HEADLESS_TARGET=""
 HEADLESS_GREENBONE="no"
 JSON_STATUS=0
+HEADLESS_JSON_STATUS_FILE=""
 LAST_BUNDLE_DIR=""
 
 print_usage() {
@@ -96,7 +97,7 @@ NetSniper - Network Recon & Exposure Intelligence Engine
 
 Usage:
   ./netsniper.sh
-  ./netsniper.sh --non-interactive --target <private-cidr> [--greenbone no] [--json-status] [--profile balanced]
+  ./netsniper.sh --non-interactive --target <private-cidr> [--greenbone no] [--json-status] [--json-status-file <path>] [--profile balanced]
   ./netsniper.sh --help
 
 Interactive mode:
@@ -112,7 +113,8 @@ Options:
   --greenbone yes|no       Optional Greenbone integration setting. Headless mode
                            currently supports no; use the interactive menu for Greenbone.
   --json-status            Print a final machine-readable status object.
-  --profile <name>          Optional v1.9 scan profile: quick, balanced, accurate, or deep.
+  --json-status-file <path> Write the final machine-readable status object to a file.
+  --profile <name>          Optional v2.0 scan profile: quick, balanced, accurate, or deep.
   --scan-profile <name>     Alias for --profile. Balanced remains the default.
   -h, --help               Show this help text.
 
@@ -189,28 +191,68 @@ emit_headless_status() {
     local return_code="$2"
     local run_dir="${3:-}"
     local manifest_path=""
+    local status_at
+    local status_payload
+    local status_dir
+    local tmp_status_file
+
+    status_at=$(date --iso-8601=seconds)
 
     if [ -n "$run_dir" ]; then
         manifest_path="$run_dir/manifest.json"
     fi
 
+    if ! status_payload="$(jq -n \
+        --arg schema_version "netsniper-status-v1" \
+        --arg scanner_version "$SCANNER_VERSION" \
+        --arg status "$status" \
+        --arg target "${NET:-$HEADLESS_TARGET}" \
+        --arg requested_profile "${SCAN_PROFILE:-balanced}" \
+        --arg effective_profile "${SCAN_PROFILE_EFFECTIVE:-balanced}" \
+        --arg runtime_stage "${SCAN_PROFILE_RUNTIME_STAGE:-unknown}" \
+        --arg run_dir "$run_dir" \
+        --arg manifest_path "$manifest_path" \
+        --arg status_at "$status_at" \
+        --argjson return_code "$return_code" \
+        '{
+            schema_version: $schema_version,
+            scanner_version: $scanner_version,
+            status: $status,
+            target: $target,
+            requested_profile: $requested_profile,
+            effective_profile: $effective_profile,
+            runtime_stage: $runtime_stage,
+            return_code: $return_code,
+            run_dir: $run_dir,
+            manifest_path: $manifest_path,
+            status_at: $status_at
+        }')"; then
+        echo "[-] Failed to build headless status payload." >&2
+        return 1
+    fi
+
     if [ "$JSON_STATUS" = "1" ]; then
-        jq -n \
-            --arg status "$status" \
-            --arg target "${NET:-$HEADLESS_TARGET}" \
-            --arg run_dir "$run_dir" \
-            --arg manifest_path "$manifest_path" \
-            --argjson return_code "$return_code" \
-            '{
-                status: $status,
-                target: $target,
-                return_code: $return_code,
-                run_dir: $run_dir,
-                manifest_path: $manifest_path
-            }'
+        printf '%s\n' "$status_payload"
+    fi
+
+    if [ -n "${HEADLESS_JSON_STATUS_FILE:-}" ]; then
+        status_dir="$(dirname -- "$HEADLESS_JSON_STATUS_FILE")"
+        mkdir -p "$status_dir"
+
+        tmp_status_file="${HEADLESS_JSON_STATUS_FILE}.tmp.$$"
+        printf '%s\n' "$status_payload" > "$tmp_status_file"
+        mv "$tmp_status_file" "$HEADLESS_JSON_STATUS_FILE"
     fi
 }
 
+handle_headless_interrupt() {
+    local rc=130
+
+    echo "" >&2
+    echo "[-] Headless pipeline interrupted." >&2
+    emit_headless_status "interrupted" "$rc" "${LAST_BUNDLE_DIR:-}" || true
+    exit "$rc"
+}
 parse_cli_args() {
     while [ "$#" -gt 0 ]; do
         case "$1" in
@@ -258,6 +300,14 @@ parse_cli_args() {
                 JSON_STATUS=1
                 shift
                 ;;
+            --json-status-file)
+                if [ "$#" -lt 2 ]; then
+                    echo "[-] --json-status-file requires a path." >&2
+                    exit 1
+                fi
+                HEADLESS_JSON_STATUS_FILE="$2"
+                shift 2
+                ;;
             *)
                 echo "[-] Unknown argument: $1" >&2
                 echo "Use --help for usage." >&2
@@ -276,6 +326,7 @@ parse_cli_args() {
         if ! SCAN_PROFILE_RESOLVED_JSON="$(python3 "$BASE/tools/resolve_v1_9_scan_profile.py" "$SCAN_PROFILE" --profiles-file "$SCAN_PROFILE_CONFIG" 2>&1)"; then
             echo "[-] Invalid scan profile: $SCAN_PROFILE" >&2
             echo "$SCAN_PROFILE_RESOLVED_JSON" >&2
+            emit_headless_status "failed" 2 ""
             exit 2
         fi
 
@@ -289,12 +340,14 @@ parse_cli_args() {
                 echo "[!] Accurate profile enables TCP service-depth plus non-fatal OS and UDP-lite evidence." >&2
                 ;;
             deep)
-                echo "[-] Scan profile 'deep' is planned but runtime execution is not enabled in this v1.9 checkpoint." >&2
-                echo "[-] Use --profile balanced or --profile accurate until deep scan wiring is validated." >&2
+                echo "[-] Scan profile 'deep' is planned but runtime execution is not enabled in this v2.0 checkpoint." >&2
+                echo "[-] Use --profile quick, --profile balanced, or --profile accurate until deep scan wiring is validated." >&2
+                emit_headless_status "failed" 2 ""
                 exit 2
                 ;;
             *)
                 echo "[-] Unexpected resolved scan profile: $SCAN_PROFILE_EFFECTIVE" >&2
+                emit_headless_status "failed" 2 ""
                 exit 2
                 ;;
         esac
@@ -319,6 +372,8 @@ run_headless_pipeline() {
     GREENBONE_USER=""
     GREENBONE_PASS=""
 
+    trap 'handle_headless_interrupt' INT TERM
+
     echo "[*] Running NetSniper in headless mode."
     echo "[*] Target: $NET"
 
@@ -336,21 +391,23 @@ run_headless_pipeline() {
         if [ -z "$LAST_BUNDLE_DIR" ] || [ ! -f "$LAST_BUNDLE_DIR/manifest.json" ]; then
             echo "[-] Pipeline completed but manifest.json was not found." >&2
             emit_headless_status "failed" 4 "${LAST_BUNDLE_DIR:-}"
+            trap - INT TERM
             return 4
         fi
 
         echo "[+] Headless pipeline completed."
         echo "[+] Manifest: $LAST_BUNDLE_DIR/manifest.json"
         emit_headless_status "completed" 0 "$LAST_BUNDLE_DIR"
+        trap - INT TERM
         return 0
     else
         rc=$?
         echo "[-] Headless pipeline failed with return code $rc." >&2
         emit_headless_status "failed" "$rc" "${LAST_BUNDLE_DIR:-}"
+        trap - INT TERM
         return "$rc"
     fi
 }
-
 
 # =========================
 # FUNCTIONS
