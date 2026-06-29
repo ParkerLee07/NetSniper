@@ -35,7 +35,7 @@ profile_path = Path("config/scan_profiles.json")
 data = json.loads(profile_path.read_text(encoding="utf-8"))
 
 assert data["schema_version"] == "netsniper-scan-profiles-v1", data
-assert data["release_target"] == "v1.9.0", data
+assert data["release_target"] in {"v1.9.0", "v2.0.0"}, data
 assert data["default_profile"] == "balanced", data
 
 profiles = data.get("profiles")

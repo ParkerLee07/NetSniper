@@ -1,0 +1,9 @@
+{
+  "classified_count": 0,
+  "false_confidence_candidate_count": 0,
+  "host_count": 2,
+  "possible_or_review_count": 1,
+  "schema_version": "netsniper-classification-quality-v1",
+  "unknown_count": 1,
+  "unknown_with_exposed_services_count": 0
+}

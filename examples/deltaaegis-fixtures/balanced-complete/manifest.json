@@ -1,0 +1,208 @@
+{
+  "compatibility": {
+    "legacy_effective_profile_field": "scan_profile_effective",
+    "legacy_requested_profile_field": "scan_profile_requested",
+    "legacy_scan_profile_field": "scan_profile",
+    "legacy_schema_versions": [
+      "netsniper-run-v2"
+    ]
+  },
+  "completed_at": "2026-06-29T00:00:08+00:00",
+  "counts": {
+    "discovered_hosts": 2,
+    "relevant_hosts": 1,
+    "service_hosts_up": 2
+  },
+  "created_at": "2026-06-29T00:00:00+00:00",
+  "duration_seconds": 8,
+  "effective_profile": "balanced",
+  "files": {
+    "analysis_enriched_json": "analysis.enriched.json",
+    "analysis_json": "analysis.json",
+    "bundle_quality_json": "bundle_quality.json",
+    "classification_quality_json": "classification_quality.json",
+    "classification_quality_markdown": "classification_quality.md",
+    "discovery_xml": "discovery.xml",
+    "hosts": "hosts.txt",
+    "neighbors": "neighbors.txt",
+    "os_detection_gnmap": null,
+    "os_detection_nmap": null,
+    "os_detection_xml": null,
+    "services_xml": "services.xml",
+    "udp_lite_gnmap": null,
+    "udp_lite_nmap": null,
+    "udp_lite_xml": null
+  },
+  "legacy_schema_version": "netsniper-run-v2",
+  "manifest_contract": "netsniper-run-v3",
+  "network_scope": "192.168.56.0/30",
+  "os_detection_available": false,
+  "profile": {
+    "fingerprint": "sha256:fixture-fast-monitored-tcp",
+    "monitored_ports": [
+      21,
+      22,
+      23,
+      25,
+      53,
+      80,
+      88,
+      389,
+      110,
+      139,
+      143,
+      443,
+      445,
+      465,
+      554,
+      587,
+      631,
+      993,
+      995,
+      1433,
+      1521,
+      1900,
+      2375,
+      2376,
+      3000,
+      3306,
+      3389,
+      5000,
+      5432,
+      5555,
+      5601,
+      5900,
+      6379,
+      6443,
+      7547,
+      8000,
+      8080,
+      8081,
+      8443,
+      8888,
+      9000,
+      9090,
+      9100,
+      9200,
+      9300,
+      9443,
+      10250,
+      10255,
+      27017,
+      3268,
+      3269
+    ],
+    "protocols": [
+      "tcp"
+    ]
+  },
+  "profile_budget_exceeded": false,
+  "profile_contract": "FAST_MONITORED_TCP",
+  "profile_duration_seconds": 8,
+  "profile_fingerprint": "sha256:fixture-fast-monitored-tcp",
+  "profile_host_timeout_seconds": 60,
+  "profile_runtime": {
+    "budget_exceeded": false,
+    "duration_seconds": 8,
+    "host_timeout_seconds": 60,
+    "runtime_budget_seconds": 900
+  },
+  "profile_runtime_budget_seconds": 900,
+  "quality": {
+    "bundle_path": "examples/deltaaegis-fixtures/balanced-complete",
+    "checked_at": "2026-06-29T19:55:18.537818+00:00",
+    "classification_quality_valid": true,
+    "counts": {
+      "analysis_enriched_json": 2,
+      "analysis_json": 2,
+      "classification_false_confidence_candidates": 0,
+      "hosts_txt": 2
+    },
+    "counts_valid": true,
+    "deltaaegis_ready": true,
+    "errors": [],
+    "manifest_path": "examples/deltaaegis-fixtures/balanced-complete/manifest.json",
+    "manifest_valid": true,
+    "network_scope": "192.168.56.0/30",
+    "profile": {
+      "budget_exceeded": false,
+      "duration_seconds": 8,
+      "effective_profile": "balanced",
+      "host_timeout_seconds": 60,
+      "profile_contract": "FAST_MONITORED_TCP",
+      "requested_profile": "balanced",
+      "runtime_budget_seconds": 900
+    },
+    "profile_fields_valid": true,
+    "required_files": [
+      {
+        "allow_empty": false,
+        "exists": true,
+        "non_empty": true,
+        "path": "manifest.json"
+      },
+      {
+        "allow_empty": false,
+        "exists": true,
+        "non_empty": true,
+        "path": "hosts.txt"
+      },
+      {
+        "allow_empty": false,
+        "exists": true,
+        "non_empty": true,
+        "path": "analysis.json"
+      },
+      {
+        "allow_empty": false,
+        "exists": true,
+        "non_empty": true,
+        "path": "analysis.enriched.json"
+      },
+      {
+        "allow_empty": false,
+        "exists": true,
+        "non_empty": true,
+        "path": "classification_quality.json"
+      },
+      {
+        "allow_empty": false,
+        "exists": true,
+        "non_empty": true,
+        "path": "services.xml"
+      }
+    ],
+    "required_files_present": true,
+    "scan_id": "fixture-balanced-complete",
+    "scanner_version": "v2.0.0-fixture",
+    "schema_version": "netsniper-bundle-quality-v1",
+    "status_complete": true,
+    "target": "192.168.56.0/30",
+    "target_scope_valid": true,
+    "warnings": []
+  },
+  "requested_profile": "balanced",
+  "run_dir": "examples/deltaaegis-fixtures/balanced-complete",
+  "scan_id": "fixture-balanced-complete",
+  "scan_profile": "FAST_MONITORED_TCP",
+  "scan_profile_contract_schema": "netsniper-scan-profiles-v1",
+  "scan_profile_effective": "balanced",
+  "scan_profile_requested": "balanced",
+  "scan_profile_runtime_stage": "v1_8_compatible_tcp",
+  "scanner_version": "v2.0.0-fixture",
+  "schema_version": "netsniper-run-v3",
+  "started_at": "2026-06-29T00:00:00+00:00",
+  "status": "COMPLETE",
+  "target": "192.168.56.0/30",
+  "telemetry": {
+    "discovery_interface": "fixture0",
+    "nmap_version": "7.95-fixture"
+  },
+  "timestamps": {
+    "archived_at": "2026-06-29T00:00:00+00:00",
+    "neighbors_captured_at": "2026-06-29T00:00:00+00:00",
+    "service_completed_at": "2026-06-29T00:00:08+00:00",
+    "service_started_at": "2026-06-29T00:00:00+00:00"
+  },
+  "udp_lite_available": false
+}

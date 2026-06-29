@@ -67,11 +67,15 @@ CONFIG_FILE="$CONFIG_DIR/netsniper.conf"
 RUN_DIR="$BASE/runs"
 SOCK="/run/gvmd/gvmd.sock"
 
-SCANNER_VERSION="v1.9.0"
+SCANNER_VERSION="v2.0.0"
 SCAN_PROFILE="${NETSNIPER_SCAN_PROFILE:-balanced}"
 SCAN_PROFILE_RESOLVED_JSON=""
 SCAN_PROFILE_EFFECTIVE="balanced"
 SCAN_PROFILE_RUNTIME_STAGE="v1_8_compatible_tcp"
+PROFILE_RUNTIME_BUDGET_SECONDS=0
+PROFILE_HOST_TIMEOUT_SECONDS=0
+PROFILE_DURATION_SECONDS=0
+PROFILE_BUDGET_EXCEEDED=false
 SCAN_PROFILE_CONFIG="$BASE/config/scan_profiles.json"
 
 # TrueAegis-aligned scan ports.
@@ -88,6 +92,7 @@ HEADLESS_MODE=0
 HEADLESS_TARGET=""
 HEADLESS_GREENBONE="no"
 JSON_STATUS=0
+HEADLESS_JSON_STATUS_FILE=""
 LAST_BUNDLE_DIR=""
 
 print_usage() {
@@ -96,7 +101,7 @@ NetSniper - Network Recon & Exposure Intelligence Engine
 
 Usage:
   ./netsniper.sh
-  ./netsniper.sh --non-interactive --target <private-cidr> [--greenbone no] [--json-status] [--profile balanced]
+  ./netsniper.sh --non-interactive --target <private-cidr> [--greenbone no] [--json-status] [--json-status-file <path>] [--profile balanced]
   ./netsniper.sh --help
 
 Interactive mode:
@@ -112,7 +117,8 @@ Options:
   --greenbone yes|no       Optional Greenbone integration setting. Headless mode
                            currently supports no; use the interactive menu for Greenbone.
   --json-status            Print a final machine-readable status object.
-  --profile <name>          Optional v1.9 scan profile: quick, balanced, accurate, or deep.
+  --json-status-file <path> Write the final machine-readable status object to a file.
+  --profile <name>          Optional v2.0 scan profile: quick, balanced, accurate, or deep.
   --scan-profile <name>     Alias for --profile. Balanced remains the default.
   -h, --help               Show this help text.
 
@@ -189,28 +195,76 @@ emit_headless_status() {
     local return_code="$2"
     local run_dir="${3:-}"
     local manifest_path=""
+    local status_at
+    local status_payload
+    local status_dir
+    local tmp_status_file
+
+    status_at=$(date --iso-8601=seconds)
 
     if [ -n "$run_dir" ]; then
         manifest_path="$run_dir/manifest.json"
     fi
 
+    if ! status_payload="$(jq -n \
+        --arg schema_version "netsniper-status-v1" \
+        --arg scanner_version "$SCANNER_VERSION" \
+        --arg status "$status" \
+        --arg target "${NET:-$HEADLESS_TARGET}" \
+        --arg requested_profile "${SCAN_PROFILE:-balanced}" \
+        --arg effective_profile "${SCAN_PROFILE_EFFECTIVE:-balanced}" \
+        --arg runtime_stage "${SCAN_PROFILE_RUNTIME_STAGE:-unknown}" \
+        --argjson profile_runtime_budget_seconds "${PROFILE_RUNTIME_BUDGET_SECONDS:-0}" \
+        --argjson profile_host_timeout_seconds "${PROFILE_HOST_TIMEOUT_SECONDS:-0}" \
+        --argjson profile_duration_seconds "${PROFILE_DURATION_SECONDS:-0}" \
+        --argjson profile_budget_exceeded "${PROFILE_BUDGET_EXCEEDED:-false}" \
+        --arg run_dir "$run_dir" \
+        --arg manifest_path "$manifest_path" \
+        --arg status_at "$status_at" \
+        --argjson return_code "$return_code" \
+        '{
+            schema_version: $schema_version,
+            scanner_version: $scanner_version,
+            status: $status,
+            target: $target,
+            requested_profile: $requested_profile,
+            effective_profile: $effective_profile,
+            runtime_stage: $runtime_stage,
+            profile_runtime_budget_seconds: $profile_runtime_budget_seconds,
+            profile_host_timeout_seconds: $profile_host_timeout_seconds,
+            profile_duration_seconds: $profile_duration_seconds,
+            profile_budget_exceeded: $profile_budget_exceeded,
+            return_code: $return_code,
+            run_dir: $run_dir,
+            manifest_path: $manifest_path,
+            status_at: $status_at
+        }')"; then
+        echo "[-] Failed to build headless status payload." >&2
+        return 1
+    fi
+
     if [ "$JSON_STATUS" = "1" ]; then
-        jq -n \
-            --arg status "$status" \
-            --arg target "${NET:-$HEADLESS_TARGET}" \
-            --arg run_dir "$run_dir" \
-            --arg manifest_path "$manifest_path" \
-            --argjson return_code "$return_code" \
-            '{
-                status: $status,
-                target: $target,
-                return_code: $return_code,
-                run_dir: $run_dir,
-                manifest_path: $manifest_path
-            }'
+        printf '%s\n' "$status_payload"
+    fi
+
+    if [ -n "${HEADLESS_JSON_STATUS_FILE:-}" ]; then
+        status_dir="$(dirname -- "$HEADLESS_JSON_STATUS_FILE")"
+        mkdir -p "$status_dir"
+
+        tmp_status_file="${HEADLESS_JSON_STATUS_FILE}.tmp.$$"
+        printf '%s\n' "$status_payload" > "$tmp_status_file"
+        mv "$tmp_status_file" "$HEADLESS_JSON_STATUS_FILE"
     fi
 }
 
+handle_headless_interrupt() {
+    local rc=130
+
+    echo "" >&2
+    echo "[-] Headless pipeline interrupted." >&2
+    emit_headless_status "interrupted" "$rc" "${LAST_BUNDLE_DIR:-}" || true
+    exit "$rc"
+}
 parse_cli_args() {
     while [ "$#" -gt 0 ]; do
         case "$1" in
@@ -258,6 +312,14 @@ parse_cli_args() {
                 JSON_STATUS=1
                 shift
                 ;;
+            --json-status-file)
+                if [ "$#" -lt 2 ]; then
+                    echo "[-] --json-status-file requires a path." >&2
+                    exit 1
+                fi
+                HEADLESS_JSON_STATUS_FILE="$2"
+                shift 2
+                ;;
             *)
                 echo "[-] Unknown argument: $1" >&2
                 echo "Use --help for usage." >&2
@@ -276,6 +338,7 @@ parse_cli_args() {
         if ! SCAN_PROFILE_RESOLVED_JSON="$(python3 "$BASE/tools/resolve_v1_9_scan_profile.py" "$SCAN_PROFILE" --profiles-file "$SCAN_PROFILE_CONFIG" 2>&1)"; then
             echo "[-] Invalid scan profile: $SCAN_PROFILE" >&2
             echo "$SCAN_PROFILE_RESOLVED_JSON" >&2
+            emit_headless_status "failed" 2 ""
             exit 2
         fi
 
@@ -289,12 +352,14 @@ parse_cli_args() {
                 echo "[!] Accurate profile enables TCP service-depth plus non-fatal OS and UDP-lite evidence." >&2
                 ;;
             deep)
-                echo "[-] Scan profile 'deep' is planned but runtime execution is not enabled in this v1.9 checkpoint." >&2
-                echo "[-] Use --profile balanced or --profile accurate until deep scan wiring is validated." >&2
+                echo "[-] Scan profile 'deep' is planned but runtime execution is not enabled in this v2.0 checkpoint." >&2
+                echo "[-] Use --profile quick, --profile balanced, or --profile accurate until deep scan wiring is validated." >&2
+                emit_headless_status "failed" 2 ""
                 exit 2
                 ;;
             *)
                 echo "[-] Unexpected resolved scan profile: $SCAN_PROFILE_EFFECTIVE" >&2
+                emit_headless_status "failed" 2 ""
                 exit 2
                 ;;
         esac
@@ -319,6 +384,8 @@ run_headless_pipeline() {
     GREENBONE_USER=""
     GREENBONE_PASS=""
 
+    trap 'handle_headless_interrupt' INT TERM
+
     echo "[*] Running NetSniper in headless mode."
     echo "[*] Target: $NET"
 
@@ -336,21 +403,23 @@ run_headless_pipeline() {
         if [ -z "$LAST_BUNDLE_DIR" ] || [ ! -f "$LAST_BUNDLE_DIR/manifest.json" ]; then
             echo "[-] Pipeline completed but manifest.json was not found." >&2
             emit_headless_status "failed" 4 "${LAST_BUNDLE_DIR:-}"
+            trap - INT TERM
             return 4
         fi
 
         echo "[+] Headless pipeline completed."
         echo "[+] Manifest: $LAST_BUNDLE_DIR/manifest.json"
         emit_headless_status "completed" 0 "$LAST_BUNDLE_DIR"
+        trap - INT TERM
         return 0
     else
         rc=$?
         echo "[-] Headless pipeline failed with return code $rc." >&2
         emit_headless_status "failed" "$rc" "${LAST_BUNDLE_DIR:-}"
+        trap - INT TERM
         return "$rc"
     fi
 }
-
 
 # =========================
 # FUNCTIONS
@@ -549,6 +618,19 @@ run_scan() {
         return 1
     fi
 
+    PROFILE_RUNTIME_BUDGET_SECONDS="$(printf '%s' "$SCAN_PROFILE_PLAN_JSON" | jq -r '.runtime.runtime_budget_seconds // 0')"
+    PROFILE_HOST_TIMEOUT_SECONDS="$(printf '%s' "$SCAN_PROFILE_PLAN_JSON" | jq -r '.runtime.host_timeout_seconds // 0')"
+    PROFILE_DURATION_SECONDS=0
+    PROFILE_BUDGET_EXCEEDED=false
+
+    if [ "${PROFILE_RUNTIME_BUDGET_SECONDS:-0}" -gt 0 ]; then
+        echo "[*] Profile runtime budget: ${PROFILE_RUNTIME_BUDGET_SECONDS}s"
+    fi
+
+    if [ "${PROFILE_HOST_TIMEOUT_SECONDS:-0}" -gt 0 ]; then
+        echo "[*] Profile host-timeout guidance: ${PROFILE_HOST_TIMEOUT_SECONDS}s"
+    fi
+
     mapfile -t TCP_SCAN_ARGS < <(printf '%s' "$SCAN_PROFILE_PLAN_JSON" | jq -r '.tcp.args[]')
 
     if [ "${#TCP_SCAN_ARGS[@]}" -eq 0 ]; then
@@ -564,10 +646,25 @@ run_scan() {
 
     echo "[*] Using scan profile: $SCAN_PROFILE_EFFECTIVE"
 
-    nmap "${TCP_SCAN_ARGS[@]}" \
-        -iL "$TARGET_DIR/hosts.txt" \
-        -oA "$SCAN_DIR/fast_scan" \
-        > /dev/null 2>&1 &
+    local scan_started_epoch scan_completed_epoch scan_rc
+    scan_started_epoch=$(date +%s)
+
+    if [ "${PROFILE_RUNTIME_BUDGET_SECONDS:-0}" -gt 0 ] && command -v timeout >/dev/null 2>&1; then
+        timeout "${PROFILE_RUNTIME_BUDGET_SECONDS}s" \
+            nmap "${TCP_SCAN_ARGS[@]}" \
+            -iL "$TARGET_DIR/hosts.txt" \
+            -oA "$SCAN_DIR/fast_scan" \
+            > /dev/null 2>&1 &
+    else
+        if [ "${PROFILE_RUNTIME_BUDGET_SECONDS:-0}" -gt 0 ]; then
+            echo "[!] timeout command not available; runtime budget will be recorded but not enforced." >&2
+        fi
+
+        nmap "${TCP_SCAN_ARGS[@]}" \
+            -iL "$TARGET_DIR/hosts.txt" \
+            -oA "$SCAN_DIR/fast_scan" \
+            > /dev/null 2>&1 &
+    fi
     PID=$!
 
     spin='|/-\'
@@ -578,9 +675,29 @@ run_scan() {
         sleep 0.1
     done
 
-    if ! wait "$PID"; then
+    set +e
+    wait "$PID"
+    scan_rc=$?
+    set -e
+
+    scan_completed_epoch=$(date +%s)
+    PROFILE_DURATION_SECONDS=$((scan_completed_epoch - scan_started_epoch))
+
+    if [ "${PROFILE_RUNTIME_BUDGET_SECONDS:-0}" -gt 0 ] \
+        && [ "${PROFILE_DURATION_SECONDS:-0}" -gt "${PROFILE_RUNTIME_BUDGET_SECONDS:-0}" ]; then
+        PROFILE_BUDGET_EXCEEDED=true
+    fi
+
+    if [ "$scan_rc" -ne 0 ]; then
         printf "\r"
-        echo -e "${RED}[-] Service scan failed.${RESET}"
+
+        if [ "$scan_rc" -eq 124 ]; then
+            PROFILE_BUDGET_EXCEEDED=true
+            echo -e "${RED}[-] Service scan exceeded profile runtime budget (${PROFILE_RUNTIME_BUDGET_SECONDS}s).${RESET}"
+        else
+            echo -e "${RED}[-] Service scan failed.${RESET}"
+        fi
+
         return 1
     fi
     printf "\r"
@@ -1052,12 +1169,281 @@ latest_analysis_text_file() {
         | cut -d' ' -f2-
 }
 
+
+write_bundle_quality_report() {
+    local bundle_dir="$1"
+
+    python3 - "$bundle_dir" <<'PY'
+from __future__ import annotations
+
+import json
+import sys
+from datetime import datetime, timezone
+from pathlib import Path
+from typing import Any
+
+bundle_dir = Path(sys.argv[1]).resolve()
+manifest_path = bundle_dir / "manifest.json"
+quality_path = bundle_dir / "bundle_quality.json"
+
+errors: list[str] = []
+warnings: list[str] = []
+
+
+def read_json(path: Path, label: str) -> Any:
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except FileNotFoundError:
+        errors.append(f"{label} is missing: {path.name}")
+    except json.JSONDecodeError as exc:
+        errors.append(f"{label} is invalid JSON: {exc}")
+    return None
+
+
+manifest = read_json(manifest_path, "manifest")
+if not isinstance(manifest, dict):
+    manifest = {}
+
+manifest_files = manifest.get("files")
+if not isinstance(manifest_files, dict):
+    manifest_files = {}
+    errors.append("manifest.files is missing or invalid")
+
+required_file_names: list[str] = [
+    "manifest.json",
+    "hosts.txt",
+]
+
+for value in manifest_files.values():
+    if isinstance(value, str) and value and value not in required_file_names:
+        required_file_names.append(value)
+
+required_file_records = []
+
+for name in required_file_names:
+    path = bundle_dir / name
+    allow_empty = name == "neighbors.txt"
+    exists = path.exists()
+    non_empty = exists and path.is_file() and path.stat().st_size > 0
+
+    if not exists:
+        errors.append(f"required bundle file missing: {name}")
+    elif not allow_empty and not non_empty:
+        errors.append(f"required bundle file is empty: {name}")
+
+    required_file_records.append(
+        {
+            "path": name,
+            "exists": exists,
+            "non_empty": bool(non_empty),
+            "allow_empty": allow_empty,
+        }
+    )
+
+required_files_present = all(
+    item["exists"] and (item["allow_empty"] or item["non_empty"])
+    for item in required_file_records
+)
+
+hosts_path = bundle_dir / "hosts.txt"
+hosts_count = 0
+
+if hosts_path.exists():
+    hosts_count = len(
+        [
+            line
+            for line in hosts_path.read_text(
+                encoding="utf-8",
+                errors="replace",
+            ).splitlines()
+            if line.strip()
+        ]
+    )
+
+analysis_count = None
+analysis = read_json(
+    bundle_dir / str(manifest_files.get("analysis_json", "analysis.json")),
+    "analysis",
+)
+
+if isinstance(analysis, list):
+    analysis_count = len(analysis)
+else:
+    errors.append("analysis.json is not a JSON list")
+
+enriched_count = None
+enriched = read_json(
+    bundle_dir / str(
+        manifest_files.get("analysis_enriched_json", "analysis.enriched.json")
+    ),
+    "analysis.enriched",
+)
+
+if isinstance(enriched, dict) and isinstance(enriched.get("hosts"), list):
+    enriched_count = len(enriched["hosts"])
+elif isinstance(enriched, list):
+    enriched_count = len(enriched)
+else:
+    errors.append("analysis.enriched.json is not a supported host collection")
+
+counts_valid = (
+    isinstance(analysis_count, int)
+    and isinstance(enriched_count, int)
+    and hosts_count == analysis_count
+    and hosts_count == enriched_count
+)
+
+if not counts_valid:
+    errors.append(
+        "host count mismatch: "
+        f"hosts.txt={hosts_count}, analysis.json={analysis_count}, "
+        f"analysis.enriched.json={enriched_count}"
+    )
+
+classification_quality = read_json(
+    bundle_dir / str(
+        manifest_files.get(
+            "classification_quality_json",
+            "classification_quality.json",
+        )
+    ),
+    "classification quality",
+)
+
+false_confidence_count = None
+classification_quality_valid = False
+
+if isinstance(classification_quality, dict):
+    false_confidence_count = classification_quality.get(
+        "false_confidence_candidate_count",
+        0,
+    )
+    classification_quality_valid = false_confidence_count == 0
+    if not classification_quality_valid:
+        errors.append(
+            "classification quality found false-confidence candidates: "
+            f"{false_confidence_count}"
+        )
+else:
+    errors.append("classification_quality.json is not a JSON object")
+
+allowed_profiles = {"quick", "balanced", "accurate"}
+
+requested_profile = manifest.get("requested_profile")
+effective_profile = manifest.get("effective_profile")
+legacy_requested = manifest.get("scan_profile_requested")
+legacy_effective = manifest.get("scan_profile_effective")
+profile_contract = manifest.get("profile_contract")
+
+profile_fields_valid = (
+    requested_profile in allowed_profiles
+    and effective_profile in allowed_profiles
+    and profile_contract == "FAST_MONITORED_TCP"
+    and requested_profile == legacy_requested
+    and effective_profile == legacy_effective
+)
+
+if not profile_fields_valid:
+    errors.append("profile fields are invalid or legacy aliases do not match")
+
+target = manifest.get("target")
+network_scope = manifest.get("network_scope")
+
+target_scope_valid = isinstance(target, str) and bool(target) and target == network_scope
+
+if not target_scope_valid:
+    errors.append("target and network_scope are missing or inconsistent")
+
+manifest_valid = (
+    manifest.get("schema_version") == "netsniper-run-v3"
+    and manifest.get("manifest_contract") == "netsniper-run-v3"
+    and manifest.get("legacy_schema_version") == "netsniper-run-v2"
+    and isinstance(manifest.get("scan_id"), str)
+    and isinstance(manifest.get("scanner_version"), str)
+)
+
+if not manifest_valid:
+    errors.append("manifest does not satisfy netsniper-run-v3 compatibility requirements")
+
+status_complete = manifest.get("status") == "COMPLETE"
+
+if not status_complete:
+    errors.append(f"manifest status is not COMPLETE: {manifest.get('status')}")
+
+budget_exceeded = bool(manifest.get("profile_budget_exceeded", False))
+
+if budget_exceeded:
+    warnings.append("profile runtime budget was exceeded")
+
+deltaaegis_ready = all(
+    [
+        manifest_valid,
+        required_files_present,
+        counts_valid,
+        classification_quality_valid,
+        profile_fields_valid,
+        target_scope_valid,
+        status_complete,
+    ]
+)
+
+checked_at = datetime.now(timezone.utc).isoformat()
+
+report = {
+    "schema_version": "netsniper-bundle-quality-v1",
+    "checked_at": checked_at,
+    "bundle_path": str(bundle_dir),
+    "manifest_path": str(manifest_path),
+    "scan_id": manifest.get("scan_id"),
+    "scanner_version": manifest.get("scanner_version"),
+    "target": target,
+    "network_scope": network_scope,
+    "deltaaegis_ready": deltaaegis_ready,
+    "manifest_valid": manifest_valid,
+    "required_files_present": required_files_present,
+    "counts_valid": counts_valid,
+    "classification_quality_valid": classification_quality_valid,
+    "profile_fields_valid": profile_fields_valid,
+    "target_scope_valid": target_scope_valid,
+    "status_complete": status_complete,
+    "required_files": required_file_records,
+    "counts": {
+        "hosts_txt": hosts_count,
+        "analysis_json": analysis_count,
+        "analysis_enriched_json": enriched_count,
+        "classification_false_confidence_candidates": false_confidence_count,
+    },
+    "profile": {
+        "requested_profile": requested_profile,
+        "effective_profile": effective_profile,
+        "profile_contract": profile_contract,
+        "runtime_budget_seconds": manifest.get("profile_runtime_budget_seconds"),
+        "host_timeout_seconds": manifest.get("profile_host_timeout_seconds"),
+        "duration_seconds": manifest.get("profile_duration_seconds"),
+        "budget_exceeded": budget_exceeded,
+    },
+    "warnings": warnings,
+    "errors": errors,
+}
+
+quality_path.write_text(
+    json.dumps(report, indent=2, sort_keys=True) + "\n",
+    encoding="utf-8",
+)
+
+if not deltaaegis_ready:
+    print(json.dumps(report, indent=2, sort_keys=True), file=sys.stderr)
+    raise SystemExit(1)
+PY
+}
+
 # NETSNIPER_MANIFEST_V2
 archive_deltaaegis_bundle() {
     local run_id bundle_dir manifest_tmp analysis_json analysis_txt
     local archived_at neighbors_captured_at discovered_count relevant_count service_hosts_up
-    local profile_ports_json profile_hash nmap_version discovery_interface
+    local profile_ports_json profile_hash profile_fingerprint profile_contract nmap_version discovery_interface
     local service_started_epoch service_completed_epoch service_started_at service_completed_at
+    local run_started_at run_completed_at duration_seconds network_scope
     local os_detection_available udp_lite_available
 
     if [ ! -s "$DISCOVERY_DIR/live.xml" ]; then
@@ -1148,10 +1534,32 @@ archive_deltaaegis_bundle() {
     discovery_interface=$(ip route show "$NET" 2>/dev/null | awk '{for (i=1; i<=NF; i++) if ($i == "dev") {print $(i+1); exit}}')
     profile_ports_json=$(printf '%s' "$TRUEAEGIS_PORTS" | tr ',' '\n' | jq -R 'tonumber' | jq -s '.')
     profile_hash=$(printf '%s' "FAST_MONITORED_TCP|tcp|$TRUEAEGIS_PORTS" | sha256sum | awk '{print $1}')
+    profile_fingerprint="sha256:$profile_hash"
+    profile_contract="FAST_MONITORED_TCP"
+    network_scope="$NET"
     service_started_epoch=$(sed -n 's/.*<nmaprun[^>]* start="\([0-9][0-9]*\)".*/\1/p' "$SCAN_DIR/fast_scan.xml" | head -n 1)
     service_completed_epoch=$(sed -n 's/.*<finished[^>]* time="\([0-9][0-9]*\)".*/\1/p' "$SCAN_DIR/fast_scan.xml" | tail -n 1)
     service_started_at=$(date --date="@${service_started_epoch:-0}" --iso-8601=seconds 2>/dev/null || printf '')
     service_completed_at=$(date --date="@${service_completed_epoch:-0}" --iso-8601=seconds 2>/dev/null || printf '')
+
+    run_started_at="$archived_at"
+    run_completed_at="$archived_at"
+    duration_seconds=0
+
+    if [[ "${service_started_epoch:-}" =~ ^[0-9]+$ ]] && [ "${service_started_epoch:-0}" -gt 0 ]; then
+        run_started_at="$service_started_at"
+    fi
+
+    if [[ "${service_completed_epoch:-}" =~ ^[0-9]+$ ]] && [ "${service_completed_epoch:-0}" -gt 0 ]; then
+        run_completed_at="$service_completed_at"
+    fi
+
+    if [[ "${service_started_epoch:-}" =~ ^[0-9]+$ ]] \
+        && [[ "${service_completed_epoch:-}" =~ ^[0-9]+$ ]] \
+        && [ "${service_completed_epoch:-0}" -ge "${service_started_epoch:-0}" ]; then
+        duration_seconds=$((service_completed_epoch - service_started_epoch))
+    fi
+
     manifest_tmp="$bundle_dir/manifest.json.tmp"
 
     jq -n \
@@ -1174,7 +1582,7 @@ archive_deltaaegis_bundle() {
         --arg service_completed_at "$service_completed_at" \
         --arg nmap_version "$nmap_version" \
         --arg discovery_interface "$discovery_interface" \
-        --arg profile_fingerprint "sha256:$profile_hash" \
+        --arg profile_fingerprint "$profile_fingerprint" \
         --argjson monitored_ports "$profile_ports_json" \
         --argjson discovered_count "$discovered_count" \
         --argjson relevant_count "$relevant_count" \
@@ -1230,7 +1638,87 @@ archive_deltaaegis_bundle() {
             }
         }' > "$manifest_tmp"
 
+    if ! jq \
+        --arg schema_version "netsniper-run-v3" \
+        --arg manifest_contract "netsniper-run-v3" \
+        --arg legacy_schema_version "netsniper-run-v2" \
+        --arg network_scope "$network_scope" \
+        --arg requested_profile "$SCAN_PROFILE" \
+        --arg effective_profile "$SCAN_PROFILE_EFFECTIVE" \
+        --arg profile_contract "$profile_contract" \
+        --arg profile_fingerprint "$profile_fingerprint" \
+        --arg run_dir "$bundle_dir" \
+        --arg started_at "$run_started_at" \
+        --arg completed_at "$run_completed_at" \
+        --argjson duration_seconds "$duration_seconds" \
+        --argjson profile_runtime_budget_seconds "${PROFILE_RUNTIME_BUDGET_SECONDS:-0}" \
+        --argjson profile_host_timeout_seconds "${PROFILE_HOST_TIMEOUT_SECONDS:-0}" \
+        --argjson profile_duration_seconds "${PROFILE_DURATION_SECONDS:-0}" \
+        --argjson profile_budget_exceeded "${PROFILE_BUDGET_EXCEEDED:-false}" \
+        '
+        .schema_version = $schema_version
+        | .manifest_contract = $manifest_contract
+        | .legacy_schema_version = $legacy_schema_version
+        | .network_scope = $network_scope
+        | .requested_profile = $requested_profile
+        | .effective_profile = $effective_profile
+        | .profile_contract = $profile_contract
+        | .profile_fingerprint = $profile_fingerprint
+        | .run_dir = $run_dir
+        | .started_at = $started_at
+        | .completed_at = $completed_at
+        | .duration_seconds = $duration_seconds
+        | .profile_runtime_budget_seconds = $profile_runtime_budget_seconds
+        | .profile_host_timeout_seconds = $profile_host_timeout_seconds
+        | .profile_duration_seconds = $profile_duration_seconds
+        | .profile_budget_exceeded = $profile_budget_exceeded
+        | .profile_runtime = {
+            runtime_budget_seconds: $profile_runtime_budget_seconds,
+            host_timeout_seconds: $profile_host_timeout_seconds,
+            duration_seconds: $profile_duration_seconds,
+            budget_exceeded: $profile_budget_exceeded
+        }
+        | .quality = {
+            manifest_valid: true,
+            required_files_present: true,
+            deltaaegis_ready: true,
+            warnings: [],
+            errors: []
+        }
+        | .compatibility = {
+            legacy_schema_versions: [$legacy_schema_version],
+            legacy_scan_profile_field: "scan_profile",
+            legacy_requested_profile_field: "scan_profile_requested",
+            legacy_effective_profile_field: "scan_profile_effective"
+        }
+        ' "$manifest_tmp" > "$manifest_tmp.v3"; then
+        echo -e "${RED}[-] Failed to enrich manifest with NetSniper v2.0 schema fields.${RESET}"
+        return 1
+    fi
+
+    mv "$manifest_tmp.v3" "$manifest_tmp"
     mv "$manifest_tmp" "$bundle_dir/manifest.json"
+
+    if ! write_bundle_quality_report "$bundle_dir"; then
+        echo -e "${RED}[-] Bundle quality validation failed; refusing to finalize telemetry bundle.${RESET}"
+        return 1
+    fi
+
+    local manifest_quality_tmp
+    manifest_quality_tmp="$bundle_dir/manifest.json.quality.tmp"
+
+    if ! jq \
+        --slurpfile bundle_quality "$bundle_dir/bundle_quality.json" \
+        '.files.hosts = "hosts.txt"
+         | .files.bundle_quality_json = "bundle_quality.json"
+         | .quality = $bundle_quality[0]' \
+        "$bundle_dir/manifest.json" > "$manifest_quality_tmp"; then
+        echo -e "${RED}[-] Failed to attach bundle quality report to manifest.${RESET}"
+        return 1
+    fi
+
+    mv "$manifest_quality_tmp" "$bundle_dir/manifest.json"
+
     LAST_BUNDLE_DIR="$bundle_dir"
     echo -e "${GREEN}[+] DeltaAegis telemetry bundle archived:${RESET}"
     echo "$bundle_dir"
