@@ -24,8 +24,12 @@ grep -Fq 'netsniper-bundle-quality-v1' netsniper.sh \
 grep -Fq 'bundle_quality.json' netsniper.sh \
     || fail "bundle_quality.json is not referenced"
 
-./tools/validate_v2_0_profile_budgets.sh \
-    || fail "profile budget validator failed before bundle quality checks"
+if [ "${NETSNIPER_SKIP_NESTED_VALIDATORS:-0}" != "1" ]; then
+    ./tools/validate_v2_0_profile_budgets.sh \
+        || fail "profile budget validator failed before bundle quality checks"
+else
+    echo "[SKIP] Nested validators skipped in validate_v2_0_bundle_quality.sh"
+fi
 
 latest_run="$(ls -td runs/* 2>/dev/null | head -1)"
 [ -n "$latest_run" ] \
@@ -103,10 +107,18 @@ assert quality["errors"] == [], quality
 print("[PASS] v2.0 bundle quality python checks passed")
 PY
 
-./tools/validate_v2_0_manifest_v3.sh \
-    || fail "manifest v3 validator failed after bundle quality changes"
+if [ "${NETSNIPER_SKIP_NESTED_VALIDATORS:-0}" != "1" ]; then
+    ./tools/validate_v2_0_manifest_v3.sh \
+        || fail "manifest v3 validator failed after bundle quality changes"
+else
+    echo "[SKIP] Nested validators skipped in validate_v2_0_bundle_quality.sh"
+fi
 
-./tools/validate_v2_0_status_contract.sh \
-    || fail "status contract validator failed after bundle quality changes"
+if [ "${NETSNIPER_SKIP_NESTED_VALIDATORS:-0}" != "1" ]; then
+    ./tools/validate_v2_0_status_contract.sh \
+        || fail "status contract validator failed after bundle quality changes"
+else
+    echo "[SKIP] Nested validators skipped in validate_v2_0_bundle_quality.sh"
+fi
 
 ok "NetSniper v2.0 bundle quality validation passed"

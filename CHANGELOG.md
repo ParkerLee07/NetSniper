@@ -15,6 +15,7 @@
 
 ### Changed
 
+- Optimized v2.0 validator execution so expensive compatibility checks are deduplicated.
 - Updated scan profile metadata for the v2.0.0 release target.
 - Updated README documentation for the v2.0 telemetry contract.
 - Preserved v1.9 profile behavior and compatibility validation.

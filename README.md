@@ -58,6 +58,10 @@ for review, not pretend that every open port proves device identity.
 
 ## Recommended Validation
 
+For quick local iteration, run:
+
+    ./tools/validate_v2_0_fast.sh
+
 Before release, demo use, or downstream DeltaAegis ingestion, run:
 
     ./tools/validate_v2_0_release_gate.sh

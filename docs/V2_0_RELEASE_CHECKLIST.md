@@ -1,10 +1,18 @@
 # NetSniper v2.0 Release Checklist
 
+For quick local iteration, run the fast structural gate:
+
+```bash
+tools/validate_v2_0_fast.sh
+```
+
 Before publishing NetSniper v2.0.0, run the complete gate:
 
 ```bash
 tools/validate_v2_0_release_gate.sh
 ```
+
+The release gate uses a deduplicated validator chain so expensive fake-Nmap compatibility checks run once instead of being repeated by nested validators.
 
 The release gate includes:
 

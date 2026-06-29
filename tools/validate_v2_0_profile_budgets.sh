@@ -81,8 +81,12 @@ grep -Fq 'timeout "${PROFILE_RUNTIME_BUDGET_SECONDS}s"' netsniper.sh \
 grep -Fq 'profile_runtime_budget_seconds' netsniper.sh \
     || fail "status/manifest budget field missing"
 
-./tools/validate_v2_0_manifest_v3.sh \
-    || fail "manifest v3 validator failed after budget changes"
+if [ "${NETSNIPER_SKIP_NESTED_VALIDATORS:-0}" != "1" ]; then
+    ./tools/validate_v2_0_manifest_v3.sh \
+        || fail "manifest v3 validator failed after budget changes"
+else
+    echo "[SKIP] Nested validators skipped in validate_v2_0_profile_budgets.sh"
+fi
 
 latest_run="$(ls -td runs/* 2>/dev/null | head -1)"
 [ -n "$latest_run" ] \
@@ -110,7 +114,11 @@ jq -e '
         fail "latest manifest does not contain v2.0 profile budget metadata"
     }
 
-./tools/validate_v2_0_status_contract.sh \
-    || fail "status contract validator failed after budget changes"
+if [ "${NETSNIPER_SKIP_NESTED_VALIDATORS:-0}" != "1" ]; then
+    ./tools/validate_v2_0_status_contract.sh \
+        || fail "status contract validator failed after budget changes"
+else
+    echo "[SKIP] Nested validators skipped in validate_v2_0_profile_budgets.sh"
+fi
 
 ok "NetSniper v2.0 profile budget validation passed"

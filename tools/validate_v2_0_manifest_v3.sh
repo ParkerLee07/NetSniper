@@ -45,11 +45,19 @@ grep -Fq 'duration_seconds' netsniper.sh \
 grep -Fq 'legacy_schema_versions' netsniper.sh \
     || fail "manifest compatibility block missing"
 
-./tools/validate_v1_9_manifest_profile_metadata.sh \
-    || fail "legacy v1.9 manifest profile metadata compatibility failed"
+if [ "${NETSNIPER_SKIP_NESTED_VALIDATORS:-0}" != "1" ]; then
+    ./tools/validate_v1_9_manifest_profile_metadata.sh \
+        || fail "legacy v1.9 manifest profile metadata compatibility failed"
+else
+    echo "[SKIP] Nested validators skipped in validate_v2_0_manifest_v3.sh"
+fi
 
-./tools/validate_v1_9_accurate_udp_lite_fake_nmap.sh \
-    || fail "fake accurate UDP-lite runtime did not produce a valid bundle"
+if [ "${NETSNIPER_SKIP_NESTED_VALIDATORS:-0}" != "1" ]; then
+    ./tools/validate_v1_9_accurate_udp_lite_fake_nmap.sh \
+        || fail "fake accurate UDP-lite runtime did not produce a valid bundle"
+else
+    echo "[SKIP] Nested validators skipped in validate_v2_0_manifest_v3.sh"
+fi
 
 latest_run="$(ls -td runs/* 2>/dev/null | head -1)"
 [ -n "$latest_run" ] \
