@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<nmaprun scanner="nmap" args="netsniper fixture os_detection accurate" start="1760000000" version="7.95">
+  <host>
+    <status state="up" reason="fixture"/>
+    <address addr="192.168.56.1" addrtype="ipv4"/>
+    <hostnames><hostname name="fixture-gateway.local" type="PTR"/></hostnames>
+  </host>
+  <host>
+    <status state="up" reason="fixture"/>
+    <address addr="192.168.56.2" addrtype="ipv4"/>
+    <hostnames><hostname name="fixture-workstation.local" type="PTR"/></hostnames>
+  </host>
+  <runstats>
+    <finished time="1760000004" timestr="fixture" elapsed="4.00" summary="Nmap done" exit="success"/>
+    <hosts up="2" down="0" total="2"/>
+  </runstats>
+</nmaprun>
