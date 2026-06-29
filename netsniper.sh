@@ -1169,6 +1169,274 @@ latest_analysis_text_file() {
         | cut -d' ' -f2-
 }
 
+
+write_bundle_quality_report() {
+    local bundle_dir="$1"
+
+    python3 - "$bundle_dir" <<'PY'
+from __future__ import annotations
+
+import json
+import sys
+from datetime import datetime, timezone
+from pathlib import Path
+from typing import Any
+
+bundle_dir = Path(sys.argv[1]).resolve()
+manifest_path = bundle_dir / "manifest.json"
+quality_path = bundle_dir / "bundle_quality.json"
+
+errors: list[str] = []
+warnings: list[str] = []
+
+
+def read_json(path: Path, label: str) -> Any:
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except FileNotFoundError:
+        errors.append(f"{label} is missing: {path.name}")
+    except json.JSONDecodeError as exc:
+        errors.append(f"{label} is invalid JSON: {exc}")
+    return None
+
+
+manifest = read_json(manifest_path, "manifest")
+if not isinstance(manifest, dict):
+    manifest = {}
+
+manifest_files = manifest.get("files")
+if not isinstance(manifest_files, dict):
+    manifest_files = {}
+    errors.append("manifest.files is missing or invalid")
+
+required_file_names: list[str] = [
+    "manifest.json",
+    "hosts.txt",
+]
+
+for value in manifest_files.values():
+    if isinstance(value, str) and value and value not in required_file_names:
+        required_file_names.append(value)
+
+required_file_records = []
+
+for name in required_file_names:
+    path = bundle_dir / name
+    allow_empty = name == "neighbors.txt"
+    exists = path.exists()
+    non_empty = exists and path.is_file() and path.stat().st_size > 0
+
+    if not exists:
+        errors.append(f"required bundle file missing: {name}")
+    elif not allow_empty and not non_empty:
+        errors.append(f"required bundle file is empty: {name}")
+
+    required_file_records.append(
+        {
+            "path": name,
+            "exists": exists,
+            "non_empty": bool(non_empty),
+            "allow_empty": allow_empty,
+        }
+    )
+
+required_files_present = all(
+    item["exists"] and (item["allow_empty"] or item["non_empty"])
+    for item in required_file_records
+)
+
+hosts_path = bundle_dir / "hosts.txt"
+hosts_count = 0
+
+if hosts_path.exists():
+    hosts_count = len(
+        [
+            line
+            for line in hosts_path.read_text(
+                encoding="utf-8",
+                errors="replace",
+            ).splitlines()
+            if line.strip()
+        ]
+    )
+
+analysis_count = None
+analysis = read_json(
+    bundle_dir / str(manifest_files.get("analysis_json", "analysis.json")),
+    "analysis",
+)
+
+if isinstance(analysis, list):
+    analysis_count = len(analysis)
+else:
+    errors.append("analysis.json is not a JSON list")
+
+enriched_count = None
+enriched = read_json(
+    bundle_dir / str(
+        manifest_files.get("analysis_enriched_json", "analysis.enriched.json")
+    ),
+    "analysis.enriched",
+)
+
+if isinstance(enriched, dict) and isinstance(enriched.get("hosts"), list):
+    enriched_count = len(enriched["hosts"])
+elif isinstance(enriched, list):
+    enriched_count = len(enriched)
+else:
+    errors.append("analysis.enriched.json is not a supported host collection")
+
+counts_valid = (
+    isinstance(analysis_count, int)
+    and isinstance(enriched_count, int)
+    and hosts_count == analysis_count
+    and hosts_count == enriched_count
+)
+
+if not counts_valid:
+    errors.append(
+        "host count mismatch: "
+        f"hosts.txt={hosts_count}, analysis.json={analysis_count}, "
+        f"analysis.enriched.json={enriched_count}"
+    )
+
+classification_quality = read_json(
+    bundle_dir / str(
+        manifest_files.get(
+            "classification_quality_json",
+            "classification_quality.json",
+        )
+    ),
+    "classification quality",
+)
+
+false_confidence_count = None
+classification_quality_valid = False
+
+if isinstance(classification_quality, dict):
+    false_confidence_count = classification_quality.get(
+        "false_confidence_candidate_count",
+        0,
+    )
+    classification_quality_valid = false_confidence_count == 0
+    if not classification_quality_valid:
+        errors.append(
+            "classification quality found false-confidence candidates: "
+            f"{false_confidence_count}"
+        )
+else:
+    errors.append("classification_quality.json is not a JSON object")
+
+allowed_profiles = {"quick", "balanced", "accurate"}
+
+requested_profile = manifest.get("requested_profile")
+effective_profile = manifest.get("effective_profile")
+legacy_requested = manifest.get("scan_profile_requested")
+legacy_effective = manifest.get("scan_profile_effective")
+profile_contract = manifest.get("profile_contract")
+
+profile_fields_valid = (
+    requested_profile in allowed_profiles
+    and effective_profile in allowed_profiles
+    and profile_contract == "FAST_MONITORED_TCP"
+    and requested_profile == legacy_requested
+    and effective_profile == legacy_effective
+)
+
+if not profile_fields_valid:
+    errors.append("profile fields are invalid or legacy aliases do not match")
+
+target = manifest.get("target")
+network_scope = manifest.get("network_scope")
+
+target_scope_valid = isinstance(target, str) and bool(target) and target == network_scope
+
+if not target_scope_valid:
+    errors.append("target and network_scope are missing or inconsistent")
+
+manifest_valid = (
+    manifest.get("schema_version") == "netsniper-run-v3"
+    and manifest.get("manifest_contract") == "netsniper-run-v3"
+    and manifest.get("legacy_schema_version") == "netsniper-run-v2"
+    and isinstance(manifest.get("scan_id"), str)
+    and isinstance(manifest.get("scanner_version"), str)
+)
+
+if not manifest_valid:
+    errors.append("manifest does not satisfy netsniper-run-v3 compatibility requirements")
+
+status_complete = manifest.get("status") == "COMPLETE"
+
+if not status_complete:
+    errors.append(f"manifest status is not COMPLETE: {manifest.get('status')}")
+
+budget_exceeded = bool(manifest.get("profile_budget_exceeded", False))
+
+if budget_exceeded:
+    warnings.append("profile runtime budget was exceeded")
+
+deltaaegis_ready = all(
+    [
+        manifest_valid,
+        required_files_present,
+        counts_valid,
+        classification_quality_valid,
+        profile_fields_valid,
+        target_scope_valid,
+        status_complete,
+    ]
+)
+
+checked_at = datetime.now(timezone.utc).isoformat()
+
+report = {
+    "schema_version": "netsniper-bundle-quality-v1",
+    "checked_at": checked_at,
+    "bundle_path": str(bundle_dir),
+    "manifest_path": str(manifest_path),
+    "scan_id": manifest.get("scan_id"),
+    "scanner_version": manifest.get("scanner_version"),
+    "target": target,
+    "network_scope": network_scope,
+    "deltaaegis_ready": deltaaegis_ready,
+    "manifest_valid": manifest_valid,
+    "required_files_present": required_files_present,
+    "counts_valid": counts_valid,
+    "classification_quality_valid": classification_quality_valid,
+    "profile_fields_valid": profile_fields_valid,
+    "target_scope_valid": target_scope_valid,
+    "status_complete": status_complete,
+    "required_files": required_file_records,
+    "counts": {
+        "hosts_txt": hosts_count,
+        "analysis_json": analysis_count,
+        "analysis_enriched_json": enriched_count,
+        "classification_false_confidence_candidates": false_confidence_count,
+    },
+    "profile": {
+        "requested_profile": requested_profile,
+        "effective_profile": effective_profile,
+        "profile_contract": profile_contract,
+        "runtime_budget_seconds": manifest.get("profile_runtime_budget_seconds"),
+        "host_timeout_seconds": manifest.get("profile_host_timeout_seconds"),
+        "duration_seconds": manifest.get("profile_duration_seconds"),
+        "budget_exceeded": budget_exceeded,
+    },
+    "warnings": warnings,
+    "errors": errors,
+}
+
+quality_path.write_text(
+    json.dumps(report, indent=2, sort_keys=True) + "\n",
+    encoding="utf-8",
+)
+
+if not deltaaegis_ready:
+    print(json.dumps(report, indent=2, sort_keys=True), file=sys.stderr)
+    raise SystemExit(1)
+PY
+}
+
 # NETSNIPER_MANIFEST_V2
 archive_deltaaegis_bundle() {
     local run_id bundle_dir manifest_tmp analysis_json analysis_txt
@@ -1430,6 +1698,27 @@ archive_deltaaegis_bundle() {
 
     mv "$manifest_tmp.v3" "$manifest_tmp"
     mv "$manifest_tmp" "$bundle_dir/manifest.json"
+
+    if ! write_bundle_quality_report "$bundle_dir"; then
+        echo -e "${RED}[-] Bundle quality validation failed; refusing to finalize telemetry bundle.${RESET}"
+        return 1
+    fi
+
+    local manifest_quality_tmp
+    manifest_quality_tmp="$bundle_dir/manifest.json.quality.tmp"
+
+    if ! jq \
+        --slurpfile bundle_quality "$bundle_dir/bundle_quality.json" \
+        '.files.hosts = "hosts.txt"
+         | .files.bundle_quality_json = "bundle_quality.json"
+         | .quality = $bundle_quality[0]' \
+        "$bundle_dir/manifest.json" > "$manifest_quality_tmp"; then
+        echo -e "${RED}[-] Failed to attach bundle quality report to manifest.${RESET}"
+        return 1
+    fi
+
+    mv "$manifest_quality_tmp" "$bundle_dir/manifest.json"
+
     LAST_BUNDLE_DIR="$bundle_dir"
     echo -e "${GREEN}[+] DeltaAegis telemetry bundle archived:${RESET}"
     echo "$bundle_dir"
