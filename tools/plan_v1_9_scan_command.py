@@ -50,6 +50,10 @@ def build_plan(profile: dict[str, Any]) -> dict[str, Any]:
     if profile.get("udp_lite"):
         udp_lite_args.extend(["-sU", "-p", "53,67,68,123,137,161,1900,5353,5355"])
 
+    runtime_budget_seconds = int(profile.get("runtime_budget_seconds") or 0)
+    host_timeout_seconds = int(profile.get("host_timeout_seconds") or 0)
+    budget_enforced = bool(profile.get("budget_enforced", False))
+
     return {
         "schema_version": "netsniper-scan-command-plan-v1",
         "profile": name,
@@ -72,6 +76,11 @@ def build_plan(profile: dict[str, Any]) -> dict[str, Any]:
         "safety": {
             "intrusive_scripts": bool(profile.get("intrusive_scripts")),
             "full_tcp": bool(profile.get("full_tcp")),
+        },
+        "runtime": {
+            "runtime_budget_seconds": runtime_budget_seconds,
+            "host_timeout_seconds": host_timeout_seconds,
+            "budget_enforced": budget_enforced,
         },
     }
 

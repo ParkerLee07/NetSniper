@@ -20,7 +20,10 @@
       "accuracy_notes": [
         "Prioritizes speed over evidence depth.",
         "May leave more hosts unknown or weakly classified."
-      ]
+      ],
+      "runtime_budget_seconds": 300,
+      "host_timeout_seconds": 30,
+      "budget_enforced": true
     },
     {
       "name": "balanced",
@@ -39,7 +42,10 @@
       "accuracy_notes": [
         "Preserves lightweight behavior expected by DeltaAegis.",
         "Uses curated TCP service detection without expensive optional probes."
-      ]
+      ],
+      "runtime_budget_seconds": 900,
+      "host_timeout_seconds": 60,
+      "budget_enforced": true
     },
     {
       "name": "accurate",
@@ -60,7 +66,10 @@
         "Adds stronger service probing and optional OS evidence.",
         "OS detection must be treated as weak/supporting evidence only.",
         "UDP-lite is limited to common local-network discovery services."
-      ]
+      ],
+      "runtime_budget_seconds": 1800,
+      "host_timeout_seconds": 120,
+      "budget_enforced": true
     },
     {
       "name": "deep",
@@ -81,7 +90,10 @@
         "Manual-only due to scan cost.",
         "Must not be used as the DeltaAegis default scheduled profile.",
         "Still avoids intrusive scripts by default."
-      ]
+      ],
+      "runtime_budget_seconds": 7200,
+      "host_timeout_seconds": 300,
+      "budget_enforced": false
     }
   ],
   "udp_lite_ports": [

@@ -72,6 +72,10 @@ SCAN_PROFILE="${NETSNIPER_SCAN_PROFILE:-balanced}"
 SCAN_PROFILE_RESOLVED_JSON=""
 SCAN_PROFILE_EFFECTIVE="balanced"
 SCAN_PROFILE_RUNTIME_STAGE="v1_8_compatible_tcp"
+PROFILE_RUNTIME_BUDGET_SECONDS=0
+PROFILE_HOST_TIMEOUT_SECONDS=0
+PROFILE_DURATION_SECONDS=0
+PROFILE_BUDGET_EXCEEDED=false
 SCAN_PROFILE_CONFIG="$BASE/config/scan_profiles.json"
 
 # TrueAegis-aligned scan ports.
@@ -210,6 +214,10 @@ emit_headless_status() {
         --arg requested_profile "${SCAN_PROFILE:-balanced}" \
         --arg effective_profile "${SCAN_PROFILE_EFFECTIVE:-balanced}" \
         --arg runtime_stage "${SCAN_PROFILE_RUNTIME_STAGE:-unknown}" \
+        --argjson profile_runtime_budget_seconds "${PROFILE_RUNTIME_BUDGET_SECONDS:-0}" \
+        --argjson profile_host_timeout_seconds "${PROFILE_HOST_TIMEOUT_SECONDS:-0}" \
+        --argjson profile_duration_seconds "${PROFILE_DURATION_SECONDS:-0}" \
+        --argjson profile_budget_exceeded "${PROFILE_BUDGET_EXCEEDED:-false}" \
         --arg run_dir "$run_dir" \
         --arg manifest_path "$manifest_path" \
         --arg status_at "$status_at" \
@@ -222,6 +230,10 @@ emit_headless_status() {
             requested_profile: $requested_profile,
             effective_profile: $effective_profile,
             runtime_stage: $runtime_stage,
+            profile_runtime_budget_seconds: $profile_runtime_budget_seconds,
+            profile_host_timeout_seconds: $profile_host_timeout_seconds,
+            profile_duration_seconds: $profile_duration_seconds,
+            profile_budget_exceeded: $profile_budget_exceeded,
             return_code: $return_code,
             run_dir: $run_dir,
             manifest_path: $manifest_path,
@@ -606,6 +618,19 @@ run_scan() {
         return 1
     fi
 
+    PROFILE_RUNTIME_BUDGET_SECONDS="$(printf '%s' "$SCAN_PROFILE_PLAN_JSON" | jq -r '.runtime.runtime_budget_seconds // 0')"
+    PROFILE_HOST_TIMEOUT_SECONDS="$(printf '%s' "$SCAN_PROFILE_PLAN_JSON" | jq -r '.runtime.host_timeout_seconds // 0')"
+    PROFILE_DURATION_SECONDS=0
+    PROFILE_BUDGET_EXCEEDED=false
+
+    if [ "${PROFILE_RUNTIME_BUDGET_SECONDS:-0}" -gt 0 ]; then
+        echo "[*] Profile runtime budget: ${PROFILE_RUNTIME_BUDGET_SECONDS}s"
+    fi
+
+    if [ "${PROFILE_HOST_TIMEOUT_SECONDS:-0}" -gt 0 ]; then
+        echo "[*] Profile host-timeout guidance: ${PROFILE_HOST_TIMEOUT_SECONDS}s"
+    fi
+
     mapfile -t TCP_SCAN_ARGS < <(printf '%s' "$SCAN_PROFILE_PLAN_JSON" | jq -r '.tcp.args[]')
 
     if [ "${#TCP_SCAN_ARGS[@]}" -eq 0 ]; then
@@ -621,10 +646,25 @@ run_scan() {
 
     echo "[*] Using scan profile: $SCAN_PROFILE_EFFECTIVE"
 
-    nmap "${TCP_SCAN_ARGS[@]}" \
-        -iL "$TARGET_DIR/hosts.txt" \
-        -oA "$SCAN_DIR/fast_scan" \
-        > /dev/null 2>&1 &
+    local scan_started_epoch scan_completed_epoch scan_rc
+    scan_started_epoch=$(date +%s)
+
+    if [ "${PROFILE_RUNTIME_BUDGET_SECONDS:-0}" -gt 0 ] && command -v timeout >/dev/null 2>&1; then
+        timeout "${PROFILE_RUNTIME_BUDGET_SECONDS}s" \
+            nmap "${TCP_SCAN_ARGS[@]}" \
+            -iL "$TARGET_DIR/hosts.txt" \
+            -oA "$SCAN_DIR/fast_scan" \
+            > /dev/null 2>&1 &
+    else
+        if [ "${PROFILE_RUNTIME_BUDGET_SECONDS:-0}" -gt 0 ]; then
+            echo "[!] timeout command not available; runtime budget will be recorded but not enforced." >&2
+        fi
+
+        nmap "${TCP_SCAN_ARGS[@]}" \
+            -iL "$TARGET_DIR/hosts.txt" \
+            -oA "$SCAN_DIR/fast_scan" \
+            > /dev/null 2>&1 &
+    fi
     PID=$!
 
     spin='|/-\'
@@ -635,9 +675,29 @@ run_scan() {
         sleep 0.1
     done
 
-    if ! wait "$PID"; then
+    set +e
+    wait "$PID"
+    scan_rc=$?
+    set -e
+
+    scan_completed_epoch=$(date +%s)
+    PROFILE_DURATION_SECONDS=$((scan_completed_epoch - scan_started_epoch))
+
+    if [ "${PROFILE_RUNTIME_BUDGET_SECONDS:-0}" -gt 0 ] \
+        && [ "${PROFILE_DURATION_SECONDS:-0}" -gt "${PROFILE_RUNTIME_BUDGET_SECONDS:-0}" ]; then
+        PROFILE_BUDGET_EXCEEDED=true
+    fi
+
+    if [ "$scan_rc" -ne 0 ]; then
         printf "\r"
-        echo -e "${RED}[-] Service scan failed.${RESET}"
+
+        if [ "$scan_rc" -eq 124 ]; then
+            PROFILE_BUDGET_EXCEEDED=true
+            echo -e "${RED}[-] Service scan exceeded profile runtime budget (${PROFILE_RUNTIME_BUDGET_SECONDS}s).${RESET}"
+        else
+            echo -e "${RED}[-] Service scan failed.${RESET}"
+        fi
+
         return 1
     fi
     printf "\r"
@@ -1323,6 +1383,10 @@ archive_deltaaegis_bundle() {
         --arg started_at "$run_started_at" \
         --arg completed_at "$run_completed_at" \
         --argjson duration_seconds "$duration_seconds" \
+        --argjson profile_runtime_budget_seconds "${PROFILE_RUNTIME_BUDGET_SECONDS:-0}" \
+        --argjson profile_host_timeout_seconds "${PROFILE_HOST_TIMEOUT_SECONDS:-0}" \
+        --argjson profile_duration_seconds "${PROFILE_DURATION_SECONDS:-0}" \
+        --argjson profile_budget_exceeded "${PROFILE_BUDGET_EXCEEDED:-false}" \
         '
         .schema_version = $schema_version
         | .manifest_contract = $manifest_contract
@@ -1336,6 +1400,16 @@ archive_deltaaegis_bundle() {
         | .started_at = $started_at
         | .completed_at = $completed_at
         | .duration_seconds = $duration_seconds
+        | .profile_runtime_budget_seconds = $profile_runtime_budget_seconds
+        | .profile_host_timeout_seconds = $profile_host_timeout_seconds
+        | .profile_duration_seconds = $profile_duration_seconds
+        | .profile_budget_exceeded = $profile_budget_exceeded
+        | .profile_runtime = {
+            runtime_budget_seconds: $profile_runtime_budget_seconds,
+            host_timeout_seconds: $profile_host_timeout_seconds,
+            duration_seconds: $profile_duration_seconds,
+            budget_exceeded: $profile_budget_exceeded
+        }
         | .quality = {
             manifest_valid: true,
             required_files_present: true,
