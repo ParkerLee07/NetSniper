@@ -1113,8 +1113,9 @@ latest_analysis_text_file() {
 archive_deltaaegis_bundle() {
     local run_id bundle_dir manifest_tmp analysis_json analysis_txt
     local archived_at neighbors_captured_at discovered_count relevant_count service_hosts_up
-    local profile_ports_json profile_hash nmap_version discovery_interface
+    local profile_ports_json profile_hash profile_fingerprint profile_contract nmap_version discovery_interface
     local service_started_epoch service_completed_epoch service_started_at service_completed_at
+    local run_started_at run_completed_at duration_seconds network_scope
     local os_detection_available udp_lite_available
 
     if [ ! -s "$DISCOVERY_DIR/live.xml" ]; then
@@ -1205,10 +1206,32 @@ archive_deltaaegis_bundle() {
     discovery_interface=$(ip route show "$NET" 2>/dev/null | awk '{for (i=1; i<=NF; i++) if ($i == "dev") {print $(i+1); exit}}')
     profile_ports_json=$(printf '%s' "$TRUEAEGIS_PORTS" | tr ',' '\n' | jq -R 'tonumber' | jq -s '.')
     profile_hash=$(printf '%s' "FAST_MONITORED_TCP|tcp|$TRUEAEGIS_PORTS" | sha256sum | awk '{print $1}')
+    profile_fingerprint="sha256:$profile_hash"
+    profile_contract="FAST_MONITORED_TCP"
+    network_scope="$NET"
     service_started_epoch=$(sed -n 's/.*<nmaprun[^>]* start="\([0-9][0-9]*\)".*/\1/p' "$SCAN_DIR/fast_scan.xml" | head -n 1)
     service_completed_epoch=$(sed -n 's/.*<finished[^>]* time="\([0-9][0-9]*\)".*/\1/p' "$SCAN_DIR/fast_scan.xml" | tail -n 1)
     service_started_at=$(date --date="@${service_started_epoch:-0}" --iso-8601=seconds 2>/dev/null || printf '')
     service_completed_at=$(date --date="@${service_completed_epoch:-0}" --iso-8601=seconds 2>/dev/null || printf '')
+
+    run_started_at="$archived_at"
+    run_completed_at="$archived_at"
+    duration_seconds=0
+
+    if [[ "${service_started_epoch:-}" =~ ^[0-9]+$ ]] && [ "${service_started_epoch:-0}" -gt 0 ]; then
+        run_started_at="$service_started_at"
+    fi
+
+    if [[ "${service_completed_epoch:-}" =~ ^[0-9]+$ ]] && [ "${service_completed_epoch:-0}" -gt 0 ]; then
+        run_completed_at="$service_completed_at"
+    fi
+
+    if [[ "${service_started_epoch:-}" =~ ^[0-9]+$ ]] \
+        && [[ "${service_completed_epoch:-}" =~ ^[0-9]+$ ]] \
+        && [ "${service_completed_epoch:-0}" -ge "${service_started_epoch:-0}" ]; then
+        duration_seconds=$((service_completed_epoch - service_started_epoch))
+    fi
+
     manifest_tmp="$bundle_dir/manifest.json.tmp"
 
     jq -n \
@@ -1231,7 +1254,7 @@ archive_deltaaegis_bundle() {
         --arg service_completed_at "$service_completed_at" \
         --arg nmap_version "$nmap_version" \
         --arg discovery_interface "$discovery_interface" \
-        --arg profile_fingerprint "sha256:$profile_hash" \
+        --arg profile_fingerprint "$profile_fingerprint" \
         --argjson monitored_ports "$profile_ports_json" \
         --argjson discovered_count "$discovered_count" \
         --argjson relevant_count "$relevant_count" \
@@ -1287,6 +1310,51 @@ archive_deltaaegis_bundle() {
             }
         }' > "$manifest_tmp"
 
+    if ! jq \
+        --arg schema_version "netsniper-run-v3" \
+        --arg manifest_contract "netsniper-run-v3" \
+        --arg legacy_schema_version "netsniper-run-v2" \
+        --arg network_scope "$network_scope" \
+        --arg requested_profile "$SCAN_PROFILE" \
+        --arg effective_profile "$SCAN_PROFILE_EFFECTIVE" \
+        --arg profile_contract "$profile_contract" \
+        --arg profile_fingerprint "$profile_fingerprint" \
+        --arg run_dir "$bundle_dir" \
+        --arg started_at "$run_started_at" \
+        --arg completed_at "$run_completed_at" \
+        --argjson duration_seconds "$duration_seconds" \
+        '
+        .schema_version = $schema_version
+        | .manifest_contract = $manifest_contract
+        | .legacy_schema_version = $legacy_schema_version
+        | .network_scope = $network_scope
+        | .requested_profile = $requested_profile
+        | .effective_profile = $effective_profile
+        | .profile_contract = $profile_contract
+        | .profile_fingerprint = $profile_fingerprint
+        | .run_dir = $run_dir
+        | .started_at = $started_at
+        | .completed_at = $completed_at
+        | .duration_seconds = $duration_seconds
+        | .quality = {
+            manifest_valid: true,
+            required_files_present: true,
+            deltaaegis_ready: true,
+            warnings: [],
+            errors: []
+        }
+        | .compatibility = {
+            legacy_schema_versions: [$legacy_schema_version],
+            legacy_scan_profile_field: "scan_profile",
+            legacy_requested_profile_field: "scan_profile_requested",
+            legacy_effective_profile_field: "scan_profile_effective"
+        }
+        ' "$manifest_tmp" > "$manifest_tmp.v3"; then
+        echo -e "${RED}[-] Failed to enrich manifest with NetSniper v2.0 schema fields.${RESET}"
+        return 1
+    fi
+
+    mv "$manifest_tmp.v3" "$manifest_tmp"
     mv "$manifest_tmp" "$bundle_dir/manifest.json"
     LAST_BUNDLE_DIR="$bundle_dir"
     echo -e "${GREEN}[+] DeltaAegis telemetry bundle archived:${RESET}"
