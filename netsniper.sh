@@ -108,8 +108,7 @@ Interactive mode:
   Launches the normal NetSniper setup prompt and menu.
 
 Headless mode:
-  Runs the full NetSniper pipeline without prompting. This is intended for automation
-  and future DeltaAegis dashboard scan control.
+  Runs the full NetSniper pipeline without prompting. This is intended for automation and DeltaAegis dashboard or schedule orchestration.
 
 Options:
   --non-interactive        Run the full pipeline without the interactive menu.
@@ -147,7 +146,7 @@ resolve_selected_scan_profile() {
             SCAN_PROFILE_RUNTIME_STAGE="accurate_tcp_service_depth_os_udp_lite"
             ;;
         deep)
-            echo "[-] Scan profile 'deep' is planned but runtime execution is not enabled in this v1.9 release." >&2
+            echo "[-] Scan profile 'deep' is planned but runtime execution is not enabled in NetSniper v2.0.0." >&2
             echo "[-] Use quick, balanced, or accurate." >&2
             return 1
             ;;
@@ -352,7 +351,7 @@ parse_cli_args() {
                 echo "[!] Accurate profile enables TCP service-depth plus non-fatal OS and UDP-lite evidence." >&2
                 ;;
             deep)
-                echo "[-] Scan profile 'deep' is planned but runtime execution is not enabled in this v2.0 checkpoint." >&2
+                echo "[-] Scan profile 'deep' is planned but runtime execution is not enabled in NetSniper v2.0.0." >&2
                 echo "[-] Use --profile quick, --profile balanced, or --profile accurate until deep scan wiring is validated." >&2
                 emit_headless_status "failed" 2 ""
                 exit 2
@@ -372,7 +371,7 @@ parse_cli_args() {
         fi
 
         if [ "$HEADLESS_GREENBONE" = "yes" ]; then
-            echo "[-] Headless Greenbone launch is not enabled in this v1.8 checkpoint. Use --greenbone no." >&2
+            echo "[-] Headless Greenbone launch is not enabled in NetSniper v2.0.0. Use --greenbone no." >&2
             emit_headless_status "failed" 1 ""
             exit 1
         fi
