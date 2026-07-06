@@ -5,7 +5,7 @@
 # License: MIT
 
 # =========================
-# NETSNIPER ENGINE v1.5.0
+# NETSNIPER ENGINE v2.0.0
 # NETSNIPER_CLASSIFICATION_ENGINE_V150
 # Compatibility marker retained for v1.5 regression validators.
 # NETSNIPER_CLASSIFICATION_ENGINE_V160
@@ -2956,7 +2956,7 @@ load_config
 while true; do
     echo ""
     echo "================================"
-    echo "        NETSNIPER v1.9"
+    echo "        NETSNIPER v2.0"
     echo "        Profile: $SCAN_PROFILE_EFFECTIVE"
     echo "================================"
     echo "  1) Discover Hosts"
