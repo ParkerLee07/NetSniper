@@ -1,0 +1,262 @@
+{
+  "schema_version": "netsniper-host-classification-v2",
+  "classifier_version": "netsniper-classifier-v2",
+  "taxonomy_version": "netsniper-device-taxonomy-v2",
+  "evidence_profile_version": "netsniper-evidence-profiles-v2",
+  "host_id": "host-192-168-50-60",
+  "generated_at": "2026-07-15T15:10:00Z",
+  "identity": {
+    "decision": "provisional",
+    "confidence": 60,
+    "observed_keys": [
+      {
+        "kind": "ip",
+        "value": "192.168.50.60",
+        "stable": false
+      },
+      {
+        "kind": "hostname",
+        "value": "office-device",
+        "stable": false
+      }
+    ],
+    "evidence_ids": [
+      "ev-review-hostname"
+    ],
+    "uncertainty_reasons": [
+      "identity_instability"
+    ]
+  },
+  "device_family": {
+    "label": "unknown",
+    "confidence": 55,
+    "confidence_band": "possible",
+    "decision": "review",
+    "evidence_ids": [
+      "ev-printer",
+      "ev-domain"
+    ],
+    "contradictions": [
+      {
+        "contradiction_id": "printer-domain-conflict",
+        "severity": "strong",
+        "reason": "Printer protocol evidence conflicts with domain-controller evidence.",
+        "evidence_ids": [
+          "ev-printer",
+          "ev-domain"
+        ],
+        "penalty": 50
+      }
+    ],
+    "secondary_candidates": [
+      {
+        "label": "printer",
+        "confidence": 55,
+        "decision": "review"
+      },
+      {
+        "label": "compute_host",
+        "confidence": 52,
+        "decision": "review"
+      }
+    ],
+    "uncertainty_reasons": [
+      "strong_contradiction",
+      "candidate_scores_too_close"
+    ],
+    "explanation": "Conflicting printer and domain-controller evidence requires review."
+  },
+  "roles": [
+    {
+      "label": "print_service",
+      "confidence": 55,
+      "confidence_band": "possible",
+      "decision": "review",
+      "evidence_ids": [
+        "ev-printer"
+      ],
+      "contradictions": [
+        {
+          "contradiction_id": "print-domain-conflict",
+          "severity": "strong",
+          "reason": "Domain-controller evidence conflicts with a print-only interpretation.",
+          "evidence_ids": [
+            "ev-printer",
+            "ev-domain"
+          ],
+          "penalty": 50
+        }
+      ],
+      "secondary_candidates": [
+        {
+          "label": "domain_controller",
+          "confidence": 52,
+          "decision": "review"
+        }
+      ],
+      "uncertainty_reasons": [
+        "strong_contradiction"
+      ],
+      "explanation": "Print-service evidence is present but conflicts with domain-controller evidence."
+    },
+    {
+      "label": "domain_controller",
+      "confidence": 52,
+      "confidence_band": "possible",
+      "decision": "review",
+      "evidence_ids": [
+        "ev-domain"
+      ],
+      "contradictions": [
+        {
+          "contradiction_id": "domain-print-conflict",
+          "severity": "strong",
+          "reason": "Printer evidence conflicts with a domain-controller interpretation.",
+          "evidence_ids": [
+            "ev-printer",
+            "ev-domain"
+          ],
+          "penalty": 50
+        }
+      ],
+      "secondary_candidates": [
+        {
+          "label": "print_service",
+          "confidence": 55,
+          "decision": "review"
+        }
+      ],
+      "uncertainty_reasons": [
+        "strong_contradiction"
+      ],
+      "explanation": "Domain-controller evidence is present but conflicts with printer evidence."
+    }
+  ],
+  "platform": {
+    "label": "unknown",
+    "confidence": 20,
+    "confidence_band": "weak",
+    "decision": "unknown",
+    "evidence_ids": [],
+    "contradictions": [],
+    "secondary_candidates": [],
+    "uncertainty_reasons": [
+      "no_classification_evidence"
+    ],
+    "explanation": "No defensible platform evidence was collected."
+  },
+  "observation_quality": {
+    "scan_completeness": "partial",
+    "coverage_score": 65,
+    "requested_collectors": [
+      "discovery",
+      "tcp_services",
+      "os_detection"
+    ],
+    "completed_collectors": [
+      "discovery",
+      "tcp_services"
+    ],
+    "failed_collectors": [],
+    "unavailable_collectors": [
+      "os_detection"
+    ],
+    "inventory_complete": true,
+    "negative_evidence_allowed": false,
+    "reasons": [
+      "permission_denied"
+    ]
+  },
+  "evidence": [
+    {
+      "evidence_id": "ev-review-hostname",
+      "source_type": "hostname_pattern",
+      "collector_id": "discovery",
+      "reliability": "low",
+      "effect": "context",
+      "observed_at": "2026-07-15T15:05:20Z",
+      "summary": "Generic hostname observed.",
+      "normalized_value": {
+        "hostname": "office-device"
+      },
+      "raw_reference": "discovery.xml#host-3",
+      "affected_axes": [
+        "identity"
+      ]
+    },
+    {
+      "evidence_id": "ev-printer",
+      "source_type": "protocol_response",
+      "collector_id": "tcp_services",
+      "reliability": "high",
+      "effect": "positive",
+      "observed_at": "2026-07-15T15:07:00Z",
+      "summary": "Print protocol response observed.",
+      "normalized_value": {
+        "protocol": "ipp"
+      },
+      "raw_reference": "services.xml#host-3-port-631",
+      "affected_axes": [
+        "device_family",
+        "role"
+      ]
+    },
+    {
+      "evidence_id": "ev-domain",
+      "source_type": "service_fingerprint",
+      "collector_id": "tcp_services",
+      "reliability": "high",
+      "effect": "contradiction",
+      "observed_at": "2026-07-15T15:07:10Z",
+      "summary": "Kerberos and LDAP evidence observed.",
+      "normalized_value": {
+        "services": [
+          "kerberos",
+          "ldap"
+        ]
+      },
+      "raw_reference": "services.xml#host-3-domain",
+      "affected_axes": [
+        "device_family",
+        "role"
+      ]
+    }
+  ],
+  "missing_evidence": [
+    {
+      "collector_id": "os_detection",
+      "status": "unavailable",
+      "reason_code": "permission_denied",
+      "affected_axes": [
+        "device_family",
+        "platform"
+      ],
+      "detail": "OS detection was unavailable in the unprivileged scan."
+    }
+  ],
+  "legacy_projection": {
+    "primary_type": "Ambiguous Device",
+    "device_type": "Unknown",
+    "device_type_confidence": 55,
+    "confidence": 55,
+    "confidence_label": "possible",
+    "decision": "contradiction_review",
+    "secondary_candidates": [
+      {
+        "candidate": "Network Printer / MFP",
+        "confidence": 55
+      },
+      {
+        "candidate": "Active Directory / Domain Controller",
+        "confidence": 52
+      }
+    ],
+    "contradictions": [
+      {
+        "reason": "Printer and domain-controller evidence conflict.",
+        "severity": "strong"
+      }
+    ],
+    "calibration_reason": "Strong contradiction prevents classification and requires review."
+  }
+}

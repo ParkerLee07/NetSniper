@@ -1,0 +1,857 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/netsniper/device-corpus-v1.schema.json",
+  "title": "NetSniper v2.1 labeled device corpus manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "policy_version",
+    "status",
+    "canonical_vocabularies",
+    "coverage_requirements",
+    "evaluation_policy",
+    "metric_gates",
+    "fixtures"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "netsniper-device-corpus-v1"
+    },
+    "policy_version": {
+      "const": "netsniper-v2.1-stage0b"
+    },
+    "status": {
+      "enum": [
+        "draft",
+        "approved",
+        "retired"
+      ]
+    },
+    "canonical_vocabularies": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "device_families",
+        "roles",
+        "platforms",
+        "decisions",
+        "uncertainty_reasons"
+      ],
+      "properties": {
+        "device_families": {
+          "type": "array",
+          "const": [
+            "network_infrastructure",
+            "compute_host",
+            "client_endpoint",
+            "printer",
+            "surveillance_device",
+            "storage_appliance",
+            "voice_device",
+            "power_device",
+            "iot_embedded",
+            "unknown"
+          ]
+        },
+        "roles": {
+          "type": "array",
+          "const": [
+            "gateway",
+            "wireless_access_point",
+            "managed_switch",
+            "security_gateway",
+            "domain_controller",
+            "dns_server",
+            "web_server",
+            "web_application_host",
+            "database_server",
+            "container_host",
+            "container_orchestrator",
+            "hypervisor",
+            "file_server",
+            "nas_service",
+            "print_service",
+            "camera",
+            "network_video_recorder",
+            "voip_endpoint",
+            "pbx",
+            "ups_monitor",
+            "mail_server",
+            "development_admin_interface"
+          ]
+        },
+        "platforms": {
+          "type": "array",
+          "const": [
+            "windows",
+            "linux",
+            "macos",
+            "ios",
+            "android",
+            "network_os",
+            "embedded",
+            "unknown"
+          ]
+        },
+        "decisions": {
+          "type": "array",
+          "const": [
+            "classified",
+            "possible",
+            "review",
+            "unknown"
+          ]
+        },
+        "uncertainty_reasons": {
+          "type": "array",
+          "const": [
+            "no_classification_evidence",
+            "insufficient_evidence_diversity",
+            "port_only_evidence",
+            "vendor_only_evidence",
+            "hostname_only_evidence",
+            "collector_unavailable",
+            "collector_failed",
+            "partial_scan",
+            "strong_contradiction",
+            "candidate_scores_too_close",
+            "family_not_inferable_from_role",
+            "identity_instability",
+            "unsupported_signature",
+            "legacy_projection_only"
+          ]
+        }
+      }
+    },
+    "coverage_requirements": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "minimum_active_fixtures_per_family",
+        "minimum_active_fixtures_per_role",
+        "required_scenario_tags",
+        "real_world_fixture_floor"
+      ],
+      "properties": {
+        "minimum_active_fixtures_per_family": {
+          "type": "object",
+          "propertyNames": {
+            "enum": [
+              "network_infrastructure",
+              "compute_host",
+              "client_endpoint",
+              "printer",
+              "surveillance_device",
+              "storage_appliance",
+              "voice_device",
+              "power_device",
+              "iot_embedded",
+              "unknown"
+            ]
+          },
+          "additionalProperties": {
+            "type": "integer",
+            "minimum": 0
+          }
+        },
+        "minimum_active_fixtures_per_role": {
+          "type": "object",
+          "propertyNames": {
+            "enum": [
+              "gateway",
+              "wireless_access_point",
+              "managed_switch",
+              "security_gateway",
+              "domain_controller",
+              "dns_server",
+              "web_server",
+              "web_application_host",
+              "database_server",
+              "container_host",
+              "container_orchestrator",
+              "hypervisor",
+              "file_server",
+              "nas_service",
+              "print_service",
+              "camera",
+              "network_video_recorder",
+              "voip_endpoint",
+              "pbx",
+              "ups_monitor",
+              "mail_server",
+              "development_admin_interface"
+            ]
+          },
+          "additionalProperties": {
+            "type": "integer",
+            "minimum": 0
+          }
+        },
+        "required_scenario_tags": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true
+        },
+        "real_world_fixture_floor": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "fixtures": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/fixture"
+      }
+    },
+    "evaluation_policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "split_values",
+        "freeze_trigger",
+        "evaluation_tuning_prohibited",
+        "ground_truth_change_requires_baseline_reset",
+        "minimum_active_evaluation_fixtures",
+        "minimum_active_sanitized_real_evaluation_fixtures"
+      ],
+      "properties": {
+        "split_values": {
+          "type": "array",
+          "const": [
+            "development",
+            "evaluation",
+            "regression"
+          ]
+        },
+        "freeze_trigger": {
+          "const": "first_v2.1_classifier_implementation_commit"
+        },
+        "evaluation_tuning_prohibited": {
+          "const": true
+        },
+        "ground_truth_change_requires_baseline_reset": {
+          "const": true
+        },
+        "minimum_active_evaluation_fixtures": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "minimum_active_sanitized_real_evaluation_fixtures": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "metric_gates": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "release_blocking",
+        "statistical_claim_floor",
+        "statistical_quality_targets"
+      ],
+      "properties": {
+        "release_blocking": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "deterministic_replay_rate",
+            "host_retention_rate",
+            "schema_validity_rate",
+            "uncertainty_reason_compliance_rate",
+            "confidence_cap_compliance_rate",
+            "contradiction_review_rate",
+            "legacy_projection_match_rate",
+            "false_high_confidence_count",
+            "false_classified_unknown_count",
+            "fixture_expectation_pass_rate"
+          ],
+          "properties": {
+            "deterministic_replay_rate": {
+              "const": 1.0
+            },
+            "host_retention_rate": {
+              "const": 1.0
+            },
+            "schema_validity_rate": {
+              "const": 1.0
+            },
+            "uncertainty_reason_compliance_rate": {
+              "const": 1.0
+            },
+            "confidence_cap_compliance_rate": {
+              "const": 1.0
+            },
+            "contradiction_review_rate": {
+              "const": 1.0
+            },
+            "legacy_projection_match_rate": {
+              "const": 1.0
+            },
+            "false_high_confidence_count": {
+              "const": 0
+            },
+            "false_classified_unknown_count": {
+              "const": 0
+            },
+            "fixture_expectation_pass_rate": {
+              "const": 1.0
+            }
+          }
+        },
+        "statistical_claim_floor": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "minimum_evaluation_fixtures",
+            "minimum_examples_per_claimed_family",
+            "minimum_high_confidence_predictions",
+            "minimum_calibration_predictions"
+          ],
+          "properties": {
+            "minimum_evaluation_fixtures": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "minimum_examples_per_claimed_family": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "minimum_high_confidence_predictions": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "minimum_calibration_predictions": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        },
+        "statistical_quality_targets": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "classified_family_precision_minimum",
+            "classified_role_precision_minimum",
+            "high_confidence_precision_minimum",
+            "family_macro_recall_minimum",
+            "expected_calibration_error_maximum"
+          ],
+          "properties": {
+            "classified_family_precision_minimum": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            },
+            "classified_role_precision_minimum": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            },
+            "high_confidence_precision_minimum": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            },
+            "family_macro_recall_minimum": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            },
+            "expected_calibration_error_maximum": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            }
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "decision_expectation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "decision",
+        "minimum_confidence",
+        "maximum_confidence"
+      ],
+      "properties": {
+        "decision": {
+          "enum": [
+            "classified",
+            "possible",
+            "review",
+            "unknown"
+          ]
+        },
+        "minimum_confidence": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "maximum_confidence": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 100
+        }
+      }
+    },
+    "role_expectation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "role",
+        "decision",
+        "minimum_confidence",
+        "maximum_confidence"
+      ],
+      "properties": {
+        "role": {
+          "enum": [
+            "gateway",
+            "wireless_access_point",
+            "managed_switch",
+            "security_gateway",
+            "domain_controller",
+            "dns_server",
+            "web_server",
+            "web_application_host",
+            "database_server",
+            "container_host",
+            "container_orchestrator",
+            "hypervisor",
+            "file_server",
+            "nas_service",
+            "print_service",
+            "camera",
+            "network_video_recorder",
+            "voip_endpoint",
+            "pbx",
+            "ups_monitor",
+            "mail_server",
+            "development_admin_interface"
+          ]
+        },
+        "decision": {
+          "enum": [
+            "classified",
+            "possible",
+            "review",
+            "unknown"
+          ]
+        },
+        "minimum_confidence": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "maximum_confidence": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 100
+        }
+      }
+    },
+    "fixture": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "fixture_id",
+        "status",
+        "fixture_kind",
+        "dataset_split",
+        "split_assignment_reason",
+        "description",
+        "scenario_tags",
+        "source_artifacts",
+        "normalized_evidence_path",
+        "ground_truth",
+        "observation",
+        "expectations",
+        "provenance"
+      ],
+      "properties": {
+        "fixture_id": {
+          "type": "string",
+          "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+        },
+        "status": {
+          "enum": [
+            "planned",
+            "active",
+            "retired"
+          ]
+        },
+        "fixture_kind": {
+          "enum": [
+            "synthetic",
+            "sanitized_real"
+          ]
+        },
+        "description": {
+          "type": "string",
+          "minLength": 1
+        },
+        "scenario_tags": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true,
+          "minItems": 1
+        },
+        "source_artifacts": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true
+        },
+        "normalized_evidence_path": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "minLength": 1
+        },
+        "ground_truth": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "device_family",
+            "roles",
+            "platform",
+            "identity_stability",
+            "acceptable_family_alternatives"
+          ],
+          "properties": {
+            "device_family": {
+              "enum": [
+                "network_infrastructure",
+                "compute_host",
+                "client_endpoint",
+                "printer",
+                "surveillance_device",
+                "storage_appliance",
+                "voice_device",
+                "power_device",
+                "iot_embedded",
+                "unknown"
+              ]
+            },
+            "roles": {
+              "type": "array",
+              "items": {
+                "enum": [
+                  "gateway",
+                  "wireless_access_point",
+                  "managed_switch",
+                  "security_gateway",
+                  "domain_controller",
+                  "dns_server",
+                  "web_server",
+                  "web_application_host",
+                  "database_server",
+                  "container_host",
+                  "container_orchestrator",
+                  "hypervisor",
+                  "file_server",
+                  "nas_service",
+                  "print_service",
+                  "camera",
+                  "network_video_recorder",
+                  "voip_endpoint",
+                  "pbx",
+                  "ups_monitor",
+                  "mail_server",
+                  "development_admin_interface"
+                ]
+              },
+              "uniqueItems": true
+            },
+            "platform": {
+              "enum": [
+                "windows",
+                "linux",
+                "macos",
+                "ios",
+                "android",
+                "network_os",
+                "embedded",
+                "unknown"
+              ]
+            },
+            "identity_stability": {
+              "enum": [
+                "stable_mac",
+                "randomized_mac",
+                "ephemeral_local_mac",
+                "hostname_only",
+                "unknown"
+              ]
+            },
+            "acceptable_family_alternatives": {
+              "type": "array",
+              "items": {
+                "enum": [
+                  "network_infrastructure",
+                  "compute_host",
+                  "client_endpoint",
+                  "printer",
+                  "surveillance_device",
+                  "storage_appliance",
+                  "voice_device",
+                  "power_device",
+                  "iot_embedded",
+                  "unknown"
+                ]
+              },
+              "uniqueItems": true
+            }
+          }
+        },
+        "observation": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "scan_profile",
+            "scan_completeness",
+            "requested_collectors",
+            "completed_collectors",
+            "failed_collectors",
+            "unavailable_collectors",
+            "privilege_context"
+          ],
+          "properties": {
+            "scan_profile": {
+              "enum": [
+                "quick",
+                "balanced",
+                "accurate",
+                "custom",
+                "legacy"
+              ]
+            },
+            "scan_completeness": {
+              "enum": [
+                "complete",
+                "partial",
+                "failed"
+              ]
+            },
+            "requested_collectors": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              },
+              "uniqueItems": true
+            },
+            "completed_collectors": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              },
+              "uniqueItems": true
+            },
+            "failed_collectors": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              },
+              "uniqueItems": true
+            },
+            "unavailable_collectors": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              },
+              "uniqueItems": true
+            },
+            "privilege_context": {
+              "enum": [
+                "privileged",
+                "unprivileged",
+                "unknown"
+              ]
+            }
+          }
+        },
+        "expectations": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "family",
+            "roles",
+            "platform",
+            "required_uncertainty_reasons",
+            "forbidden_classified_families",
+            "legacy_projection"
+          ],
+          "properties": {
+            "family": {
+              "$ref": "#/$defs/decision_expectation"
+            },
+            "roles": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/role_expectation"
+              }
+            },
+            "platform": {
+              "$ref": "#/$defs/decision_expectation"
+            },
+            "required_uncertainty_reasons": {
+              "type": "array",
+              "items": {
+                "enum": [
+                  "no_classification_evidence",
+                  "insufficient_evidence_diversity",
+                  "port_only_evidence",
+                  "vendor_only_evidence",
+                  "hostname_only_evidence",
+                  "collector_unavailable",
+                  "collector_failed",
+                  "partial_scan",
+                  "strong_contradiction",
+                  "candidate_scores_too_close",
+                  "family_not_inferable_from_role",
+                  "identity_instability",
+                  "unsupported_signature",
+                  "legacy_projection_only"
+                ]
+              },
+              "uniqueItems": true
+            },
+            "forbidden_classified_families": {
+              "type": "array",
+              "items": {
+                "enum": [
+                  "network_infrastructure",
+                  "compute_host",
+                  "client_endpoint",
+                  "printer",
+                  "surveillance_device",
+                  "storage_appliance",
+                  "voice_device",
+                  "power_device",
+                  "iot_embedded",
+                  "unknown"
+                ]
+              },
+              "uniqueItems": true
+            },
+            "legacy_projection": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "primary_type",
+                "decision"
+              ],
+              "properties": {
+                "primary_type": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "decision": {
+                  "enum": [
+                    "classified",
+                    "possible",
+                    "review",
+                    "unknown",
+                    "contradiction_review"
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "provenance": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "ground_truth_method",
+            "recorded_by",
+            "recorded_at",
+            "notes"
+          ],
+          "properties": {
+            "ground_truth_method": {
+              "enum": [
+                "synthetic_design",
+                "physical_inspection",
+                "admin_inventory",
+                "device_ui",
+                "vendor_model",
+                "documentation"
+              ]
+            },
+            "recorded_by": {
+              "type": "string",
+              "minLength": 1
+            },
+            "recorded_at": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "format": "date-time"
+            },
+            "notes": {
+              "type": "string"
+            }
+          }
+        },
+        "dataset_split": {
+          "enum": [
+            "development",
+            "evaluation",
+            "regression"
+          ]
+        },
+        "split_assignment_reason": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "status": {
+                "const": "active"
+              }
+            },
+            "required": [
+              "status"
+            ]
+          },
+          "then": {
+            "properties": {
+              "source_artifacts": {
+                "minItems": 1
+              },
+              "normalized_evidence_path": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,2459 @@
+{
+  "schema_version": "netsniper-device-corpus-v1",
+  "policy_version": "netsniper-v2.1-stage0b",
+  "status": "draft",
+  "canonical_vocabularies": {
+    "device_families": [
+      "network_infrastructure",
+      "compute_host",
+      "client_endpoint",
+      "printer",
+      "surveillance_device",
+      "storage_appliance",
+      "voice_device",
+      "power_device",
+      "iot_embedded",
+      "unknown"
+    ],
+    "roles": [
+      "gateway",
+      "wireless_access_point",
+      "managed_switch",
+      "security_gateway",
+      "domain_controller",
+      "dns_server",
+      "web_server",
+      "web_application_host",
+      "database_server",
+      "container_host",
+      "container_orchestrator",
+      "hypervisor",
+      "file_server",
+      "nas_service",
+      "print_service",
+      "camera",
+      "network_video_recorder",
+      "voip_endpoint",
+      "pbx",
+      "ups_monitor",
+      "mail_server",
+      "development_admin_interface"
+    ],
+    "platforms": [
+      "windows",
+      "linux",
+      "macos",
+      "ios",
+      "android",
+      "network_os",
+      "embedded",
+      "unknown"
+    ],
+    "decisions": [
+      "classified",
+      "possible",
+      "review",
+      "unknown"
+    ],
+    "uncertainty_reasons": [
+      "no_classification_evidence",
+      "insufficient_evidence_diversity",
+      "port_only_evidence",
+      "vendor_only_evidence",
+      "hostname_only_evidence",
+      "collector_unavailable",
+      "collector_failed",
+      "partial_scan",
+      "strong_contradiction",
+      "candidate_scores_too_close",
+      "family_not_inferable_from_role",
+      "identity_instability",
+      "unsupported_signature",
+      "legacy_projection_only"
+    ]
+  },
+  "coverage_requirements": {
+    "minimum_active_fixtures_per_family": {
+      "network_infrastructure": 4,
+      "compute_host": 2,
+      "client_endpoint": 4,
+      "printer": 2,
+      "surveillance_device": 2,
+      "storage_appliance": 1,
+      "voice_device": 2,
+      "power_device": 1,
+      "iot_embedded": 1,
+      "unknown": 5
+    },
+    "minimum_active_fixtures_per_role": {
+      "gateway": 1,
+      "wireless_access_point": 1,
+      "managed_switch": 1,
+      "security_gateway": 1,
+      "domain_controller": 1,
+      "dns_server": 1,
+      "web_server": 1,
+      "web_application_host": 1,
+      "database_server": 1,
+      "container_host": 1,
+      "container_orchestrator": 1,
+      "hypervisor": 1,
+      "file_server": 1,
+      "nas_service": 1,
+      "print_service": 1,
+      "camera": 1,
+      "network_video_recorder": 1,
+      "voip_endpoint": 1,
+      "pbx": 1,
+      "ups_monitor": 1,
+      "mail_server": 1,
+      "development_admin_interface": 1
+    },
+    "required_scenario_tags": [
+      "strong-positive",
+      "unknown",
+      "review",
+      "contradiction",
+      "partial-scan",
+      "collector-failure",
+      "confidence-cap",
+      "role-without-family",
+      "axis-separation",
+      "legacy",
+      "sanitized-real"
+    ],
+    "real_world_fixture_floor": 3
+  },
+  "fixtures": [
+    {
+      "fixture_id": "synthetic-router-gateway-01",
+      "status": "planned",
+      "fixture_kind": "synthetic",
+      "description": "Dedicated router and default gateway with corroborating network evidence.",
+      "scenario_tags": [
+        "family",
+        "role",
+        "strong-positive",
+        "network-infrastructure"
+      ],
+      "source_artifacts": [],
+      "normalized_evidence_path": null,
+      "ground_truth": {
+        "device_family": "network_infrastructure",
+        "roles": [
+          "gateway"
+        ],
+        "platform": "network_os",
+        "identity_stability": "stable_mac",
+        "acceptable_family_alternatives": []
+      },
+      "observation": {
+        "scan_profile": "accurate",
+        "scan_completeness": "complete",
+        "requested_collectors": [
+          "discovery",
+          "tcp_services",
+          "os_detection",
+          "passive_neighbors"
+        ],
+        "completed_collectors": [
+          "discovery",
+          "tcp_services",
+          "os_detection",
+          "passive_neighbors"
+        ],
+        "failed_collectors": [],
+        "unavailable_collectors": [],
+        "privilege_context": "privileged"
+      },
+      "expectations": {
+        "family": {
+          "decision": "classified",
+          "minimum_confidence": 70,
+          "maximum_confidence": 100
+        },
+        "roles": [
+          {
+            "role": "gateway",
+            "decision": "classified",
+            "minimum_confidence": 70,
+            "maximum_confidence": 100
+          }
+        ],
+        "platform": {
+          "decision": "classified",
+          "minimum_confidence": 70,
+          "maximum_confidence": 100
+        },
+        "required_uncertainty_reasons": [],
+        "forbidden_classified_families": [],
+        "legacy_projection": {
+          "primary_type": "Router / Gateway",
+          "decision": "classified"
+        }
+      },
+      "provenance": {
+        "ground_truth_method": "synthetic_design",
+        "recorded_by": "Parker Lee",
+        "recorded_at": null,
+        "notes": ""
+      },
+      "dataset_split": "development",
+      "split_assignment_reason": "Available during rule design and evidence-profile calibration."
+    },
+    {
+      "fixture_id": "synthetic-wireless-access-point-01",
+      "status": "planned",
+      "fixture_kind": "synthetic",
+      "description": "Dedicated wireless access point without gateway behavior.",
+      "scenario_tags": [
+        "family",
+        "role",
+        "strong-positive",
+        "network-infrastructure"
+      ],
+      "source_artifacts": [],
+      "normalized_evidence_path": null,
+      "ground_truth": {
+        "device_family": "network_infrastructure",
+        "roles": [
+          "wireless_access_point"
+        ],
+        "platform": "network_os",
+        "identity_stability": "stable_mac",
+        "acceptable_family_alternatives": []
+      },
+      "observation": {
+        "scan_profile": "accurate",
+        "scan_completeness": "complete",
+        "requested_collectors": [
+          "discovery",
+          "tcp_services",
+          "os_detection",
+          "passive_neighbors"
+        ],
+        "completed_collectors": [
+          "discovery",
+          "tcp_services",
+          "os_detection",
+          "passive_neighbors"
+        ],
+        "failed_collectors": [],
+        "unavailable_collectors": [],
+        "privilege_context": "privileged"
+      },
+      "expectations": {
+        "family": {
+          "decision": "classified",
+          "minimum_confidence": 70,
+          "maximum_confidence": 100
+        },
+        "roles": [
+          {
+            "role": "wireless_access_point",
+            "decision": "classified",
+            "minimum_confidence": 70,
+            "maximum_confidence": 100
+          }
+        ],
+        "platform": {
+          "decision": "classified",
+          "minimum_confidence": 70,
+          "maximum_confidence": 100
+        },
+        "required_uncertainty_reasons": [],
+        "forbidden_classified_families": [],
+        "legacy_projection": {
+          "primary_type": "Wireless Access Point",
+          "decision": "classified"
+        }
+      },
+      "provenance": {
+        "ground_truth_method": "synthetic_design",
+        "recorded_by": "Parker Lee",
+        "recorded_at": null,
+        "notes": ""
+      },
+      "dataset_split": "development",
+      "split_assignment_reason": "Available during rule design and evidence-profile calibration."
+    },
+    {
+      "fixture_id": "synthetic-managed-switch-01",
+      "status": "planned",
+      "fixture_kind": "synthetic",
+      "description": "Managed Ethernet switch with infrastructure-specific evidence.",
+      "scenario_tags": [
+        "family",
+        "role",
+        "strong-positive",
+        "network-infrastructure"
+      ],
+      "source_artifacts": [],
+      "normalized_evidence_path": null,
+      "ground_truth": {
+        "device_family": "network_infrastructure",
+        "roles": [
+          "managed_switch"
+        ],
+        "platform": "network_os",
+        "identity_stability": "stable_mac",
+        "acceptable_family_alternatives": []
+      },
+      "observation": {
+        "scan_profile": "accurate",
+        "scan_completeness": "complete",
+        "requested_collectors": [
+          "discovery",
+          "tcp_services",
+          "os_detection",
+          "passive_neighbors"
+        ],
+        "completed_collectors": [
+          "discovery",
+          "tcp_services",
+          "os_detection",
+          "passive_neighbors"
+        ],
+        "failed_collectors": [],
+        "unavailable_collectors": [],
+        "privilege_context": "privileged"
+      },
+      "expectations": {
+        "family": {
+          "decision": "classified",
+          "minimum_confidence": 70,
+          "maximum_confidence": 100
+        },
+        "roles": [
+          {
+            "role": "managed_switch",
+            "decision": "classified",
+            "minimum_confidence": 70,
+            "maximum_confidence": 100
+          }
+        ],
+        "platform": {
+          "decision": "classified",
+          "minimum_confidence": 70,
+          "maximum_confidence": 100
+        },
+        "required_uncertainty_reasons": [],
+        "forbidden_classified_families": [],
+        "legacy_projection": {
+          "primary_type": "Managed Switch / Network Infrastructure",
+          "decision": "classified"
+        }
+      },
+      "provenance": {
+        "ground_truth_method": "synthetic_design",
+        "recorded_by": "Parker Lee",
+        "recorded_at": null,
+        "notes": ""
+      },
+      "dataset_split": "development",
+      "split_assignment_reason": "Available during rule design and evidence-profile calibration."
+    },
+    {
+      "fixture_id": "synthetic-security-gateway-01",
+      "status": "planned",
+      "fixture_kind": "synthetic",
+      "description": "Security appliance acting as a gateway.",
+      "scenario_tags": [
+        "family",
+        "multi-role",
+        "strong-positive",
+        "network-infrastructure"
+      ],
+      "source_artifacts": [],
+      "normalized_evidence_path": null,
+      "ground_truth": {
+        "device_family": "network_infrastructure",
+        "roles": [
+          "security_gateway",
+          "gateway"
+        ],
+        "platform": "network_os",
+        "identity_stability": "stable_mac",
+        "acceptable_family_alternatives": []
+      },
+      "observation": {
+        "scan_profile": "accurate",
+        "scan_completeness": "complete",
+        "requested_collectors": [
+          "discovery",
+          "tcp_services",
+          "os_detection",
+          "passive_neighbors"
+        ],
+        "completed_collectors": [
+          "discovery",
+          "tcp_services",
+          "os_detection",
+          "passive_neighbors"
+        ],
+        "failed_collectors": [],
+        "unavailable_collectors": [],
+        "privilege_context": "privileged"
+      },
+      "expectations": {
+        "family": {
+          "decision": "classified",
+          "minimum_confidence": 70,
+          "maximum_confidence": 100
+        },
+        "roles": [
+          {
+            "role": "security_gateway",
+            "decision": "classified",
+            "minimum_confidence": 70,
+            "maximum_confidence": 100
+          },
+          {
+            "role": "gateway",
+            "decision": "classified",
+            "minimum_confidence": 70,
+            "maximum_confidence": 100
+          }
+        ],
+        "platform": {
+          "decision": "classified",
+          "minimum_confidence": 70,
+          "maximum_confidence": 100
+        },
+        "required_uncertainty_reasons": [],
+        "forbidden_classified_families": [],
+        "legacy_projection": {
+          "primary_type": "Security Appliance",
+          "decision": "classified"
+        }
+      },
+      "provenance": {
+        "ground_truth_method": "synthetic_design",
+        "recorded_by": "Parker Lee",
+        "recorded_at": null,
+        "notes": ""
+      },
+      "dataset_split": "evaluation",
+      "split_assignment_reason": "Held for release-candidate evaluation; not used to tune v2.1 scoring."
+    },
+    {
+      "fixture_id": "synthetic-windows-domain-controller-01",
+      "status": "planned",
+      "fixture_kind": "synthetic",
+      "description": "Windows compute host serving domain-controller and DNS roles.",
+      "scenario_tags": [
+        "family",
+        "multi-role",
+        "platform",
+        "server"
+      ],
+      "source_artifacts": [],
+      "normalized_evidence_path": null,
+      "ground_truth": {
+        "device_family": "compute_host",
+        "roles": [
+          "domain_controller",
+          "dns_server"
+        ],
+        "platform": "windows",
+        "identity_stability": "stable_mac",
+        "acceptable_family_alternatives": []
+      },
+      "observation": {
+        "scan_profile": "accurate",
+        "scan_completeness": "complete",
+        "requested_collectors": [
+          "discovery",
+          "tcp_services",
+          "os_detection",
+          "passive_neighbors"
+        ],
+        "completed_collectors": [
+          "discovery",
+          "tcp_services",
+          "os_detection",
+          "passive_neighbors"
+        ],
+        "failed_collectors": [],
+        "unavailable_collectors": [],
+        "privilege_context": "privileged"
+      },
+      "expectations": {
+        "family": {
+          "decision": "classified",
+          "minimum_confidence": 70,
+          "maximum_confidence": 100
+        },
+        "roles": [
+          {
+            "role": "domain_controller",
+            "decision": "classified",
+            "minimum_confidence": 70,
+            "maximum_confidence": 100
+          },
+          {
+            "role": "dns_server",
+            "decision": "classified",
+            "minimum_confidence": 70,
+            "maximum_confidence": 100
+          }
+        ],
+        "platform": {
+          "decision": "classified",
+          "minimum_confidence": 70,
+          "maximum_confidence": 100
+        },
+        "required_uncertainty_reasons": [],
+        "forbidden_classified_families": [],
+        "legacy_projection": {
+          "primary_type": "Active Directory / Domain Controller",
+          "decision": "classified"
+        }
+      },
+      "provenance": {
+        "ground_truth_method": "synthetic_design",
+        "recorded_by": "Parker Lee",
+        "recorded_at": null,
+        "notes": ""
+      },
+      "dataset_split": "development",
+      "split_assignment_reason": "Available during rule design and evidence-profile calibration."
+    },
+    {
+      "fixture_id": "synthetic-linux-web-db-container-01",
+      "status": "planned",
+      "fixture_kind": "synthetic",
+      "description": "Linux compute host running web, database, and container roles.",
+      "scenario_tags": [
+        "family",
+        "multi-role",
+        "platform",
+        "server"
+      ],
+      "source_artifacts": [],
+      "normalized_evidence_path": null,
+      "ground_truth": {
+        "device_family": "compute_host",
+        "roles": [
+          "web_server",
+          "database_server",
+          "container_host"
+        ],
+        "platform": "linux",
+        "identity_stability": "stable_mac",
+        "acceptable_family_alternatives": []
+      },
+      "observation": {
+        "scan_profile": "accurate",
+        "scan_completeness": "complete",
+        "requested_collectors": [
+          "discovery",
+          "tcp_services",
+          "os_detection",
+          "passive_neighbors"
+        ],
+        "completed_collectors": [
+          "discovery",
+          "tcp_services",
+          "os_detection",
+          "passive_neighbors"
+        ],
+        "failed_collectors": [],
+        "unavailable_collectors": [],
+        "privilege_context": "privileged"
+      },
+      "expectations": {
+        "family": {
+          "decision": "classified",
+          "minimum_confidence": 70,
+          "maximum_confidence": 100
+        },
+        "roles": [
+          {
+            "role": "web_server",
+            "decision": "classified",
+            "minimum_confidence": 70,
+            "maximum_confidence": 100
+          },
+          {
+            "role": "database_server",
+            "decision": "classified",
+            "minimum_confidence": 70,
+            "maximum_confidence": 100
+          },
+          {
+            "role": "container_host",
+            "decision": "classified",
+            "minimum_confidence": 70,
+            "maximum_confidence": 100
+          }
+        ],
+        "platform": {
+          "decision": "classified",
+          "minimum_confidence": 70,
+          "maximum_confidence": 100
+        },
+        "required_uncertainty_reasons": [],
+        "forbidden_classified_families": [],
+        "legacy_projection": {
+          "primary_type": "Container Infrastructure",
+          "decision": "classified"
+        }
+      },
+      "provenance": {
+        "ground_truth_method": "synthetic_design",
+        "recorded_by": "Parker Lee",
+        "recorded_at": null,
+        "notes": ""
+      },
+      "dataset_split": "evaluation",
+      "split_assignment_reason": "Held for release-candidate evaluation; not used to tune v2.1 scoring."
+    },
+    {
+      "fixture_id": "synthetic-printer-01",
+      "status": "planned",
+      "fixture_kind": "synthetic",
+      "description": "Network multifunction printer with print-protocol and product evidence.",
+      "scenario_tags": [
+        "family",
+        "role",
+        "strong-positive",
+        "printer"
+      ],
+      "source_artifacts": [],
+      "normalized_evidence_path": null,
+      "ground_truth": {
+        "device_family": "printer",
+        "roles": [
+          "print_service"
+        ],
+        "platform": "embedded",
+        "identity_stability": "stable_mac",
+        "acceptable_family_alternatives": []
+      },
+      "observation": {
+        "scan_profile": "accurate",
+        "scan_completeness": "complete",
+        "requested_collectors": [
+          "discovery",
+          "tcp_services",
+          "os_detection",
+          "passive_neighbors"
+        ],
+        "completed_collectors": [
+          "discovery",
+          "tcp_services",
+          "os_detection",
+          "passive_neighbors"
+        ],
+        "failed_collectors": [],
+        "unavailable_collectors": [],
+        "privilege_context": "privileged"
+      },
+      "expectations": {
+        "family": {
+          "decision": "classified",
+          "minimum_confidence": 70,
+          "maximum_confidence": 100
+        },
+        "roles": [
+          {
+            "role": "print_service",
+            "decision": "classified",
+            "minimum_confidence": 70,
+            "maximum_confidence": 100
+          }
+        ],
+        "platform": {
+          "decision": "classified",
+          "minimum_confidence": 70,
+          "maximum_confidence": 100
+        },
+        "required_uncertainty_reasons": [],
+        "forbidden_classified_families": [],
+        "legacy_projection": {
+          "primary_type": "Network Printer / MFP",
+          "decision": "classified"
+        }
+      },
+      "provenance": {
+        "ground_truth_method": "synthetic_design",
+        "recorded_by": "Parker Lee",
+        "recorded_at": null,
+        "notes": ""
+      },
+      "dataset_split": "development",
+      "split_assignment_reason": "Available during rule design and evidence-profile calibration."
+    },
+    {
+      "fixture_id": "synthetic-camera-01",
+      "status": "planned",
+      "fixture_kind": "synthetic",
+      "description": "Standalone IP camera with protocol-specific surveillance evidence.",
+      "scenario_tags": [
+        "family",
+        "role",
+        "strong-positive",
+        "surveillance"
+      ],
+      "source_artifacts": [],
+      "normalized_evidence_path": null,
+      "ground_truth": {
+        "device_family": "surveillance_device",
+        "roles": [
+          "camera"
+        ],
+        "platform": "embedded",
+        "identity_stability": "stable_mac",
+        "acceptable_family_alternatives": []
+      },
+      "observation": {
+        "scan_profile": "accurate",
+        "scan_completeness": "complete",
+        "requested_collectors": [
+          "discovery",
+          "tcp_services",
+          "os_detection",
+          "passive_neighbors"
+        ],
+        "completed_collectors": [
+          "discovery",
+          "tcp_services",
+          "os_detection",
+          "passive_neighbors"
+        ],
+        "failed_collectors": [],
+        "unavailable_collectors": [],
+        "privilege_context": "privileged"
+      },
+      "expectations": {
+        "family": {
+          "decision": "classified",
+          "minimum_confidence": 70,
+          "maximum_confidence": 100
+        },
+        "roles": [
+          {
+            "role": "camera",
+            "decision": "classified",
+            "minimum_confidence": 70,
+            "maximum_confidence": 100
+          }
+        ],
+        "platform": {
+          "decision": "classified",
+          "minimum_confidence": 70,
+          "maximum_confidence": 100
+        },
+        "required_uncertainty_reasons": [],
+        "forbidden_classified_families": [],
+        "legacy_projection": {
+          "primary_type": "IP Camera / NVR",
+          "decision": "classified"
+        }
+      },
+      "provenance": {
+        "ground_truth_method": "synthetic_design",
+        "recorded_by": "Parker Lee",
+        "recorded_at": null,
+        "notes": ""
+      },
+      "dataset_split": "development",
+      "split_assignment_reason": "Available during rule design and evidence-profile calibration."
+    },
+    {
+      "fixture_id": "synthetic-network-video-recorder-01",
+      "status": "planned",
+      "fixture_kind": "synthetic",
+      "description": "Network video recorder with storage and surveillance roles.",
+      "scenario_tags": [
+        "family",
+        "role",
+        "strong-positive",
+        "surveillance"
+      ],
+      "source_artifacts": [],
+      "normalized_evidence_path": null,
+      "ground_truth": {
+        "device_family": "surveillance_device",
+        "roles": [
+          "network_video_recorder"
+        ],
+        "platform": "embedded",
+        "identity_stability": "stable_mac",
+        "acceptable_family_alternatives": []
+      },
+      "observation": {
+        "scan_profile": "accurate",
+        "scan_completeness": "complete",
+        "requested_collectors": [
+          "discovery",
+          "tcp_services",
+          "os_detection",
+          "passive_neighbors"
+        ],
+        "completed_collectors": [
+          "discovery",
+          "tcp_services",
+          "os_detection",
+          "passive_neighbors"
+        ],
+        "failed_collectors": [],
+        "unavailable_collectors": [],
+        "privilege_context": "privileged"
+      },
+      "expectations": {
+        "family": {
+          "decision": "classified",
+          "minimum_confidence": 70,
+          "maximum_confidence": 100
+        },
+        "roles": [
+          {
+            "role": "network_video_recorder",
+            "decision": "classified",
+            "minimum_confidence": 70,
+            "maximum_confidence": 100
+          }
+        ],
+        "platform": {
+          "decision": "classified",
+          "minimum_confidence": 70,
+          "maximum_confidence": 100
+        },
+        "required_uncertainty_reasons": [],
+        "forbidden_classified_families": [],
+        "legacy_projection": {
+          "primary_type": "IP Camera / NVR",
+          "decision": "classified"
+        }
+      },
+      "provenance": {
+        "ground_truth_method": "synthetic_design",
+        "recorded_by": "Parker Lee",
+        "recorded_at": null,
+        "notes": ""
+      },
+      "dataset_split": "evaluation",
+      "split_assignment_reason": "Held for release-candidate evaluation; not used to tune v2.1 scoring."
+    },
+    {
+      "fixture_id": "synthetic-nas-01",
+      "status": "planned",
+      "fixture_kind": "synthetic",
+      "description": "Dedicated NAS appliance exposing NAS and file-server roles.",
+      "scenario_tags": [
+        "family",
+        "multi-role",
+        "strong-positive",
+        "storage"
+      ],
+      "source_artifacts": [],
+      "normalized_evidence_path": null,
+      "ground_truth": {
+        "device_family": "storage_appliance",
+        "roles": [
+          "nas_service",
+          "file_server"
+        ],
+        "platform": "embedded",
+        "identity_stability": "stable_mac",
+        "acceptable_family_alternatives": []
+      },
+      "observation": {
+        "scan_profile": "accurate",
+        "scan_completeness": "complete",
+        "requested_collectors": [
+          "discovery",
+          "tcp_services",
+          "os_detection",
+          "passive_neighbors"
+        ],
+        "completed_collectors": [
+          "discovery",
+          "tcp_services",
+          "os_detection",
+          "passive_neighbors"
+        ],
+        "failed_collectors": [],
+        "unavailable_collectors": [],
+        "privilege_context": "privileged"
+      },
+      "expectations": {
+        "family": {
+          "decision": "classified",
+          "minimum_confidence": 70,
+          "maximum_confidence": 100
+        },
+        "roles": [
+          {
+            "role": "nas_service",
+            "decision": "classified",
+            "minimum_confidence": 70,
+            "maximum_confidence": 100
+          },
+          {
+            "role": "file_server",
+            "decision": "classified",
+            "minimum_confidence": 70,
+            "maximum_confidence": 100
+          }
+        ],
+        "platform": {
+          "decision": "classified",
+          "minimum_confidence": 70,
+          "maximum_confidence": 100
+        },
+        "required_uncertainty_reasons": [],
+        "forbidden_classified_families": [],
+        "legacy_projection": {
+          "primary_type": "NAS / Storage Appliance",
+          "decision": "classified"
+        }
+      },
+      "provenance": {
+        "ground_truth_method": "synthetic_design",
+        "recorded_by": "Parker Lee",
+        "recorded_at": null,
+        "notes": ""
+      },
+      "dataset_split": "evaluation",
+      "split_assignment_reason": "Held for release-candidate evaluation; not used to tune v2.1 scoring."
+    },
+    {
+      "fixture_id": "synthetic-windows-workstation-01",
+      "status": "planned",
+      "fixture_kind": "synthetic",
+      "description": "Windows end-user workstation without server-role evidence.",
+      "scenario_tags": [
+        "family",
+        "platform",
+        "endpoint"
+      ],
+      "source_artifacts": [],
+      "normalized_evidence_path": null,
+      "ground_truth": {
+        "device_family": "client_endpoint",
+        "roles": [],
+        "platform": "windows",
+        "identity_stability": "stable_mac",
+        "acceptable_family_alternatives": []
+      },
+      "observation": {
+        "scan_profile": "accurate",
+        "scan_completeness": "complete",
+        "requested_collectors": [
+          "discovery",
+          "tcp_services",
+          "os_detection",
+          "passive_neighbors"
+        ],
+        "completed_collectors": [
+          "discovery",
+          "tcp_services",
+          "os_detection",
+          "passive_neighbors"
+        ],
+        "failed_collectors": [],
+        "unavailable_collectors": [],
+        "privilege_context": "privileged"
+      },
+      "expectations": {
+        "family": {
+          "decision": "classified",
+          "minimum_confidence": 70,
+          "maximum_confidence": 100
+        },
+        "roles": [],
+        "platform": {
+          "decision": "classified",
+          "minimum_confidence": 70,
+          "maximum_confidence": 100
+        },
+        "required_uncertainty_reasons": [],
+        "forbidden_classified_families": [],
+        "legacy_projection": {
+          "primary_type": "Windows Workstation",
+          "decision": "classified"
+        }
+      },
+      "provenance": {
+        "ground_truth_method": "synthetic_design",
+        "recorded_by": "Parker Lee",
+        "recorded_at": null,
+        "notes": ""
+      },
+      "dataset_split": "development",
+      "split_assignment_reason": "Available during rule design and evidence-profile calibration."
+    },
+    {
+      "fixture_id": "synthetic-linux-workstation-01",
+      "status": "planned",
+      "fixture_kind": "synthetic",
+      "description": "Linux end-user workstation without server-role evidence.",
+      "scenario_tags": [
+        "family",
+        "platform",
+        "endpoint"
+      ],
+      "source_artifacts": [],
+      "normalized_evidence_path": null,
+      "ground_truth": {
+        "device_family": "client_endpoint",
+        "roles": [],
+        "platform": "linux",
+        "identity_stability": "stable_mac",
+        "acceptable_family_alternatives": []
+      },
+      "observation": {
+        "scan_profile": "accurate",
+        "scan_completeness": "complete",
+        "requested_collectors": [
+          "discovery",
+          "tcp_services",
+          "os_detection",
+          "passive_neighbors"
+        ],
+        "completed_collectors": [
+          "discovery",
+          "tcp_services",
+          "os_detection",
+          "passive_neighbors"
+        ],
+        "failed_collectors": [],
+        "unavailable_collectors": [],
+        "privilege_context": "privileged"
+      },
+      "expectations": {
+        "family": {
+          "decision": "classified",
+          "minimum_confidence": 70,
+          "maximum_confidence": 100
+        },
+        "roles": [],
+        "platform": {
+          "decision": "classified",
+          "minimum_confidence": 70,
+          "maximum_confidence": 100
+        },
+        "required_uncertainty_reasons": [
+          "legacy_projection_only"
+        ],
+        "forbidden_classified_families": [],
+        "legacy_projection": {
+          "primary_type": "Linux Server",
+          "decision": "review"
+        }
+      },
+      "provenance": {
+        "ground_truth_method": "synthetic_design",
+        "recorded_by": "Parker Lee",
+        "recorded_at": null,
+        "notes": ""
+      },
+      "dataset_split": "evaluation",
+      "split_assignment_reason": "Held for release-candidate evaluation; not used to tune v2.1 scoring."
+    },
+    {
+      "fixture_id": "synthetic-ios-mobile-01",
+      "status": "planned",
+      "fixture_kind": "synthetic",
+      "description": "iOS mobile endpoint with randomized MAC behavior.",
+      "scenario_tags": [
+        "family",
+        "platform",
+        "mobile",
+        "identity-instability"
+      ],
+      "source_artifacts": [],
+      "normalized_evidence_path": null,
+      "ground_truth": {
+        "device_family": "client_endpoint",
+        "roles": [],
+        "platform": "ios",
+        "identity_stability": "randomized_mac",
+        "acceptable_family_alternatives": []
+      },
+      "observation": {
+        "scan_profile": "accurate",
+        "scan_completeness": "complete",
+        "requested_collectors": [
+          "discovery",
+          "tcp_services",
+          "os_detection",
+          "passive_neighbors"
+        ],
+        "completed_collectors": [
+          "discovery",
+          "tcp_services",
+          "os_detection",
+          "passive_neighbors"
+        ],
+        "failed_collectors": [],
+        "unavailable_collectors": [],
+        "privilege_context": "privileged"
+      },
+      "expectations": {
+        "family": {
+          "decision": "classified",
+          "minimum_confidence": 70,
+          "maximum_confidence": 100
+        },
+        "roles": [],
+        "platform": {
+          "decision": "classified",
+          "minimum_confidence": 70,
+          "maximum_confidence": 100
+        },
+        "required_uncertainty_reasons": [
+          "identity_instability"
+        ],
+        "forbidden_classified_families": [],
+        "legacy_projection": {
+          "primary_type": "Unknown",
+          "decision": "classified"
+        }
+      },
+      "provenance": {
+        "ground_truth_method": "synthetic_design",
+        "recorded_by": "Parker Lee",
+        "recorded_at": null,
+        "notes": ""
+      },
+      "dataset_split": "development",
+      "split_assignment_reason": "Available during rule design and evidence-profile calibration."
+    },
+    {
+      "fixture_id": "synthetic-android-mobile-01",
+      "status": "planned",
+      "fixture_kind": "synthetic",
+      "description": "Android mobile endpoint with randomized MAC behavior.",
+      "scenario_tags": [
+        "family",
+        "platform",
+        "mobile",
+        "identity-instability"
+      ],
+      "source_artifacts": [],
+      "normalized_evidence_path": null,
+      "ground_truth": {
+        "device_family": "client_endpoint",
+        "roles": [],
+        "platform": "android",
+        "identity_stability": "randomized_mac",
+        "acceptable_family_alternatives": []
+      },
+      "observation": {
+        "scan_profile": "accurate",
+        "scan_completeness": "complete",
+        "requested_collectors": [
+          "discovery",
+          "tcp_services",
+          "os_detection",
+          "passive_neighbors"
+        ],
+        "completed_collectors": [
+          "discovery",
+          "tcp_services",
+          "os_detection",
+          "passive_neighbors"
+        ],
+        "failed_collectors": [],
+        "unavailable_collectors": [],
+        "privilege_context": "privileged"
+      },
+      "expectations": {
+        "family": {
+          "decision": "classified",
+          "minimum_confidence": 70,
+          "maximum_confidence": 100
+        },
+        "roles": [],
+        "platform": {
+          "decision": "classified",
+          "minimum_confidence": 70,
+          "maximum_confidence": 100
+        },
+        "required_uncertainty_reasons": [
+          "identity_instability"
+        ],
+        "forbidden_classified_families": [],
+        "legacy_projection": {
+          "primary_type": "Unknown",
+          "decision": "classified"
+        }
+      },
+      "provenance": {
+        "ground_truth_method": "synthetic_design",
+        "recorded_by": "Parker Lee",
+        "recorded_at": null,
+        "notes": ""
+      },
+      "dataset_split": "development",
+      "split_assignment_reason": "Available during rule design and evidence-profile calibration."
+    },
+    {
+      "fixture_id": "synthetic-voip-phone-01",
+      "status": "planned",
+      "fixture_kind": "synthetic",
+      "description": "Dedicated VoIP handset.",
+      "scenario_tags": [
+        "family",
+        "role",
+        "voice"
+      ],
+      "source_artifacts": [],
+      "normalized_evidence_path": null,
+      "ground_truth": {
+        "device_family": "voice_device",
+        "roles": [
+          "voip_endpoint"
+        ],
+        "platform": "embedded",
+        "identity_stability": "stable_mac",
+        "acceptable_family_alternatives": []
+      },
+      "observation": {
+        "scan_profile": "accurate",
+        "scan_completeness": "complete",
+        "requested_collectors": [
+          "discovery",
+          "tcp_services",
+          "os_detection",
+          "passive_neighbors"
+        ],
+        "completed_collectors": [
+          "discovery",
+          "tcp_services",
+          "os_detection",
+          "passive_neighbors"
+        ],
+        "failed_collectors": [],
+        "unavailable_collectors": [],
+        "privilege_context": "privileged"
+      },
+      "expectations": {
+        "family": {
+          "decision": "classified",
+          "minimum_confidence": 70,
+          "maximum_confidence": 100
+        },
+        "roles": [
+          {
+            "role": "voip_endpoint",
+            "decision": "classified",
+            "minimum_confidence": 70,
+            "maximum_confidence": 100
+          }
+        ],
+        "platform": {
+          "decision": "classified",
+          "minimum_confidence": 70,
+          "maximum_confidence": 100
+        },
+        "required_uncertainty_reasons": [],
+        "forbidden_classified_families": [],
+        "legacy_projection": {
+          "primary_type": "VoIP Phone / PBX",
+          "decision": "classified"
+        }
+      },
+      "provenance": {
+        "ground_truth_method": "synthetic_design",
+        "recorded_by": "Parker Lee",
+        "recorded_at": null,
+        "notes": ""
+      },
+      "dataset_split": "development",
+      "split_assignment_reason": "Available during rule design and evidence-profile calibration."
+    },
+    {
+      "fixture_id": "synthetic-pbx-01",
+      "status": "planned",
+      "fixture_kind": "synthetic",
+      "description": "PBX appliance with call-control role.",
+      "scenario_tags": [
+        "family",
+        "role",
+        "voice"
+      ],
+      "source_artifacts": [],
+      "normalized_evidence_path": null,
+      "ground_truth": {
+        "device_family": "voice_device",
+        "roles": [
+          "pbx"
+        ],
+        "platform": "embedded",
+        "identity_stability": "stable_mac",
+        "acceptable_family_alternatives": []
+      },
+      "observation": {
+        "scan_profile": "accurate",
+        "scan_completeness": "complete",
+        "requested_collectors": [
+          "discovery",
+          "tcp_services",
+          "os_detection",
+          "passive_neighbors"
+        ],
+        "completed_collectors": [
+          "discovery",
+          "tcp_services",
+          "os_detection",
+          "passive_neighbors"
+        ],
+        "failed_collectors": [],
+        "unavailable_collectors": [],
+        "privilege_context": "privileged"
+      },
+      "expectations": {
+        "family": {
+          "decision": "classified",
+          "minimum_confidence": 70,
+          "maximum_confidence": 100
+        },
+        "roles": [
+          {
+            "role": "pbx",
+            "decision": "classified",
+            "minimum_confidence": 70,
+            "maximum_confidence": 100
+          }
+        ],
+        "platform": {
+          "decision": "classified",
+          "minimum_confidence": 70,
+          "maximum_confidence": 100
+        },
+        "required_uncertainty_reasons": [],
+        "forbidden_classified_families": [],
+        "legacy_projection": {
+          "primary_type": "VoIP Phone / PBX",
+          "decision": "classified"
+        }
+      },
+      "provenance": {
+        "ground_truth_method": "synthetic_design",
+        "recorded_by": "Parker Lee",
+        "recorded_at": null,
+        "notes": ""
+      },
+      "dataset_split": "evaluation",
+      "split_assignment_reason": "Held for release-candidate evaluation; not used to tune v2.1 scoring."
+    },
+    {
+      "fixture_id": "synthetic-ups-monitor-01",
+      "status": "planned",
+      "fixture_kind": "synthetic",
+      "description": "UPS or power-management device exposing monitoring services.",
+      "scenario_tags": [
+        "family",
+        "role",
+        "power"
+      ],
+      "source_artifacts": [],
+      "normalized_evidence_path": null,
+      "ground_truth": {
+        "device_family": "power_device",
+        "roles": [
+          "ups_monitor"
+        ],
+        "platform": "embedded",
+        "identity_stability": "stable_mac",
+        "acceptable_family_alternatives": []
+      },
+      "observation": {
+        "scan_profile": "accurate",
+        "scan_completeness": "complete",
+        "requested_collectors": [
+          "discovery",
+          "tcp_services",
+          "os_detection",
+          "passive_neighbors"
+        ],
+        "completed_collectors": [
+          "discovery",
+          "tcp_services",
+          "os_detection",
+          "passive_neighbors"
+        ],
+        "failed_collectors": [],
+        "unavailable_collectors": [],
+        "privilege_context": "privileged"
+      },
+      "expectations": {
+        "family": {
+          "decision": "classified",
+          "minimum_confidence": 70,
+          "maximum_confidence": 100
+        },
+        "roles": [
+          {
+            "role": "ups_monitor",
+            "decision": "classified",
+            "minimum_confidence": 70,
+            "maximum_confidence": 100
+          }
+        ],
+        "platform": {
+          "decision": "classified",
+          "minimum_confidence": 70,
+          "maximum_confidence": 100
+        },
+        "required_uncertainty_reasons": [],
+        "forbidden_classified_families": [],
+        "legacy_projection": {
+          "primary_type": "UPS / Power Device",
+          "decision": "classified"
+        }
+      },
+      "provenance": {
+        "ground_truth_method": "synthetic_design",
+        "recorded_by": "Parker Lee",
+        "recorded_at": null,
+        "notes": ""
+      },
+      "dataset_split": "evaluation",
+      "split_assignment_reason": "Held for release-candidate evaluation; not used to tune v2.1 scoring."
+    },
+    {
+      "fixture_id": "synthetic-iot-embedded-01",
+      "status": "planned",
+      "fixture_kind": "synthetic",
+      "description": "Embedded IoT device with no more specific supported family.",
+      "scenario_tags": [
+        "family",
+        "iot"
+      ],
+      "source_artifacts": [],
+      "normalized_evidence_path": null,
+      "ground_truth": {
+        "device_family": "iot_embedded",
+        "roles": [],
+        "platform": "embedded",
+        "identity_stability": "stable_mac",
+        "acceptable_family_alternatives": []
+      },
+      "observation": {
+        "scan_profile": "accurate",
+        "scan_completeness": "complete",
+        "requested_collectors": [
+          "discovery",
+          "tcp_services",
+          "os_detection",
+          "passive_neighbors"
+        ],
+        "completed_collectors": [
+          "discovery",
+          "tcp_services",
+          "os_detection",
+          "passive_neighbors"
+        ],
+        "failed_collectors": [],
+        "unavailable_collectors": [],
+        "privilege_context": "privileged"
+      },
+      "expectations": {
+        "family": {
+          "decision": "classified",
+          "minimum_confidence": 70,
+          "maximum_confidence": 100
+        },
+        "roles": [],
+        "platform": {
+          "decision": "classified",
+          "minimum_confidence": 70,
+          "maximum_confidence": 100
+        },
+        "required_uncertainty_reasons": [],
+        "forbidden_classified_families": [],
+        "legacy_projection": {
+          "primary_type": "IoT / Embedded Device",
+          "decision": "classified"
+        }
+      },
+      "provenance": {
+        "ground_truth_method": "synthetic_design",
+        "recorded_by": "Parker Lee",
+        "recorded_at": null,
+        "notes": ""
+      },
+      "dataset_split": "evaluation",
+      "split_assignment_reason": "Held for release-candidate evaluation; not used to tune v2.1 scoring."
+    },
+    {
+      "fixture_id": "synthetic-unknown-no-evidence-01",
+      "status": "planned",
+      "fixture_kind": "synthetic",
+      "description": "Discovered host with no defensible classification evidence.",
+      "scenario_tags": [
+        "unknown",
+        "no-evidence",
+        "negative-control"
+      ],
+      "source_artifacts": [],
+      "normalized_evidence_path": null,
+      "ground_truth": {
+        "device_family": "unknown",
+        "roles": [],
+        "platform": "unknown",
+        "identity_stability": "stable_mac",
+        "acceptable_family_alternatives": []
+      },
+      "observation": {
+        "scan_profile": "accurate",
+        "scan_completeness": "complete",
+        "requested_collectors": [
+          "discovery",
+          "tcp_services",
+          "os_detection",
+          "passive_neighbors"
+        ],
+        "completed_collectors": [
+          "discovery",
+          "tcp_services",
+          "os_detection",
+          "passive_neighbors"
+        ],
+        "failed_collectors": [],
+        "unavailable_collectors": [],
+        "privilege_context": "privileged"
+      },
+      "expectations": {
+        "family": {
+          "decision": "unknown",
+          "minimum_confidence": 0,
+          "maximum_confidence": 0
+        },
+        "roles": [],
+        "platform": {
+          "decision": "unknown",
+          "minimum_confidence": 0,
+          "maximum_confidence": 0
+        },
+        "required_uncertainty_reasons": [
+          "no_classification_evidence"
+        ],
+        "forbidden_classified_families": [
+          "network_infrastructure",
+          "compute_host",
+          "client_endpoint",
+          "printer",
+          "surveillance_device",
+          "storage_appliance",
+          "voice_device",
+          "power_device",
+          "iot_embedded"
+        ],
+        "legacy_projection": {
+          "primary_type": "Unknown",
+          "decision": "unknown"
+        }
+      },
+      "provenance": {
+        "ground_truth_method": "synthetic_design",
+        "recorded_by": "Parker Lee",
+        "recorded_at": null,
+        "notes": ""
+      },
+      "dataset_split": "development",
+      "split_assignment_reason": "Available during rule design and evidence-profile calibration."
+    },
+    {
+      "fixture_id": "synthetic-ambiguous-web-admin-01",
+      "status": "planned",
+      "fixture_kind": "synthetic",
+      "description": "Generic web and administration interface that supports a role candidate but not a device family.",
+      "scenario_tags": [
+        "review",
+        "role-without-family",
+        "ambiguous"
+      ],
+      "source_artifacts": [],
+      "normalized_evidence_path": null,
+      "ground_truth": {
+        "device_family": "unknown",
+        "roles": [
+          "web_application_host",
+          "development_admin_interface"
+        ],
+        "platform": "unknown",
+        "identity_stability": "stable_mac",
+        "acceptable_family_alternatives": []
+      },
+      "observation": {
+        "scan_profile": "accurate",
+        "scan_completeness": "complete",
+        "requested_collectors": [
+          "discovery",
+          "tcp_services",
+          "os_detection",
+          "passive_neighbors"
+        ],
+        "completed_collectors": [
+          "discovery",
+          "tcp_services",
+          "os_detection",
+          "passive_neighbors"
+        ],
+        "failed_collectors": [],
+        "unavailable_collectors": [],
+        "privilege_context": "privileged"
+      },
+      "expectations": {
+        "family": {
+          "decision": "review",
+          "minimum_confidence": 0,
+          "maximum_confidence": 69
+        },
+        "roles": [
+          {
+            "role": "web_application_host",
+            "decision": "possible",
+            "minimum_confidence": 40,
+            "maximum_confidence": 69
+          },
+          {
+            "role": "development_admin_interface",
+            "decision": "possible",
+            "minimum_confidence": 40,
+            "maximum_confidence": 69
+          }
+        ],
+        "platform": {
+          "decision": "unknown",
+          "minimum_confidence": 0,
+          "maximum_confidence": 39
+        },
+        "required_uncertainty_reasons": [
+          "family_not_inferable_from_role",
+          "candidate_scores_too_close"
+        ],
+        "forbidden_classified_families": [],
+        "legacy_projection": {
+          "primary_type": "Ambiguous Device",
+          "decision": "review"
+        }
+      },
+      "provenance": {
+        "ground_truth_method": "synthetic_design",
+        "recorded_by": "Parker Lee",
+        "recorded_at": null,
+        "notes": ""
+      },
+      "dataset_split": "evaluation",
+      "split_assignment_reason": "Held for release-candidate evaluation; not used to tune v2.1 scoring."
+    },
+    {
+      "fixture_id": "synthetic-printer-domain-contradiction-01",
+      "status": "planned",
+      "fixture_kind": "synthetic",
+      "description": "Printer evidence conflicts with domain-controller evidence.",
+      "scenario_tags": [
+        "review",
+        "contradiction",
+        "negative-control"
+      ],
+      "source_artifacts": [],
+      "normalized_evidence_path": null,
+      "ground_truth": {
+        "device_family": "unknown",
+        "roles": [
+          "print_service",
+          "domain_controller"
+        ],
+        "platform": "unknown",
+        "identity_stability": "stable_mac",
+        "acceptable_family_alternatives": []
+      },
+      "observation": {
+        "scan_profile": "accurate",
+        "scan_completeness": "complete",
+        "requested_collectors": [
+          "discovery",
+          "tcp_services",
+          "os_detection",
+          "passive_neighbors"
+        ],
+        "completed_collectors": [
+          "discovery",
+          "tcp_services",
+          "os_detection",
+          "passive_neighbors"
+        ],
+        "failed_collectors": [],
+        "unavailable_collectors": [],
+        "privilege_context": "privileged"
+      },
+      "expectations": {
+        "family": {
+          "decision": "review",
+          "minimum_confidence": 0,
+          "maximum_confidence": 69
+        },
+        "roles": [
+          {
+            "role": "print_service",
+            "decision": "review",
+            "minimum_confidence": 0,
+            "maximum_confidence": 69
+          },
+          {
+            "role": "domain_controller",
+            "decision": "review",
+            "minimum_confidence": 0,
+            "maximum_confidence": 69
+          }
+        ],
+        "platform": {
+          "decision": "review",
+          "minimum_confidence": 0,
+          "maximum_confidence": 69
+        },
+        "required_uncertainty_reasons": [
+          "strong_contradiction"
+        ],
+        "forbidden_classified_families": [],
+        "legacy_projection": {
+          "primary_type": "Ambiguous Device",
+          "decision": "contradiction_review"
+        }
+      },
+      "provenance": {
+        "ground_truth_method": "synthetic_design",
+        "recorded_by": "Parker Lee",
+        "recorded_at": null,
+        "notes": ""
+      },
+      "dataset_split": "regression",
+      "split_assignment_reason": "Protects a contradiction, partial-scan, or legacy-compatibility invariant."
+    },
+    {
+      "fixture_id": "synthetic-partial-printer-scan-01",
+      "status": "planned",
+      "fixture_kind": "synthetic",
+      "description": "Known printer observed during a partial scan with service collection failure.",
+      "scenario_tags": [
+        "partial-scan",
+        "collector-failure",
+        "printer"
+      ],
+      "source_artifacts": [],
+      "normalized_evidence_path": null,
+      "ground_truth": {
+        "device_family": "printer",
+        "roles": [
+          "print_service"
+        ],
+        "platform": "embedded",
+        "identity_stability": "stable_mac",
+        "acceptable_family_alternatives": []
+      },
+      "observation": {
+        "scan_profile": "accurate",
+        "scan_completeness": "partial",
+        "requested_collectors": [
+          "discovery",
+          "tcp_services",
+          "os_detection",
+          "passive_neighbors"
+        ],
+        "completed_collectors": [
+          "discovery",
+          "os_detection",
+          "passive_neighbors"
+        ],
+        "failed_collectors": [
+          "tcp_services"
+        ],
+        "unavailable_collectors": [],
+        "privilege_context": "privileged"
+      },
+      "expectations": {
+        "family": {
+          "decision": "possible",
+          "minimum_confidence": 1,
+          "maximum_confidence": 69
+        },
+        "roles": [
+          {
+            "role": "print_service",
+            "decision": "possible",
+            "minimum_confidence": 1,
+            "maximum_confidence": 69
+          }
+        ],
+        "platform": {
+          "decision": "possible",
+          "minimum_confidence": 1,
+          "maximum_confidence": 69
+        },
+        "required_uncertainty_reasons": [
+          "partial_scan",
+          "collector_failed"
+        ],
+        "forbidden_classified_families": [],
+        "legacy_projection": {
+          "primary_type": "Network Printer / MFP",
+          "decision": "possible"
+        }
+      },
+      "provenance": {
+        "ground_truth_method": "synthetic_design",
+        "recorded_by": "Parker Lee",
+        "recorded_at": null,
+        "notes": ""
+      },
+      "dataset_split": "regression",
+      "split_assignment_reason": "Protects a contradiction, partial-scan, or legacy-compatibility invariant."
+    },
+    {
+      "fixture_id": "synthetic-vendor-only-camera-01",
+      "status": "planned",
+      "fixture_kind": "synthetic",
+      "description": "Camera-vendor identity without protocol or product corroboration.",
+      "scenario_tags": [
+        "confidence-cap",
+        "vendor-only",
+        "surveillance"
+      ],
+      "source_artifacts": [],
+      "normalized_evidence_path": null,
+      "ground_truth": {
+        "device_family": "surveillance_device",
+        "roles": [
+          "camera"
+        ],
+        "platform": "embedded",
+        "identity_stability": "stable_mac",
+        "acceptable_family_alternatives": []
+      },
+      "observation": {
+        "scan_profile": "accurate",
+        "scan_completeness": "complete",
+        "requested_collectors": [
+          "discovery",
+          "tcp_services",
+          "os_detection",
+          "passive_neighbors"
+        ],
+        "completed_collectors": [
+          "discovery",
+          "tcp_services",
+          "os_detection",
+          "passive_neighbors"
+        ],
+        "failed_collectors": [],
+        "unavailable_collectors": [],
+        "privilege_context": "privileged"
+      },
+      "expectations": {
+        "family": {
+          "decision": "possible",
+          "minimum_confidence": 1,
+          "maximum_confidence": 39
+        },
+        "roles": [
+          {
+            "role": "camera",
+            "decision": "possible",
+            "minimum_confidence": 1,
+            "maximum_confidence": 39
+          }
+        ],
+        "platform": {
+          "decision": "possible",
+          "minimum_confidence": 1,
+          "maximum_confidence": 39
+        },
+        "required_uncertainty_reasons": [
+          "vendor_only_evidence",
+          "insufficient_evidence_diversity"
+        ],
+        "forbidden_classified_families": [],
+        "legacy_projection": {
+          "primary_type": "IP Camera / NVR",
+          "decision": "possible"
+        }
+      },
+      "provenance": {
+        "ground_truth_method": "synthetic_design",
+        "recorded_by": "Parker Lee",
+        "recorded_at": null,
+        "notes": ""
+      },
+      "dataset_split": "development",
+      "split_assignment_reason": "Available during rule design and evidence-profile calibration."
+    },
+    {
+      "fixture_id": "synthetic-port-only-web-01",
+      "status": "planned",
+      "fixture_kind": "synthetic",
+      "description": "Open HTTP port without product, title, certificate, or protocol-specific evidence.",
+      "scenario_tags": [
+        "confidence-cap",
+        "port-only",
+        "role-without-family"
+      ],
+      "source_artifacts": [],
+      "normalized_evidence_path": null,
+      "ground_truth": {
+        "device_family": "unknown",
+        "roles": [
+          "web_server"
+        ],
+        "platform": "unknown",
+        "identity_stability": "stable_mac",
+        "acceptable_family_alternatives": []
+      },
+      "observation": {
+        "scan_profile": "accurate",
+        "scan_completeness": "complete",
+        "requested_collectors": [
+          "discovery",
+          "tcp_services",
+          "os_detection",
+          "passive_neighbors"
+        ],
+        "completed_collectors": [
+          "discovery",
+          "tcp_services",
+          "os_detection",
+          "passive_neighbors"
+        ],
+        "failed_collectors": [],
+        "unavailable_collectors": [],
+        "privilege_context": "privileged"
+      },
+      "expectations": {
+        "family": {
+          "decision": "unknown",
+          "minimum_confidence": 0,
+          "maximum_confidence": 39
+        },
+        "roles": [
+          {
+            "role": "web_server",
+            "decision": "possible",
+            "minimum_confidence": 1,
+            "maximum_confidence": 39
+          }
+        ],
+        "platform": {
+          "decision": "unknown",
+          "minimum_confidence": 0,
+          "maximum_confidence": 39
+        },
+        "required_uncertainty_reasons": [
+          "port_only_evidence",
+          "family_not_inferable_from_role"
+        ],
+        "forbidden_classified_families": [
+          "network_infrastructure",
+          "compute_host",
+          "client_endpoint",
+          "printer",
+          "surveillance_device",
+          "storage_appliance",
+          "voice_device",
+          "power_device",
+          "iot_embedded"
+        ],
+        "legacy_projection": {
+          "primary_type": "Unknown / Ambiguous",
+          "decision": "possible"
+        }
+      },
+      "provenance": {
+        "ground_truth_method": "synthetic_design",
+        "recorded_by": "Parker Lee",
+        "recorded_at": null,
+        "notes": ""
+      },
+      "dataset_split": "development",
+      "split_assignment_reason": "Available during rule design and evidence-profile calibration."
+    },
+    {
+      "fixture_id": "synthetic-database-role-family-unknown-01",
+      "status": "planned",
+      "fixture_kind": "synthetic",
+      "description": "Database service can be classified while physical device family remains unknown.",
+      "scenario_tags": [
+        "role-without-family",
+        "database",
+        "axis-separation"
+      ],
+      "source_artifacts": [],
+      "normalized_evidence_path": null,
+      "ground_truth": {
+        "device_family": "unknown",
+        "roles": [
+          "database_server"
+        ],
+        "platform": "unknown",
+        "identity_stability": "stable_mac",
+        "acceptable_family_alternatives": []
+      },
+      "observation": {
+        "scan_profile": "accurate",
+        "scan_completeness": "complete",
+        "requested_collectors": [
+          "discovery",
+          "tcp_services",
+          "os_detection",
+          "passive_neighbors"
+        ],
+        "completed_collectors": [
+          "discovery",
+          "tcp_services",
+          "os_detection",
+          "passive_neighbors"
+        ],
+        "failed_collectors": [],
+        "unavailable_collectors": [],
+        "privilege_context": "privileged"
+      },
+      "expectations": {
+        "family": {
+          "decision": "unknown",
+          "minimum_confidence": 0,
+          "maximum_confidence": 39
+        },
+        "roles": [
+          {
+            "role": "database_server",
+            "decision": "classified",
+            "minimum_confidence": 70,
+            "maximum_confidence": 100
+          }
+        ],
+        "platform": {
+          "decision": "unknown",
+          "minimum_confidence": 0,
+          "maximum_confidence": 39
+        },
+        "required_uncertainty_reasons": [
+          "family_not_inferable_from_role"
+        ],
+        "forbidden_classified_families": [],
+        "legacy_projection": {
+          "primary_type": "Database Server",
+          "decision": "classified"
+        }
+      },
+      "provenance": {
+        "ground_truth_method": "synthetic_design",
+        "recorded_by": "Parker Lee",
+        "recorded_at": null,
+        "notes": ""
+      },
+      "dataset_split": "development",
+      "split_assignment_reason": "Available during rule design and evidence-profile calibration."
+    },
+    {
+      "fixture_id": "legacy-v2-router-projection-01",
+      "status": "planned",
+      "fixture_kind": "synthetic",
+      "description": "Legacy NetSniper v2.0 router record projected into the v2.1 axes.",
+      "scenario_tags": [
+        "legacy",
+        "compatibility",
+        "network-infrastructure"
+      ],
+      "source_artifacts": [],
+      "normalized_evidence_path": null,
+      "ground_truth": {
+        "device_family": "network_infrastructure",
+        "roles": [
+          "gateway"
+        ],
+        "platform": "network_os",
+        "identity_stability": "stable_mac",
+        "acceptable_family_alternatives": []
+      },
+      "observation": {
+        "scan_profile": "legacy",
+        "scan_completeness": "complete",
+        "requested_collectors": [
+          "discovery",
+          "tcp_services",
+          "os_detection",
+          "passive_neighbors"
+        ],
+        "completed_collectors": [
+          "discovery",
+          "tcp_services",
+          "os_detection",
+          "passive_neighbors"
+        ],
+        "failed_collectors": [],
+        "unavailable_collectors": [],
+        "privilege_context": "privileged"
+      },
+      "expectations": {
+        "family": {
+          "decision": "classified",
+          "minimum_confidence": 70,
+          "maximum_confidence": 100
+        },
+        "roles": [
+          {
+            "role": "gateway",
+            "decision": "classified",
+            "minimum_confidence": 70,
+            "maximum_confidence": 100
+          }
+        ],
+        "platform": {
+          "decision": "classified",
+          "minimum_confidence": 70,
+          "maximum_confidence": 100
+        },
+        "required_uncertainty_reasons": [],
+        "forbidden_classified_families": [],
+        "legacy_projection": {
+          "primary_type": "Router / Gateway",
+          "decision": "classified"
+        }
+      },
+      "provenance": {
+        "ground_truth_method": "synthetic_design",
+        "recorded_by": "Parker Lee",
+        "recorded_at": null,
+        "notes": ""
+      },
+      "dataset_split": "regression",
+      "split_assignment_reason": "Protects a contradiction, partial-scan, or legacy-compatibility invariant."
+    },
+    {
+      "fixture_id": "legacy-v2-unknown-ambiguous-projection-01",
+      "status": "planned",
+      "fixture_kind": "synthetic",
+      "description": "Legacy Unknown / Ambiguous record projected to canonical review.",
+      "scenario_tags": [
+        "legacy",
+        "compatibility",
+        "review"
+      ],
+      "source_artifacts": [],
+      "normalized_evidence_path": null,
+      "ground_truth": {
+        "device_family": "unknown",
+        "roles": [],
+        "platform": "unknown",
+        "identity_stability": "stable_mac",
+        "acceptable_family_alternatives": []
+      },
+      "observation": {
+        "scan_profile": "legacy",
+        "scan_completeness": "complete",
+        "requested_collectors": [
+          "discovery",
+          "tcp_services",
+          "os_detection",
+          "passive_neighbors"
+        ],
+        "completed_collectors": [
+          "discovery",
+          "tcp_services",
+          "os_detection",
+          "passive_neighbors"
+        ],
+        "failed_collectors": [],
+        "unavailable_collectors": [],
+        "privilege_context": "privileged"
+      },
+      "expectations": {
+        "family": {
+          "decision": "review",
+          "minimum_confidence": 0,
+          "maximum_confidence": 69
+        },
+        "roles": [],
+        "platform": {
+          "decision": "unknown",
+          "minimum_confidence": 0,
+          "maximum_confidence": 39
+        },
+        "required_uncertainty_reasons": [
+          "legacy_projection_only"
+        ],
+        "forbidden_classified_families": [],
+        "legacy_projection": {
+          "primary_type": "Unknown / Ambiguous",
+          "decision": "review"
+        }
+      },
+      "provenance": {
+        "ground_truth_method": "synthetic_design",
+        "recorded_by": "Parker Lee",
+        "recorded_at": null,
+        "notes": ""
+      },
+      "dataset_split": "regression",
+      "split_assignment_reason": "Protects a contradiction, partial-scan, or legacy-compatibility invariant."
+    },
+    {
+      "fixture_id": "sanitized-real-home-router-01",
+      "status": "planned",
+      "fixture_kind": "sanitized_real",
+      "description": "Reserved real-world router fixture to be captured and sanitized manually.",
+      "scenario_tags": [
+        "sanitized-real",
+        "network-infrastructure",
+        "multi-role"
+      ],
+      "source_artifacts": [],
+      "normalized_evidence_path": null,
+      "ground_truth": {
+        "device_family": "network_infrastructure",
+        "roles": [
+          "gateway",
+          "wireless_access_point"
+        ],
+        "platform": "network_os",
+        "identity_stability": "stable_mac",
+        "acceptable_family_alternatives": []
+      },
+      "observation": {
+        "scan_profile": "accurate",
+        "scan_completeness": "complete",
+        "requested_collectors": [
+          "discovery",
+          "tcp_services",
+          "os_detection",
+          "passive_neighbors"
+        ],
+        "completed_collectors": [
+          "discovery",
+          "tcp_services",
+          "os_detection",
+          "passive_neighbors"
+        ],
+        "failed_collectors": [],
+        "unavailable_collectors": [],
+        "privilege_context": "privileged"
+      },
+      "expectations": {
+        "family": {
+          "decision": "classified",
+          "minimum_confidence": 70,
+          "maximum_confidence": 100
+        },
+        "roles": [
+          {
+            "role": "gateway",
+            "decision": "classified",
+            "minimum_confidence": 70,
+            "maximum_confidence": 100
+          },
+          {
+            "role": "wireless_access_point",
+            "decision": "classified",
+            "minimum_confidence": 70,
+            "maximum_confidence": 100
+          }
+        ],
+        "platform": {
+          "decision": "classified",
+          "minimum_confidence": 70,
+          "maximum_confidence": 100
+        },
+        "required_uncertainty_reasons": [],
+        "forbidden_classified_families": [],
+        "legacy_projection": {
+          "primary_type": "Router / Gateway",
+          "decision": "classified"
+        }
+      },
+      "provenance": {
+        "ground_truth_method": "physical_inspection",
+        "recorded_by": "Parker Lee",
+        "recorded_at": null,
+        "notes": ""
+      },
+      "dataset_split": "evaluation",
+      "split_assignment_reason": "Held for release-candidate evaluation; not used to tune v2.1 scoring."
+    },
+    {
+      "fixture_id": "sanitized-real-printer-01",
+      "status": "planned",
+      "fixture_kind": "sanitized_real",
+      "description": "Reserved real-world printer fixture to be captured and sanitized manually.",
+      "scenario_tags": [
+        "sanitized-real",
+        "printer"
+      ],
+      "source_artifacts": [],
+      "normalized_evidence_path": null,
+      "ground_truth": {
+        "device_family": "printer",
+        "roles": [
+          "print_service"
+        ],
+        "platform": "embedded",
+        "identity_stability": "stable_mac",
+        "acceptable_family_alternatives": []
+      },
+      "observation": {
+        "scan_profile": "accurate",
+        "scan_completeness": "complete",
+        "requested_collectors": [
+          "discovery",
+          "tcp_services",
+          "os_detection",
+          "passive_neighbors"
+        ],
+        "completed_collectors": [
+          "discovery",
+          "tcp_services",
+          "os_detection",
+          "passive_neighbors"
+        ],
+        "failed_collectors": [],
+        "unavailable_collectors": [],
+        "privilege_context": "privileged"
+      },
+      "expectations": {
+        "family": {
+          "decision": "classified",
+          "minimum_confidence": 70,
+          "maximum_confidence": 100
+        },
+        "roles": [
+          {
+            "role": "print_service",
+            "decision": "classified",
+            "minimum_confidence": 70,
+            "maximum_confidence": 100
+          }
+        ],
+        "platform": {
+          "decision": "classified",
+          "minimum_confidence": 70,
+          "maximum_confidence": 100
+        },
+        "required_uncertainty_reasons": [],
+        "forbidden_classified_families": [],
+        "legacy_projection": {
+          "primary_type": "Network Printer / MFP",
+          "decision": "classified"
+        }
+      },
+      "provenance": {
+        "ground_truth_method": "physical_inspection",
+        "recorded_by": "Parker Lee",
+        "recorded_at": null,
+        "notes": ""
+      },
+      "dataset_split": "evaluation",
+      "split_assignment_reason": "Held for release-candidate evaluation; not used to tune v2.1 scoring."
+    },
+    {
+      "fixture_id": "sanitized-real-client-endpoint-01",
+      "status": "planned",
+      "fixture_kind": "sanitized_real",
+      "description": "Reserved real-world client endpoint fixture to be captured and sanitized manually.",
+      "scenario_tags": [
+        "sanitized-real",
+        "endpoint",
+        "platform"
+      ],
+      "source_artifacts": [],
+      "normalized_evidence_path": null,
+      "ground_truth": {
+        "device_family": "client_endpoint",
+        "roles": [],
+        "platform": "windows",
+        "identity_stability": "stable_mac",
+        "acceptable_family_alternatives": []
+      },
+      "observation": {
+        "scan_profile": "accurate",
+        "scan_completeness": "complete",
+        "requested_collectors": [
+          "discovery",
+          "tcp_services",
+          "os_detection",
+          "passive_neighbors"
+        ],
+        "completed_collectors": [
+          "discovery",
+          "tcp_services",
+          "os_detection",
+          "passive_neighbors"
+        ],
+        "failed_collectors": [],
+        "unavailable_collectors": [],
+        "privilege_context": "privileged"
+      },
+      "expectations": {
+        "family": {
+          "decision": "classified",
+          "minimum_confidence": 70,
+          "maximum_confidence": 100
+        },
+        "roles": [],
+        "platform": {
+          "decision": "classified",
+          "minimum_confidence": 70,
+          "maximum_confidence": 100
+        },
+        "required_uncertainty_reasons": [],
+        "forbidden_classified_families": [],
+        "legacy_projection": {
+          "primary_type": "Windows Workstation",
+          "decision": "classified"
+        }
+      },
+      "provenance": {
+        "ground_truth_method": "physical_inspection",
+        "recorded_by": "Parker Lee",
+        "recorded_at": null,
+        "notes": ""
+      },
+      "dataset_split": "evaluation",
+      "split_assignment_reason": "Held for release-candidate evaluation; not used to tune v2.1 scoring."
+    }
+  ],
+  "evaluation_policy": {
+    "split_values": [
+      "development",
+      "evaluation",
+      "regression"
+    ],
+    "freeze_trigger": "first_v2.1_classifier_implementation_commit",
+    "evaluation_tuning_prohibited": true,
+    "ground_truth_change_requires_baseline_reset": true,
+    "minimum_active_evaluation_fixtures": 12,
+    "minimum_active_sanitized_real_evaluation_fixtures": 3
+  },
+  "metric_gates": {
+    "release_blocking": {
+      "deterministic_replay_rate": 1.0,
+      "host_retention_rate": 1.0,
+      "schema_validity_rate": 1.0,
+      "uncertainty_reason_compliance_rate": 1.0,
+      "confidence_cap_compliance_rate": 1.0,
+      "contradiction_review_rate": 1.0,
+      "legacy_projection_match_rate": 1.0,
+      "false_high_confidence_count": 0,
+      "false_classified_unknown_count": 0,
+      "fixture_expectation_pass_rate": 1.0
+    },
+    "statistical_claim_floor": {
+      "minimum_evaluation_fixtures": 100,
+      "minimum_examples_per_claimed_family": 10,
+      "minimum_high_confidence_predictions": 50,
+      "minimum_calibration_predictions": 100
+    },
+    "statistical_quality_targets": {
+      "classified_family_precision_minimum": 0.95,
+      "classified_role_precision_minimum": 0.95,
+      "high_confidence_precision_minimum": 0.98,
+      "family_macro_recall_minimum": 0.8,
+      "expected_calibration_error_maximum": 0.1
+    }
+  }
+}
