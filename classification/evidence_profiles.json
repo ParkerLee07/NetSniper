@@ -72,6 +72,15 @@
       "description": "Routing, gateway, wireless-controller, or infrastructure product evidence supports network infrastructure.",
       "positive_evidence": [
         {
+          "id": "infrastructure_network_product",
+          "source": "service",
+          "value": "unifi|wireless access point|managed switch|procurve|edgeswitch|catalyst|switchos|network switch|cisco ios",
+          "reliability": "high",
+          "points": 50,
+          "reason": "Recognized wireless or switching product evidence supports the network-infrastructure family.",
+          "source_group": "network_product"
+        },
+        {
           "id": "gateway_default_gateway_role",
           "source": "network_role",
           "value": "default_gateway",
@@ -208,7 +217,7 @@
           "source": "os",
           "value": "windows 10|windows 11|microsoft windows",
           "reliability": "high",
-          "points": 45,
+          "points": 55,
           "reason": "Desktop Windows OS evidence supports a client endpoint.",
           "source_group": "os_fingerprint"
         },
@@ -217,7 +226,7 @@
           "source": "os",
           "value": "mac os|macos|apple darwin",
           "reliability": "high",
-          "points": 45,
+          "points": 55,
           "reason": "macOS evidence supports a client endpoint.",
           "source_group": "os_fingerprint"
         },
@@ -226,7 +235,7 @@
           "source": "os",
           "value": "android|ios|iphone|ipad",
           "reliability": "high",
-          "points": 45,
+          "points": 55,
           "reason": "Mobile OS evidence supports a client endpoint.",
           "source_group": "os_fingerprint"
         },
@@ -574,6 +583,15 @@
       "description": "Wireless-controller and access-point evidence supports the AP role.",
       "positive_evidence": [
         {
+          "id": "role_ap_product",
+          "source": "service",
+          "value": "unifi|wireless access point|aruba instant|ruckus|meraki",
+          "reliability": "high",
+          "points": 50,
+          "reason": "Recognized access-point product evidence strongly supports the wireless access point role.",
+          "source_group": "ap_product"
+        },
+        {
           "id": "role_ap_wireless_vendor_hint",
           "source": "vendor",
           "value": "ubiquiti|unifi|ruckus|aruba|meraki|tp-link|netgear|linksys|eero",
@@ -765,7 +783,7 @@
           "source": "service",
           "value": "domain|dns|bind|unbound|dnsmasq",
           "reliability": "high",
-          "points": 45,
+          "points": 55,
           "reason": "DNS product evidence supports a DNS-server role.",
           "source_group": "dns_product"
         }
@@ -960,9 +978,10 @@
           "source": "service",
           "value": "postgresql|mysql|mariadb|microsoft sql|oracle|mongodb|redis|elasticsearch",
           "reliability": "high",
-          "points": 55,
+          "points": 70,
           "reason": "Recognized database product evidence strongly supports a database-server role.",
-          "source_group": "database_product"
+          "source_group": "database_product",
+          "unique_identifying": true
         }
       ],
       "contradicts": []

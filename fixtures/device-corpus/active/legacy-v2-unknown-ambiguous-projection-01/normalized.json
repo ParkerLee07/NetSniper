@@ -1,0 +1,33 @@
+{
+  "schema_version": "netsniper-corpus-input-v1",
+  "fixture_id": "legacy-v2-unknown-ambiguous-projection-01",
+  "mode": "legacy_projection",
+  "legacy_record": {
+    "schema_version": "netsniper-classification-v1",
+    "host_id": "192.0.2.71",
+    "ip": "192.0.2.71",
+    "mac": "02:00:00:00:00:71",
+    "primary_type": "Unknown / Ambiguous",
+    "device_type": "Unknown / Ambiguous",
+    "confidence": 25,
+    "decision": "review",
+    "observation_quality": {
+      "scan_completeness": "complete",
+      "requested_collectors": [
+        "discovery",
+        "tcp_services",
+        "os_detection",
+        "passive_neighbors"
+      ],
+      "completed_collectors": [
+        "discovery",
+        "tcp_services",
+        "os_detection",
+        "passive_neighbors"
+      ],
+      "failed_collectors": [],
+      "unavailable_collectors": [],
+      "inventory_complete": true
+    }
+  }
+}

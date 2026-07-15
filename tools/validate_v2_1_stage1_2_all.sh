@@ -29,6 +29,8 @@ paths = [
     Path("tools/classify_v2_1_host.py"),
     Path("tools/generate_v2_1_run_artifacts.py"),
     Path("tools/validate_v2_1_stage1_2.py"),
+    Path("tools/replay_v2_1_corpus.py"),
+    Path("tools/validate_v2_1_corpus_activation.py"),
 ]
 
 for path in paths:
@@ -45,7 +47,10 @@ fi
 ./tools/validate_v2_1_stage1_2.py \
     || fail "v2.1 Stages 1-2 contract validator"
 
+./tools/validate_v2_1_corpus_activation.py \
+    || fail "v2.1 deterministic corpus activation validator"
+
 ./tools/validate_v2_0_all.sh \
     || fail "v2.0 runtime compatibility suite"
 
-pass "NetSniper v2.1 Stages 1-2 and v2.0 compatibility suites passed"
+pass "NetSniper v2.1 classifier, corpus, and v2.0 compatibility suites passed"

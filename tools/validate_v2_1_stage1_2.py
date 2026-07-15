@@ -284,13 +284,21 @@ def validate_corpus_policy_alignment() -> None:
     )
 
     split_counts: dict[str, int] = {}
+    active_counts: dict[str, int] = {}
     for item in fixtures.values():
         split = item["dataset_split"]
         split_counts[split] = split_counts.get(split, 0) + 1
-        assert_true(
-            item["status"] == "planned",
-            "policy alignment must not activate corpus fixtures",
+        expected_status = (
+            "active"
+            if split in {"development", "regression"}
+            else "planned"
         )
+        assert_true(
+            item["status"] == expected_status,
+            "corpus activation status does not preserve the evaluation holdout",
+        )
+        if item["status"] == "active":
+            active_counts[split] = active_counts.get(split, 0) + 1
     assert_true(
         split_counts
         == {
@@ -300,7 +308,14 @@ def validate_corpus_policy_alignment() -> None:
         },
         "frozen corpus split changed",
     )
-    passed("corpus expectations align with the frozen confidence policy")
+    assert_true(
+        active_counts == {"development": 14, "regression": 4},
+        "only development and regression fixtures may be active",
+    )
+    passed(
+        "corpus expectations align with the frozen confidence policy "
+        "and evaluation holdout"
+    )
 
 
 def validate_bundle_generator(profiles: dict, capability_schema: dict, host_schema: dict) -> None:

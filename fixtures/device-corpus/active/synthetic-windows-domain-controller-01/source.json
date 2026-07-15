@@ -1,0 +1,50 @@
+{
+  "schema_version": "netsniper-corpus-source-v1",
+  "fixture_id": "synthetic-windows-domain-controller-01",
+  "fixture_kind": "synthetic",
+  "source_type": "designed_host_observation",
+  "synthetic_observation": {
+    "host": "192.0.2.10",
+    "ip": "192.0.2.10",
+    "mac": "02:00:00:00:00:10",
+    "observation_quality": {
+      "scan_completeness": "complete",
+      "requested_collectors": [
+        "discovery",
+        "tcp_services",
+        "os_detection",
+        "passive_neighbors"
+      ],
+      "completed_collectors": [
+        "discovery",
+        "tcp_services",
+        "os_detection",
+        "passive_neighbors"
+      ],
+      "failed_collectors": [],
+      "unavailable_collectors": [],
+      "inventory_complete": true
+    },
+    "hostname": "dc01",
+    "ports": [
+      88,
+      389,
+      445,
+      {
+        "port": 53,
+        "protocol": "tcp"
+      },
+      {
+        "port": 53,
+        "protocol": "udp"
+      }
+    ],
+    "service_hints": [
+      "Active Directory domain controller Windows Server DNS"
+    ],
+    "os_hints": [
+      "Windows Server 2022"
+    ]
+  },
+  "design_notes": "Windows compute host serving domain-controller and DNS roles."
+}

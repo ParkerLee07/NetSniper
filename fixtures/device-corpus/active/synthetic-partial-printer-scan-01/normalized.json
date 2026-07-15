@@ -1,0 +1,37 @@
+{
+  "schema_version": "netsniper-corpus-input-v1",
+  "fixture_id": "synthetic-partial-printer-scan-01",
+  "mode": "classification",
+  "host_record": {
+    "host": "192.0.2.61",
+    "ip": "192.0.2.61",
+    "mac": "02:00:00:00:00:61",
+    "observation_quality": {
+      "scan_completeness": "partial",
+      "requested_collectors": [
+        "discovery",
+        "tcp_services",
+        "os_detection",
+        "passive_neighbors"
+      ],
+      "completed_collectors": [
+        "discovery",
+        "os_detection",
+        "passive_neighbors"
+      ],
+      "failed_collectors": [
+        "tcp_services"
+      ],
+      "unavailable_collectors": [],
+      "inventory_complete": true
+    },
+    "hostname": "printer-partial",
+    "vendor": "HP",
+    "ports": [
+      631
+    ],
+    "os_hints": [
+      "embedded"
+    ]
+  }
+}

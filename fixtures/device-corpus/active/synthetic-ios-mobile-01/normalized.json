@@ -1,0 +1,33 @@
+{
+  "schema_version": "netsniper-corpus-input-v1",
+  "fixture_id": "synthetic-ios-mobile-01",
+  "mode": "classification",
+  "host_record": {
+    "host": "192.0.2.31",
+    "ip": "192.0.2.31",
+    "mac": "02:11:22:33:44:31",
+    "observation_quality": {
+      "scan_completeness": "complete",
+      "requested_collectors": [
+        "discovery",
+        "tcp_services",
+        "os_detection",
+        "passive_neighbors"
+      ],
+      "completed_collectors": [
+        "discovery",
+        "tcp_services",
+        "os_detection",
+        "passive_neighbors"
+      ],
+      "failed_collectors": [],
+      "unavailable_collectors": [],
+      "inventory_complete": true
+    },
+    "hostname": "iphone-parker",
+    "local_mac": true,
+    "os_hints": [
+      "iOS iPhone"
+    ]
+  }
+}

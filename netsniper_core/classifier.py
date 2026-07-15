@@ -471,7 +471,10 @@ def classify_host(
         close_candidate_delta=close_candidate_delta,
     )
 
-    if family["label"] == "unknown" and any(role["decision"] == "classified" for role in roles):
+    if family["label"] == "unknown" and any(
+        role["decision"] in {"classified", "possible", "review"}
+        for role in roles
+    ):
         family["uncertainty_reasons"] = list(
             dict.fromkeys(family["uncertainty_reasons"] + ["family_not_inferable_from_role"])
         )

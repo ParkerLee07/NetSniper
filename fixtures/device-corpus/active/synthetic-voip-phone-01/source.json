@@ -1,0 +1,42 @@
+{
+  "schema_version": "netsniper-corpus-source-v1",
+  "fixture_id": "synthetic-voip-phone-01",
+  "fixture_kind": "synthetic",
+  "source_type": "designed_host_observation",
+  "synthetic_observation": {
+    "host": "192.0.2.40",
+    "ip": "192.0.2.40",
+    "mac": "02:00:00:00:00:40",
+    "observation_quality": {
+      "scan_completeness": "complete",
+      "requested_collectors": [
+        "discovery",
+        "tcp_services",
+        "os_detection",
+        "passive_neighbors"
+      ],
+      "completed_collectors": [
+        "discovery",
+        "tcp_services",
+        "os_detection",
+        "passive_neighbors"
+      ],
+      "failed_collectors": [],
+      "unavailable_collectors": [],
+      "inventory_complete": true
+    },
+    "hostname": "phone01",
+    "vendor": "Yealink",
+    "ports": [
+      5060
+    ],
+    "service_hints": [
+      "SIP VoIP IP phone",
+      "embedded firmware"
+    ],
+    "os_hints": [
+      "embedded firmware"
+    ]
+  },
+  "design_notes": "Dedicated VoIP handset."
+}

@@ -52,37 +52,29 @@ def _legacy_band(confidence: int) -> str:
     return "unknown"
 
 
-def _review_context(
+def _strong_contradiction_present(
     family: dict[str, Any],
     roles: list[dict[str, Any]],
     platform: dict[str, Any],
-) -> tuple[bool, bool]:
+) -> bool:
     axis_results = [family, platform, *roles]
-    review = any(item.get("decision") == "review" for item in axis_results)
-    strong_contradiction = any(
+    return any(
         item.get("contradictions")
         or "strong_contradiction" in item.get("uncertainty_reasons", [])
         for item in axis_results
     )
-    return review, strong_contradiction
 
 
-def _leading_review_label(
-    family: dict[str, Any],
+def _role_choice(
     roles: list[dict[str, Any]],
-) -> tuple[str, int]:
-    family_label = str(family.get("label", "unknown"))
-    family_confidence = int(family.get("confidence", 0))
-
-    if family_label != "unknown":
-        return FAMILY_LABELS.get(family_label, "Unknown"), family_confidence
-
+    decisions: set[str],
+) -> tuple[str, dict[str, Any]] | None:
     role_by_label = {
         role.get("label"): role
         for role in roles
-        if role.get("decision") in {"classified", "possible", "review"}
+        if role.get("decision") in decisions
     }
-    chosen = next(
+    return next(
         (
             (legacy_label, role_by_label[canonical])
             for canonical, legacy_label in ROLE_PRIORITY
@@ -90,11 +82,27 @@ def _leading_review_label(
         ),
         None,
     )
-    if chosen:
-        label, role = chosen
-        return label, int(role.get("confidence", 0))
 
-    return "Unknown / Ambiguous", family_confidence
+
+def _family_primary_type(
+    family: dict[str, Any],
+    platform: dict[str, Any],
+) -> str:
+    family_label = str(family.get("label", "unknown"))
+    primary_type = FAMILY_LABELS.get(family_label, "Unknown")
+    if family_label == "compute_host":
+        if platform.get("label") == "windows":
+            return "Windows Server"
+        if platform.get("label") == "linux":
+            return "Linux Server"
+    elif family_label == "client_endpoint":
+        if platform.get("label") == "windows":
+            return "Windows Workstation"
+        if platform.get("label") == "linux":
+            return "Linux Workstation"
+        if platform.get("label") in {"ios", "android"}:
+            return "Unknown"
+    return primary_type
 
 
 def project_legacy(result: dict[str, Any]) -> dict[str, Any]:
@@ -102,70 +110,73 @@ def project_legacy(result: dict[str, Any]) -> dict[str, Any]:
     roles = result.get("roles", [])
     platform = result.get("platform", {})
 
-    review, strong_contradiction = _review_context(
+    strong_contradiction = _strong_contradiction_present(
         family,
         roles,
         platform,
     )
 
-    if review:
+    if strong_contradiction:
+        primary_type = "Ambiguous Device"
+        decision = "contradiction_review"
         confidence = max(
             [
                 int(family.get("confidence", 0)),
                 int(platform.get("confidence", 0)),
-                *[
-                    int(role.get("confidence", 0))
-                    for role in roles
-                ],
+                *[int(role.get("confidence", 0)) for role in roles],
             ]
         )
-
-        if strong_contradiction:
-            primary_type = "Ambiguous Device"
-            decision = "contradiction_review"
-        elif str(family.get("label", "unknown")) == "unknown":
-            primary_type = "Unknown / Ambiguous"
-            decision = "review"
-        else:
-            primary_type, leading_confidence = _leading_review_label(
-                family,
-                roles,
-            )
-            confidence = max(confidence, leading_confidence)
-            decision = "review"
     else:
-        role_by_label = {
-            role.get("label"): role
-            for role in roles
-            if role.get("decision") == "classified"
-        }
-        chosen = next(
-            (
-                (legacy_label, role_by_label[canonical])
-                for canonical, legacy_label in ROLE_PRIORITY
-                if canonical in role_by_label
-            ),
-            None,
-        )
+        chosen = _role_choice(roles, {"classified"})
         if chosen:
             primary_type, chosen_result = chosen
             confidence = int(chosen_result.get("confidence", 0))
-            decision = str(chosen_result.get("decision", "unknown"))
-        else:
-            family_label = str(family.get("label", "unknown"))
-            primary_type = FAMILY_LABELS.get(family_label, "Unknown")
+            decision = "classified"
+        elif family.get("decision") == "classified":
+            primary_type = _family_primary_type(family, platform)
             confidence = int(family.get("confidence", 0))
-            decision = str(family.get("decision", "unknown"))
-            if family_label == "compute_host":
-                if platform.get("label") == "windows":
-                    primary_type = "Windows Server"
-                elif platform.get("label") == "linux":
-                    primary_type = "Linux Server"
-            elif family_label == "client_endpoint":
-                if platform.get("label") == "windows":
-                    primary_type = "Windows Workstation"
-                elif platform.get("label") == "linux":
-                    primary_type = "Linux Workstation"
+            decision = "classified"
+        else:
+            chosen = _role_choice(roles, {"possible"})
+            if chosen:
+                primary_type, chosen_result = chosen
+                confidence = int(chosen_result.get("confidence", 0))
+                decision = "possible"
+            elif family.get("decision") == "possible":
+                primary_type = _family_primary_type(family, platform)
+                confidence = int(family.get("confidence", 0))
+                decision = "possible"
+            else:
+                chosen = _role_choice(roles, {"review"})
+                if str(family.get("label", "unknown")) == "unknown" and (
+                    chosen or family.get("decision") == "review"
+                ):
+                    primary_type = "Unknown / Ambiguous"
+                    confidence = max(
+                        int(family.get("confidence", 0)),
+                        int(chosen[1].get("confidence", 0)) if chosen else 0,
+                    )
+                    decision = "review"
+                elif chosen:
+                    primary_type, chosen_result = chosen
+                    confidence = int(chosen_result.get("confidence", 0))
+                    decision = "review"
+                elif family.get("decision") == "review":
+                    primary_type = _family_primary_type(family, platform)
+                    confidence = int(family.get("confidence", 0))
+                    decision = "review"
+                elif platform.get("decision") == "review":
+                    primary_type = "Unknown / Ambiguous"
+                    confidence = int(platform.get("confidence", 0))
+                    decision = "review"
+                else:
+                    primary_type = "Unknown"
+                    confidence = 0
+                    decision = "unknown"
+
+        if decision == "review" and str(family.get("label", "unknown")) == "unknown":
+            if not _role_choice(roles, {"review"}):
+                primary_type = "Unknown / Ambiguous"
 
     candidates: list[dict[str, Any]] = []
     for role in sorted(

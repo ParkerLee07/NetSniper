@@ -1,7 +1,7 @@
 {
   "schema_version": "netsniper-device-corpus-v1",
   "policy_version": "netsniper-v2.1-stage0b",
-  "status": "draft",
+  "status": "approved",
   "canonical_vocabularies": {
     "device_families": [
       "network_infrastructure",
@@ -127,7 +127,7 @@
   "fixtures": [
     {
       "fixture_id": "synthetic-router-gateway-01",
-      "status": "planned",
+      "status": "active",
       "fixture_kind": "synthetic",
       "description": "Dedicated router and default gateway with corroborating network evidence.",
       "scenario_tags": [
@@ -136,8 +136,10 @@
         "strong-positive",
         "network-infrastructure"
       ],
-      "source_artifacts": [],
-      "normalized_evidence_path": null,
+      "source_artifacts": [
+        "fixtures/device-corpus/active/synthetic-router-gateway-01/source.json"
+      ],
+      "normalized_evidence_path": "fixtures/device-corpus/active/synthetic-router-gateway-01/normalized.json",
       "ground_truth": {
         "device_family": "network_infrastructure",
         "roles": [
@@ -195,15 +197,15 @@
       "provenance": {
         "ground_truth_method": "synthetic_design",
         "recorded_by": "Parker Lee",
-        "recorded_at": null,
-        "notes": ""
+        "recorded_at": "2026-07-15T00:00:00Z",
+        "notes": "Activated as a deterministic v2.1 development/regression replay fixture."
       },
       "dataset_split": "development",
       "split_assignment_reason": "Available during rule design and evidence-profile calibration."
     },
     {
       "fixture_id": "synthetic-wireless-access-point-01",
-      "status": "planned",
+      "status": "active",
       "fixture_kind": "synthetic",
       "description": "Dedicated wireless access point without gateway behavior.",
       "scenario_tags": [
@@ -212,8 +214,10 @@
         "strong-positive",
         "network-infrastructure"
       ],
-      "source_artifacts": [],
-      "normalized_evidence_path": null,
+      "source_artifacts": [
+        "fixtures/device-corpus/active/synthetic-wireless-access-point-01/source.json"
+      ],
+      "normalized_evidence_path": "fixtures/device-corpus/active/synthetic-wireless-access-point-01/normalized.json",
       "ground_truth": {
         "device_family": "network_infrastructure",
         "roles": [
@@ -271,15 +275,15 @@
       "provenance": {
         "ground_truth_method": "synthetic_design",
         "recorded_by": "Parker Lee",
-        "recorded_at": null,
-        "notes": ""
+        "recorded_at": "2026-07-15T00:00:00Z",
+        "notes": "Activated as a deterministic v2.1 development/regression replay fixture."
       },
       "dataset_split": "development",
       "split_assignment_reason": "Available during rule design and evidence-profile calibration."
     },
     {
       "fixture_id": "synthetic-managed-switch-01",
-      "status": "planned",
+      "status": "active",
       "fixture_kind": "synthetic",
       "description": "Managed Ethernet switch with infrastructure-specific evidence.",
       "scenario_tags": [
@@ -288,8 +292,10 @@
         "strong-positive",
         "network-infrastructure"
       ],
-      "source_artifacts": [],
-      "normalized_evidence_path": null,
+      "source_artifacts": [
+        "fixtures/device-corpus/active/synthetic-managed-switch-01/source.json"
+      ],
+      "normalized_evidence_path": "fixtures/device-corpus/active/synthetic-managed-switch-01/normalized.json",
       "ground_truth": {
         "device_family": "network_infrastructure",
         "roles": [
@@ -347,8 +353,8 @@
       "provenance": {
         "ground_truth_method": "synthetic_design",
         "recorded_by": "Parker Lee",
-        "recorded_at": null,
-        "notes": ""
+        "recorded_at": "2026-07-15T00:00:00Z",
+        "notes": "Activated as a deterministic v2.1 development/regression replay fixture."
       },
       "dataset_split": "development",
       "split_assignment_reason": "Available during rule design and evidence-profile calibration."
@@ -438,7 +444,7 @@
     },
     {
       "fixture_id": "synthetic-windows-domain-controller-01",
-      "status": "planned",
+      "status": "active",
       "fixture_kind": "synthetic",
       "description": "Windows compute host serving domain-controller and DNS roles.",
       "scenario_tags": [
@@ -447,8 +453,10 @@
         "platform",
         "server"
       ],
-      "source_artifacts": [],
-      "normalized_evidence_path": null,
+      "source_artifacts": [
+        "fixtures/device-corpus/active/synthetic-windows-domain-controller-01/source.json"
+      ],
+      "normalized_evidence_path": "fixtures/device-corpus/active/synthetic-windows-domain-controller-01/normalized.json",
       "ground_truth": {
         "device_family": "compute_host",
         "roles": [
@@ -513,8 +521,8 @@
       "provenance": {
         "ground_truth_method": "synthetic_design",
         "recorded_by": "Parker Lee",
-        "recorded_at": null,
-        "notes": ""
+        "recorded_at": "2026-07-15T00:00:00Z",
+        "notes": "Activated as a deterministic v2.1 development/regression replay fixture."
       },
       "dataset_split": "development",
       "split_assignment_reason": "Available during rule design and evidence-profile calibration."
@@ -611,7 +619,7 @@
     },
     {
       "fixture_id": "synthetic-printer-01",
-      "status": "planned",
+      "status": "active",
       "fixture_kind": "synthetic",
       "description": "Network multifunction printer with print-protocol and product evidence.",
       "scenario_tags": [
@@ -620,8 +628,10 @@
         "strong-positive",
         "printer"
       ],
-      "source_artifacts": [],
-      "normalized_evidence_path": null,
+      "source_artifacts": [
+        "fixtures/device-corpus/active/synthetic-printer-01/source.json"
+      ],
+      "normalized_evidence_path": "fixtures/device-corpus/active/synthetic-printer-01/normalized.json",
       "ground_truth": {
         "device_family": "printer",
         "roles": [
@@ -679,15 +689,15 @@
       "provenance": {
         "ground_truth_method": "synthetic_design",
         "recorded_by": "Parker Lee",
-        "recorded_at": null,
-        "notes": ""
+        "recorded_at": "2026-07-15T00:00:00Z",
+        "notes": "Activated as a deterministic v2.1 development/regression replay fixture."
       },
       "dataset_split": "development",
       "split_assignment_reason": "Available during rule design and evidence-profile calibration."
     },
     {
       "fixture_id": "synthetic-camera-01",
-      "status": "planned",
+      "status": "active",
       "fixture_kind": "synthetic",
       "description": "Standalone IP camera with protocol-specific surveillance evidence.",
       "scenario_tags": [
@@ -696,8 +706,10 @@
         "strong-positive",
         "surveillance"
       ],
-      "source_artifacts": [],
-      "normalized_evidence_path": null,
+      "source_artifacts": [
+        "fixtures/device-corpus/active/synthetic-camera-01/source.json"
+      ],
+      "normalized_evidence_path": "fixtures/device-corpus/active/synthetic-camera-01/normalized.json",
       "ground_truth": {
         "device_family": "surveillance_device",
         "roles": [
@@ -755,8 +767,8 @@
       "provenance": {
         "ground_truth_method": "synthetic_design",
         "recorded_by": "Parker Lee",
-        "recorded_at": null,
-        "notes": ""
+        "recorded_at": "2026-07-15T00:00:00Z",
+        "notes": "Activated as a deterministic v2.1 development/regression replay fixture."
       },
       "dataset_split": "development",
       "split_assignment_reason": "Available during rule design and evidence-profile calibration."
@@ -922,7 +934,7 @@
     },
     {
       "fixture_id": "synthetic-windows-workstation-01",
-      "status": "planned",
+      "status": "active",
       "fixture_kind": "synthetic",
       "description": "Windows end-user workstation without server-role evidence.",
       "scenario_tags": [
@@ -930,8 +942,10 @@
         "platform",
         "endpoint"
       ],
-      "source_artifacts": [],
-      "normalized_evidence_path": null,
+      "source_artifacts": [
+        "fixtures/device-corpus/active/synthetic-windows-workstation-01/source.json"
+      ],
+      "normalized_evidence_path": "fixtures/device-corpus/active/synthetic-windows-workstation-01/normalized.json",
       "ground_truth": {
         "device_family": "client_endpoint",
         "roles": [],
@@ -980,8 +994,8 @@
       "provenance": {
         "ground_truth_method": "synthetic_design",
         "recorded_by": "Parker Lee",
-        "recorded_at": null,
-        "notes": ""
+        "recorded_at": "2026-07-15T00:00:00Z",
+        "notes": "Activated as a deterministic v2.1 development/regression replay fixture."
       },
       "dataset_split": "development",
       "split_assignment_reason": "Available during rule design and evidence-profile calibration."
@@ -1056,7 +1070,7 @@
     },
     {
       "fixture_id": "synthetic-ios-mobile-01",
-      "status": "planned",
+      "status": "active",
       "fixture_kind": "synthetic",
       "description": "iOS mobile endpoint with randomized MAC behavior.",
       "scenario_tags": [
@@ -1065,8 +1079,10 @@
         "mobile",
         "identity-instability"
       ],
-      "source_artifacts": [],
-      "normalized_evidence_path": null,
+      "source_artifacts": [
+        "fixtures/device-corpus/active/synthetic-ios-mobile-01/source.json"
+      ],
+      "normalized_evidence_path": "fixtures/device-corpus/active/synthetic-ios-mobile-01/normalized.json",
       "ground_truth": {
         "device_family": "client_endpoint",
         "roles": [],
@@ -1117,15 +1133,15 @@
       "provenance": {
         "ground_truth_method": "synthetic_design",
         "recorded_by": "Parker Lee",
-        "recorded_at": null,
-        "notes": ""
+        "recorded_at": "2026-07-15T00:00:00Z",
+        "notes": "Activated as a deterministic v2.1 development/regression replay fixture."
       },
       "dataset_split": "development",
       "split_assignment_reason": "Available during rule design and evidence-profile calibration."
     },
     {
       "fixture_id": "synthetic-android-mobile-01",
-      "status": "planned",
+      "status": "active",
       "fixture_kind": "synthetic",
       "description": "Android mobile endpoint with randomized MAC behavior.",
       "scenario_tags": [
@@ -1134,8 +1150,10 @@
         "mobile",
         "identity-instability"
       ],
-      "source_artifacts": [],
-      "normalized_evidence_path": null,
+      "source_artifacts": [
+        "fixtures/device-corpus/active/synthetic-android-mobile-01/source.json"
+      ],
+      "normalized_evidence_path": "fixtures/device-corpus/active/synthetic-android-mobile-01/normalized.json",
       "ground_truth": {
         "device_family": "client_endpoint",
         "roles": [],
@@ -1186,15 +1204,15 @@
       "provenance": {
         "ground_truth_method": "synthetic_design",
         "recorded_by": "Parker Lee",
-        "recorded_at": null,
-        "notes": ""
+        "recorded_at": "2026-07-15T00:00:00Z",
+        "notes": "Activated as a deterministic v2.1 development/regression replay fixture."
       },
       "dataset_split": "development",
       "split_assignment_reason": "Available during rule design and evidence-profile calibration."
     },
     {
       "fixture_id": "synthetic-voip-phone-01",
-      "status": "planned",
+      "status": "active",
       "fixture_kind": "synthetic",
       "description": "Dedicated VoIP handset.",
       "scenario_tags": [
@@ -1202,8 +1220,10 @@
         "role",
         "voice"
       ],
-      "source_artifacts": [],
-      "normalized_evidence_path": null,
+      "source_artifacts": [
+        "fixtures/device-corpus/active/synthetic-voip-phone-01/source.json"
+      ],
+      "normalized_evidence_path": "fixtures/device-corpus/active/synthetic-voip-phone-01/normalized.json",
       "ground_truth": {
         "device_family": "voice_device",
         "roles": [
@@ -1261,8 +1281,8 @@
       "provenance": {
         "ground_truth_method": "synthetic_design",
         "recorded_by": "Parker Lee",
-        "recorded_at": null,
-        "notes": ""
+        "recorded_at": "2026-07-15T00:00:00Z",
+        "notes": "Activated as a deterministic v2.1 development/regression replay fixture."
       },
       "dataset_split": "development",
       "split_assignment_reason": "Available during rule design and evidence-profile calibration."
@@ -1484,7 +1504,7 @@
     },
     {
       "fixture_id": "synthetic-unknown-no-evidence-01",
-      "status": "planned",
+      "status": "active",
       "fixture_kind": "synthetic",
       "description": "Discovered host with no defensible classification evidence.",
       "scenario_tags": [
@@ -1492,8 +1512,10 @@
         "no-evidence",
         "negative-control"
       ],
-      "source_artifacts": [],
-      "normalized_evidence_path": null,
+      "source_artifacts": [
+        "fixtures/device-corpus/active/synthetic-unknown-no-evidence-01/source.json"
+      ],
+      "normalized_evidence_path": "fixtures/device-corpus/active/synthetic-unknown-no-evidence-01/normalized.json",
       "ground_truth": {
         "device_family": "unknown",
         "roles": [],
@@ -1554,8 +1576,8 @@
       "provenance": {
         "ground_truth_method": "synthetic_design",
         "recorded_by": "Parker Lee",
-        "recorded_at": null,
-        "notes": ""
+        "recorded_at": "2026-07-15T00:00:00Z",
+        "notes": "Activated as a deterministic v2.1 development/regression replay fixture."
       },
       "dataset_split": "development",
       "split_assignment_reason": "Available during rule design and evidence-profile calibration."
@@ -1647,7 +1669,7 @@
     },
     {
       "fixture_id": "synthetic-printer-domain-contradiction-01",
-      "status": "planned",
+      "status": "active",
       "fixture_kind": "synthetic",
       "description": "Printer evidence conflicts with domain-controller evidence.",
       "scenario_tags": [
@@ -1655,8 +1677,10 @@
         "contradiction",
         "negative-control"
       ],
-      "source_artifacts": [],
-      "normalized_evidence_path": null,
+      "source_artifacts": [
+        "fixtures/device-corpus/active/synthetic-printer-domain-contradiction-01/source.json"
+      ],
+      "normalized_evidence_path": "fixtures/device-corpus/active/synthetic-printer-domain-contradiction-01/normalized.json",
       "ground_truth": {
         "device_family": "unknown",
         "roles": [
@@ -1723,15 +1747,15 @@
       "provenance": {
         "ground_truth_method": "synthetic_design",
         "recorded_by": "Parker Lee",
-        "recorded_at": null,
-        "notes": ""
+        "recorded_at": "2026-07-15T00:00:00Z",
+        "notes": "Activated as a deterministic v2.1 development/regression replay fixture."
       },
       "dataset_split": "regression",
       "split_assignment_reason": "Protects a contradiction, partial-scan, or legacy-compatibility invariant."
     },
     {
       "fixture_id": "synthetic-partial-printer-scan-01",
-      "status": "planned",
+      "status": "active",
       "fixture_kind": "synthetic",
       "description": "Known printer observed during a partial scan with service collection failure.",
       "scenario_tags": [
@@ -1739,8 +1763,10 @@
         "collector-failure",
         "printer"
       ],
-      "source_artifacts": [],
-      "normalized_evidence_path": null,
+      "source_artifacts": [
+        "fixtures/device-corpus/active/synthetic-partial-printer-scan-01/source.json"
+      ],
+      "normalized_evidence_path": "fixtures/device-corpus/active/synthetic-partial-printer-scan-01/normalized.json",
       "ground_truth": {
         "device_family": "printer",
         "roles": [
@@ -1802,15 +1828,15 @@
       "provenance": {
         "ground_truth_method": "synthetic_design",
         "recorded_by": "Parker Lee",
-        "recorded_at": null,
-        "notes": ""
+        "recorded_at": "2026-07-15T00:00:00Z",
+        "notes": "Activated as a deterministic v2.1 development/regression replay fixture."
       },
       "dataset_split": "regression",
       "split_assignment_reason": "Protects a contradiction, partial-scan, or legacy-compatibility invariant."
     },
     {
       "fixture_id": "synthetic-vendor-only-camera-01",
-      "status": "planned",
+      "status": "active",
       "fixture_kind": "synthetic",
       "description": "Camera-vendor identity without protocol or product corroboration.",
       "scenario_tags": [
@@ -1818,8 +1844,10 @@
         "vendor-only",
         "surveillance"
       ],
-      "source_artifacts": [],
-      "normalized_evidence_path": null,
+      "source_artifacts": [
+        "fixtures/device-corpus/active/synthetic-vendor-only-camera-01/source.json"
+      ],
+      "normalized_evidence_path": "fixtures/device-corpus/active/synthetic-vendor-only-camera-01/normalized.json",
       "ground_truth": {
         "device_family": "surveillance_device",
         "roles": [
@@ -1880,15 +1908,15 @@
       "provenance": {
         "ground_truth_method": "synthetic_design",
         "recorded_by": "Parker Lee",
-        "recorded_at": null,
-        "notes": ""
+        "recorded_at": "2026-07-15T00:00:00Z",
+        "notes": "Activated as a deterministic v2.1 development/regression replay fixture."
       },
       "dataset_split": "development",
       "split_assignment_reason": "Available during rule design and evidence-profile calibration."
     },
     {
       "fixture_id": "synthetic-port-only-web-01",
-      "status": "planned",
+      "status": "active",
       "fixture_kind": "synthetic",
       "description": "Open HTTP port without product, title, certificate, or protocol-specific evidence.",
       "scenario_tags": [
@@ -1896,8 +1924,10 @@
         "port-only",
         "role-without-family"
       ],
-      "source_artifacts": [],
-      "normalized_evidence_path": null,
+      "source_artifacts": [
+        "fixtures/device-corpus/active/synthetic-port-only-web-01/source.json"
+      ],
+      "normalized_evidence_path": "fixtures/device-corpus/active/synthetic-port-only-web-01/normalized.json",
       "ground_truth": {
         "device_family": "unknown",
         "roles": [
@@ -1968,15 +1998,15 @@
       "provenance": {
         "ground_truth_method": "synthetic_design",
         "recorded_by": "Parker Lee",
-        "recorded_at": null,
-        "notes": ""
+        "recorded_at": "2026-07-15T00:00:00Z",
+        "notes": "Activated as a deterministic v2.1 development/regression replay fixture."
       },
       "dataset_split": "development",
       "split_assignment_reason": "Available during rule design and evidence-profile calibration."
     },
     {
       "fixture_id": "synthetic-database-role-family-unknown-01",
-      "status": "planned",
+      "status": "active",
       "fixture_kind": "synthetic",
       "description": "Database service can be classified while physical device family remains unknown.",
       "scenario_tags": [
@@ -1984,8 +2014,10 @@
         "database",
         "axis-separation"
       ],
-      "source_artifacts": [],
-      "normalized_evidence_path": null,
+      "source_artifacts": [
+        "fixtures/device-corpus/active/synthetic-database-role-family-unknown-01/source.json"
+      ],
+      "normalized_evidence_path": "fixtures/device-corpus/active/synthetic-database-role-family-unknown-01/normalized.json",
       "ground_truth": {
         "device_family": "unknown",
         "roles": [
@@ -2045,15 +2077,15 @@
       "provenance": {
         "ground_truth_method": "synthetic_design",
         "recorded_by": "Parker Lee",
-        "recorded_at": null,
-        "notes": ""
+        "recorded_at": "2026-07-15T00:00:00Z",
+        "notes": "Activated as a deterministic v2.1 development/regression replay fixture."
       },
       "dataset_split": "development",
       "split_assignment_reason": "Available during rule design and evidence-profile calibration."
     },
     {
       "fixture_id": "legacy-v2-router-projection-01",
-      "status": "planned",
+      "status": "active",
       "fixture_kind": "synthetic",
       "description": "Legacy NetSniper v2.0 router record projected into the v2.1 axes.",
       "scenario_tags": [
@@ -2061,8 +2093,10 @@
         "compatibility",
         "network-infrastructure"
       ],
-      "source_artifacts": [],
-      "normalized_evidence_path": null,
+      "source_artifacts": [
+        "fixtures/device-corpus/active/legacy-v2-router-projection-01/source.json"
+      ],
+      "normalized_evidence_path": "fixtures/device-corpus/active/legacy-v2-router-projection-01/normalized.json",
       "ground_truth": {
         "device_family": "network_infrastructure",
         "roles": [
@@ -2120,15 +2154,15 @@
       "provenance": {
         "ground_truth_method": "synthetic_design",
         "recorded_by": "Parker Lee",
-        "recorded_at": null,
-        "notes": ""
+        "recorded_at": "2026-07-15T00:00:00Z",
+        "notes": "Activated as a deterministic v2.1 development/regression replay fixture."
       },
       "dataset_split": "regression",
       "split_assignment_reason": "Protects a contradiction, partial-scan, or legacy-compatibility invariant."
     },
     {
       "fixture_id": "legacy-v2-unknown-ambiguous-projection-01",
-      "status": "planned",
+      "status": "active",
       "fixture_kind": "synthetic",
       "description": "Legacy Unknown / Ambiguous record projected to canonical review.",
       "scenario_tags": [
@@ -2136,8 +2170,10 @@
         "compatibility",
         "review"
       ],
-      "source_artifacts": [],
-      "normalized_evidence_path": null,
+      "source_artifacts": [
+        "fixtures/device-corpus/active/legacy-v2-unknown-ambiguous-projection-01/source.json"
+      ],
+      "normalized_evidence_path": "fixtures/device-corpus/active/legacy-v2-unknown-ambiguous-projection-01/normalized.json",
       "ground_truth": {
         "device_family": "unknown",
         "roles": [],
@@ -2188,8 +2224,8 @@
       "provenance": {
         "ground_truth_method": "synthetic_design",
         "recorded_by": "Parker Lee",
-        "recorded_at": null,
-        "notes": ""
+        "recorded_at": "2026-07-15T00:00:00Z",
+        "notes": "Activated as a deterministic v2.1 development/regression replay fixture."
       },
       "dataset_split": "regression",
       "split_assignment_reason": "Protects a contradiction, partial-scan, or legacy-compatibility invariant."

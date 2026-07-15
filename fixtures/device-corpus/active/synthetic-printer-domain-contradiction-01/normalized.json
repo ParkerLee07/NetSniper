@@ -1,0 +1,49 @@
+{
+  "schema_version": "netsniper-corpus-input-v1",
+  "fixture_id": "synthetic-printer-domain-contradiction-01",
+  "mode": "classification",
+  "host_record": {
+    "host": "192.0.2.60",
+    "ip": "192.0.2.60",
+    "mac": "02:00:00:00:00:60",
+    "observation_quality": {
+      "scan_completeness": "complete",
+      "requested_collectors": [
+        "discovery",
+        "tcp_services",
+        "os_detection",
+        "passive_neighbors"
+      ],
+      "completed_collectors": [
+        "discovery",
+        "tcp_services",
+        "os_detection",
+        "passive_neighbors"
+      ],
+      "failed_collectors": [],
+      "unavailable_collectors": [],
+      "inventory_complete": true
+    },
+    "hostname": "dc-printer",
+    "vendor": "HP",
+    "ports": [
+      9100,
+      631,
+      88,
+      389,
+      445,
+      22
+    ],
+    "service_hints": [
+      "Active Directory domain controller Windows Server",
+      "Linux"
+    ],
+    "http_titles": [
+      "HP LaserJet Printer"
+    ],
+    "os_hints": [
+      "Windows Server 2022",
+      "Linux"
+    ]
+  }
+}
