@@ -32,6 +32,7 @@ paths = [
     Path("tools/replay_v2_1_corpus.py"),
     Path("tools/validate_v2_1_corpus_activation.py"),
     Path("tools/validate_v2_1_evaluation_preparation.py"),
+    Path("tools/validate_v2_1_observation_integrity.py"),
 ]
 
 for path in paths:
@@ -54,7 +55,10 @@ fi
 ./tools/validate_v2_1_evaluation_preparation.py \
     || fail "v2.1 sealed evaluation preparation validator"
 
+./tools/validate_v2_1_observation_integrity.py \
+    || fail "v2.1 observation and risk integrity validator"
+
 ./tools/validate_v2_0_all.sh \
     || fail "v2.0 runtime compatibility suite"
 
-pass "NetSniper v2.1 classifier, corpus, evaluation preparation, and v2.0 compatibility suites passed"
+pass "NetSniper v2.1 classifier, corpus, evaluation preparation, observation integrity, and v2.0 compatibility suites passed"

@@ -87,23 +87,92 @@ def severity(score: int) -> str:
     return "LOW"
 
 
+def _has_value(value: Any) -> bool:
+    return value not in (None, "", [], {})
+
+
+def _value_richness(value: Any) -> int:
+    if not _has_value(value):
+        return 0
+    if isinstance(value, str):
+        return len(value.strip())
+    if isinstance(value, (list, tuple, set, dict)):
+        return len(json.dumps(value, sort_keys=True, default=str))
+    return 1
+
+
+def canonicalize_port_observations(record: dict[str, Any]) -> dict[str, Any]:
+    """Merge duplicate Nmap records while retaining the richest metadata."""
+    output = dict(record)
+    canonical: dict[tuple[str, int, str], dict[str, Any]] = {}
+    order: list[tuple[str, int, str]] = []
+
+    for raw in record.get("ports", []):
+        if not isinstance(raw, dict):
+            continue
+        try:
+            port = int(raw.get("port", 0))
+        except (TypeError, ValueError):
+            continue
+        if not 1 <= port <= 65535:
+            continue
+        protocol = str(raw.get("protocol", "tcp")).strip().lower() or "tcp"
+        state = str(raw.get("state", "open")).strip().lower() or "open"
+        key = (protocol, port, state)
+
+        candidate = dict(raw)
+        candidate["port"] = port
+        candidate["protocol"] = protocol
+        candidate["state"] = state
+
+        if key not in canonical:
+            canonical[key] = candidate
+            order.append(key)
+            continue
+
+        current = canonical[key]
+        for field, value in candidate.items():
+            if field in {"port", "protocol", "state"}:
+                continue
+            if not _has_value(value):
+                continue
+            if not _has_value(current.get(field)) or _value_richness(value) > _value_richness(current[field]):
+                current[field] = value
+
+    output["ports"] = [canonical[key] for key in order]
+    return output
+
+
 def findings_for(record: dict[str, Any]) -> tuple[list[dict[str, Any]], int]:
     findings: list[dict[str, Any]] = []
     score = 0
+    seen: set[tuple[str, str, int]] = set()
+
     for port_record in record.get("ports", []):
+        if not isinstance(port_record, dict):
+            continue
+        state = str(port_record.get("state", "open")).strip().lower()
+        if state not in {"open", "open|filtered"}:
+            continue
         try:
             port = int(port_record.get("port", 0))
         except (TypeError, ValueError):
             continue
         if port not in FINDINGS:
             continue
+        protocol = str(port_record.get("protocol", "tcp")).strip().lower() or "tcp"
         finding_id, name, service, points = FINDINGS[port]
+        key = (finding_id, protocol, port)
+        if key in seen:
+            continue
+        seen.add(key)
         score += points
         findings.append(
             {
                 "id": finding_id,
                 "name": name,
                 "service": service,
+                "protocol": protocol,
                 "port": port,
                 "score": points,
                 "evidence": f"Port {port} open",
@@ -160,6 +229,7 @@ def main() -> int:
         record = by_host.get(host, {"host": host, "ip": host, "ports": []})
         for xml_map in xml_maps:
             record = merge_host_records(record, xml_map.get(host))
+        record = canonicalize_port_observations(record)
         record["observation_quality"] = {
             "scan_completeness": "complete",
             "requested_collectors": ["discovery", "tcp_services"],

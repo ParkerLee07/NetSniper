@@ -1,0 +1,16 @@
+{
+  "schema_version": "netsniper-observation-integrity-fixture-v1",
+  "host_count": 1,
+  "canonical_port_count": 2,
+  "ports": [
+    {"protocol": "tcp", "port": 80, "state": "open"},
+    {"protocol": "tcp", "port": 443, "state": "open"}
+  ],
+  "finding_keys": [
+    "HTTP_EXPOSED|tcp|80",
+    "HTTPS_EXPOSED|tcp|443"
+  ],
+  "score": 4,
+  "severity": "LOW",
+  "sanitized": true
+}

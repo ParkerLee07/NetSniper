@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<nmaprun scanner="nmap" args="sanitized-observation-integrity-fixture" version="7.98" xmloutputversion="1.05">
+  <host>
+    <status state="up" reason="syn-ack" reason_ttl="0"/>
+    <address addr="192.0.2.10" addrtype="ipv4"/>
+    <hostnames><hostname name="fixture-admin" type="user"/></hostnames>
+    <ports>
+      <port protocol="tcp" portid="80">
+        <state state="open" reason="syn-ack" reason_ttl="0"/>
+        <service name="http" product="Sanitized Embedded Administration" version="1.0" servicefp="SANITIZED-HTTP-FINGERPRINT"/>
+      </port>
+      <port protocol="tcp" portid="443">
+        <state state="open" reason="syn-ack" reason_ttl="0"/>
+        <service name="https" product="Sanitized Embedded Administration TLS" version="1.0" servicefp="SANITIZED-HTTPS-FINGERPRINT"/>
+      </port>
+    </ports>
+  </host>
+</nmaprun>
