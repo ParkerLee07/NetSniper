@@ -26,6 +26,7 @@ jobs:
             tools/validate_v2_1_corpus_activation.py \
             tools/validate_v2_1_evaluation_preparation.py \
             tools/validate_v2_1_observation_integrity.py \
+            tools/validate_v2_1_embedded_admin_boundary.py \
             tools/validate_v2_1_stage1_2.py
-      - name: Run v2.1 classifier, corpus, evaluation-preparation, and observation-integrity gate
+      - name: Run v2.1 classifier, corpus, evaluation-preparation, observation-integrity, and embedded-admin gate
         run: ./tools/validate_v2_1_stage1_2_all.sh

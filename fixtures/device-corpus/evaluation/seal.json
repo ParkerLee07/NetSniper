@@ -1,9 +1,9 @@
 {
   "schema_version": "netsniper-evaluation-preparation-seal-v1",
-  "seal_id": "5a1a582121dfc8ea6d36f90361f82ee3f170002b1140b7b178aa6530128b3e44",
-  "state": "synthetic_prepared_sanitized_real_pending",
+  "seal_id": "d042728fa62464d1d821620113d43e3f1ac4cf512cc726f4a51ba8559101167d",
+  "state": "synthetic_prepared_sanitized_real_pending_candidate_reseal",
   "prepared_at": "2026-07-15T00:00:00Z",
-  "classifier_candidate_commit": "a760fc7e125a223181cf44c63a151c3eebcbe460",
+  "classifier_candidate_commit": null,
   "evaluation_holdout_frozen_at": "a4c027c9ab5f2fd1e7484b2ae9f8a76b10988c03",
   "evaluation_tuning_prohibited": true,
   "first_evaluation_replay_executed": false,
@@ -12,13 +12,13 @@
   "prepared_inputs_index_sha256": "537efa632dc78e2db6496562e385ad28ff3fd9b40e12d1623df84e5a0d2869f1",
   "runtime_fingerprints": {
     "classification/device_taxonomy.json": "a997a67352d285a33a6556d6842627163793168dce0acc9581daaf662d0af773",
-    "classification/evidence_profiles.json": "43862fd1e56dea0f9fdccd58f1f87e7ec231222103377a9e4135af7e81c3af7f",
-    "contracts/v2.1/host-classification.schema.json": "d3b5a9c05d5586d6c730a16e2ece12f91d2ef5f4832464ce149ddef8962d30e6",
-    "netsniper_core/classifier.py": "7788a422cd6d1aa812654f55a9506d9af90ea0a85b4ff5cf38c76e89fc1ca64d",
-    "netsniper_core/contracts.py": "cb2b3ac7a4e8901758193f470b65a3004fc318d79e7aa323c9b9fef939c0b5fa",
+    "classification/evidence_profiles.json": "32a094693703f61e271c7a98fd73e46b3ce9a82666cf7dd16f96d7c0203f8dd5",
+    "contracts/v2.1/host-classification.schema.json": "8ef233388d91d6bbf4504abc271d730f1a8489c68fd91b2fd2038df9aa8cda15",
+    "netsniper_core/classifier.py": "c5e74fefcbfd4dbd29f9005bba3c98845a1ea4cad310ea27f90f2a7d44f9b29d",
+    "netsniper_core/contracts.py": "0df5d5f22a8d7607797aa5d49601fa2523ae83a3241ce07b7629826fa6f07600",
     "netsniper_core/corpus.py": "9168d01bbfebce8ed3dce1424eb93518964004ead540915bdb7a56ffb881f6da",
     "netsniper_core/corpus_replay.py": "b7f34c014950f8e5a0f49065133dd2b3796f8b0a1fbcce4f1ba0392a65c095f0",
-    "netsniper_core/evidence.py": "02151e2374e01cfc99aeb16efc70c2ee8b37782bf74c9014b827631fda103fda",
+    "netsniper_core/evidence.py": "c5219faa0f0ad3c0a6225dfa78bed5e3d3979db62170cddbf861933abb2abf67",
     "netsniper_core/legacy.py": "a23e9081a6e186d4b999a04dc3c94802cf01be4d649bda30390c6506863003e4",
     "netsniper_core/normalization.py": "cf9974cc332b7e9f16fb16f03c38a61771a4088259892b0528714a34e8bfbf05"
   },
@@ -59,10 +59,16 @@
     "sanitized-real-printer-01"
   ],
   "execution_blockers": [
+    "classifier_candidate_reseal_required",
     "sanitized-real-client-endpoint-01:missing_genuine_sanitized_capture",
     "sanitized-real-home-router-01:missing_genuine_sanitized_capture",
     "sanitized-real-printer-01:missing_genuine_sanitized_capture"
   ],
   "results_path": "fixtures/device-corpus/evaluation/results",
-  "notes": "Preparation seal records inputs and candidate fingerprints before any evaluation replay. No classifier output is stored or consulted at this checkpoint."
+  "notes": "Preparation seal records inputs and candidate fingerprints before any evaluation replay. No classifier output is stored or consulted at this checkpoint.",
+  "previous_classifier_candidate_commit": "a760fc7e125a223181cf44c63a151c3eebcbe460",
+  "candidate_base_commit": "809b23432348b6d0dc861948532cb4d5de21da78",
+  "candidate_reseal_required": true,
+  "candidate_reseal_reason": "Classifier semantic correction requires a post-commit candidate reseal before first evaluation replay.",
+  "candidate_runtime_index_sha256": "f93446916eb3ee4a6e71a37f7d853d10b662b5ed22e470e1db7d49e22b7dcb29"
 }

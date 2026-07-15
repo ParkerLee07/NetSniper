@@ -16,7 +16,8 @@ if str(ROOT) not in sys.path:
 from netsniper_core.contracts import load_json
 
 SEAL_VERSION = "netsniper-evaluation-preparation-seal-v1"
-BASE_COMMIT = "a760fc7e125a223181cf44c63a151c3eebcbe460"
+PREVIOUS_CANDIDATE_COMMIT = "a760fc7e125a223181cf44c63a151c3eebcbe460"
+CANDIDATE_BASE_COMMIT = "809b23432348b6d0dc861948532cb4d5de21da78"
 FREEZE_COMMIT = "a4c027c9ab5f2fd1e7484b2ae9f8a76b10988c03"
 FIXED_TIME = "2026-07-15T00:00:00Z"
 EXPECTED_SPLITS = {"development": 14, "evaluation": 12, "regression": 4}
@@ -230,9 +231,13 @@ def validate_seal(manifest: dict[str, Any], input_hashes: dict[str, str]) -> Non
     seal_path = ROOT / "fixtures/device-corpus/evaluation/seal.json"
     seal = load_json(seal_path)
     assert_true(seal.get("schema_version") == SEAL_VERSION, "evaluation seal version mismatch")
-    assert_true(seal.get("state") == "synthetic_prepared_sanitized_real_pending", "evaluation seal state mismatch")
+    assert_true(seal.get("state") == "synthetic_prepared_sanitized_real_pending_candidate_reseal", "evaluation seal state mismatch")
     assert_true(seal.get("prepared_at") == FIXED_TIME, "evaluation seal timestamp mismatch")
-    assert_true(seal.get("classifier_candidate_commit") == BASE_COMMIT, "candidate commit seal mismatch")
+    assert_true(seal.get("classifier_candidate_commit") is None, "pending candidate commit must remain unset")
+    assert_true(seal.get("previous_classifier_candidate_commit") == PREVIOUS_CANDIDATE_COMMIT, "previous candidate commit mismatch")
+    assert_true(seal.get("candidate_base_commit") == CANDIDATE_BASE_COMMIT, "candidate base commit mismatch")
+    assert_true(seal.get("candidate_reseal_required") is True, "candidate reseal requirement missing")
+    assert_true("semantic correction" in str(seal.get("candidate_reseal_reason", "")).lower(), "candidate reseal reason mismatch")
     assert_true(seal.get("evaluation_holdout_frozen_at") == FREEZE_COMMIT, "holdout freeze commit mismatch")
     assert_true(seal.get("evaluation_tuning_prohibited") is True, "evaluation tuning prohibition missing")
     assert_true(seal.get("first_evaluation_replay_executed") is False, "evaluation replay is incorrectly marked executed")
@@ -253,15 +258,20 @@ def validate_seal(manifest: dict[str, Any], input_hashes: dict[str, str]) -> Non
         path = confined(relative)
         assert_true(path.is_file(), f"sealed runtime file is missing: {relative}")
         current_runtime[relative] = sha256_file(path)
-    assert_true(runtime == current_runtime, "classifier/runtime files changed after evaluation preparation seal")
+    assert_true(runtime == current_runtime, "corrected classifier/runtime files changed after pending reseal fingerprint")
+    runtime_index = sha256_bytes(canonical_bytes(runtime))
+    assert_true(seal.get("candidate_runtime_index_sha256") == runtime_index, "candidate runtime index mismatch")
 
     expected_seal_id = sha256_bytes(
         canonical_bytes(
             {
-                "commit": BASE_COMMIT,
+                "base_commit": CANDIDATE_BASE_COMMIT,
+                "previous_candidate": PREVIOUS_CANDIDATE_COMMIT,
                 "freeze": FREEZE_COMMIT,
                 "contract": contract_hash,
                 "inputs": expected_input_index,
+                "runtime": runtime_index,
+                "state": "candidate_reseal_required",
             }
         )
     )
@@ -271,8 +281,9 @@ def validate_seal(manifest: dict[str, Any], input_hashes: dict[str, str]) -> Non
         f"{fixture_id}:missing_genuine_sanitized_capture"
         for fixture_id in EXPECTED_REAL_IDS
     }
+    expected_blockers.add("classifier_candidate_reseal_required")
     assert_true(blockers == expected_blockers, "evaluation execution blockers mismatch")
-    passed("candidate runtime, frozen expectations, and prepared inputs match the evaluation seal")
+    passed("corrected runtime, frozen expectations, and prepared inputs match the pending-reseal seal")
 
 
 def validate_no_results() -> None:
@@ -291,6 +302,7 @@ def validate_integration() -> None:
     assert_true("validate_v2_1_evaluation_preparation.py" in ci, "CI syntax list omits evaluation preparation validator")
     assert_true("nine synthetic" in docs.lower() and "three sanitized-real" in docs.lower(), "evaluation preparation documentation lacks fixture counts")
     assert_true("must not" in docs.lower() and "tune" in docs.lower(), "documentation lacks no-tuning boundary")
+    assert_true("candidate reseal" in docs.lower(), "documentation lacks pending candidate reseal boundary")
     passed("evaluation preparation seal is wired into CI, the complete gate, and documentation")
 
 

@@ -75,6 +75,7 @@ def build_evidence(
             "matched_value": matched_value,
             "points": int(rule.get("points", 0)),
             "source_group": source_group(rule),
+            "independence_group": str(rule.get("independence_group") or source_group(rule)),
         },
         "raw_reference": None,
     }

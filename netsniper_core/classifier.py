@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
+import re
 from typing import Any
 
 from .contracts import (
@@ -55,7 +56,7 @@ def _confidence_cap(
     if not matches:
         return 0, ["no_classification_evidence"]
 
-    groups = {item["source_group"] for item in matches}
+    groups = {item.get("independence_group", item["source_group"]) for item in matches}
     sources = {item["source"] for item in matches}
     reliabilities = [item["reliability"] for item in matches]
     high_count = reliabilities.count("high")
@@ -98,6 +99,70 @@ def _confidence_cap(
     return max(0, min(maximum, confidence)), reasons
 
 
+
+def _management_marker_matches(
+    guard: dict[str, Any],
+    observed: dict[str, list[str]],
+) -> list[str]:
+    patterns = guard.get("management_patterns", {})
+    if not isinstance(patterns, dict):
+        return []
+    fields = guard.get("management_observed_fields", [])
+    if not isinstance(fields, list):
+        return []
+    matches: list[str] = []
+    for field in fields:
+        pattern = str(patterns.get(str(field), "")).strip()
+        if not pattern:
+            continue
+        try:
+            regex = re.compile(pattern, re.IGNORECASE)
+        except re.error:
+            continue
+        for value in observed.get(str(field), []):
+            text = str(value).strip()
+            if text and regex.search(text):
+                matches.append(text)
+    return list(dict.fromkeys(matches))
+
+
+def _apply_profile_guard(
+    profile: dict[str, Any],
+    observed: dict[str, list[str]],
+    matches: list[dict[str, Any]],
+    confidence: int,
+    uncertainty: list[str],
+    policy: dict[str, Any],
+) -> tuple[int, list[str], list[str]]:
+    guard = profile.get("classification_guard", {})
+    if not isinstance(guard, dict) or guard.get("kind") != "embedded_admin_web_server_boundary":
+        return confidence, uncertainty, []
+
+    reasons = list(uncertainty)
+    classified_minimum = _policy_int(policy, "minimum_classified_score", 70)
+    independence_groups = {
+        str(item.get("independence_group") or item.get("source_group") or "other")
+        for item in matches
+    }
+    required_groups = {
+        str(item)
+        for item in guard.get("minimum_classified_independence_groups", [])
+        if str(item)
+    }
+    if confidence >= classified_minimum and not required_groups.issubset(independence_groups):
+        confidence = classified_minimum - 1
+        reasons.append("insufficient_evidence_diversity")
+
+    management_matches = _management_marker_matches(guard, observed)
+    if management_matches:
+        cap_key = str(guard.get("management_cap_policy_key", "embedded_admin_web_server_cap"))
+        cap = _policy_int(policy, cap_key, 39)
+        confidence = min(confidence, cap)
+        reasons.append(str(guard.get("management_uncertainty_reason", "embedded_admin_interface")))
+
+    return confidence, list(dict.fromkeys(reasons)), management_matches
+
+
 def _score_profile(
     profile: dict[str, Any],
     observed: dict[str, list[str]],
@@ -120,6 +185,7 @@ def _score_profile(
             "rule_id": str(rule.get("id", "rule")),
             "source": str(rule.get("source", "other")),
             "source_group": source_group(rule),
+            "independence_group": str(rule.get("independence_group") or source_group(rule)),
             "reliability": str(rule.get("reliability", "low")),
             "points": points,
             "unique_identifying": bool(rule.get("unique_identifying", False)),
@@ -138,6 +204,14 @@ def _score_profile(
         )
 
     confidence, uncertainty = _confidence_cap(matches, raw, policy)
+    confidence, uncertainty, management_matches = _apply_profile_guard(
+        profile,
+        observed,
+        matches,
+        confidence,
+        uncertainty,
+        policy,
+    )
     possible_minimum = _policy_int(policy, "minimum_possible_score", 40)
     classified_minimum = _policy_int(policy, "minimum_classified_score", 70)
     maximum = _policy_int(policy, "max_confidence", 100)
@@ -152,12 +226,93 @@ def _score_profile(
             minimum_classified=classified_minimum,
         ),
         "matches": matches,
+        "management_matches": management_matches,
         "evidence": evidence,
         "uncertainty_reasons": uncertainty,
         "contradictions": [],
         "contradicts": list(profile.get("contradicts", [])),
         "explanation": str(profile.get("description", f"Evidence score for {label}.")),
     }
+
+
+
+def _apply_embedded_admin_candidate_boundary(
+    candidates: list[dict[str, Any]],
+    profiles: list[dict[str, Any]],
+    policy: dict[str, Any],
+) -> None:
+    web_candidate = next(
+        (
+            item
+            for item in candidates
+            if item.get("axis") == "role" and item.get("label") == "web_server"
+        ),
+        None,
+    )
+    web_profile = next(
+        (
+            item
+            for item in profiles
+            if item.get("axis") == "role" and item.get("label") == "web_server"
+        ),
+        None,
+    )
+    if not web_candidate or not web_profile:
+        return
+    guard = web_profile.get("classification_guard", {})
+    if not isinstance(guard, dict) or guard.get("kind") != "embedded_admin_web_server_boundary":
+        return
+
+    threshold = _policy_int(
+        guard,
+        "minimum_appliance_context_confidence",
+        40,
+    )
+    appliance_families = {
+        str(item) for item in guard.get("appliance_family_labels", [])
+    }
+    appliance_roles = {
+        str(item) for item in guard.get("appliance_role_labels", [])
+    }
+    context = [
+        item
+        for item in candidates
+        if item is not web_candidate
+        and int(item.get("confidence", 0)) >= threshold
+        and (
+            (item.get("axis") == "device_family" and item.get("label") in appliance_families)
+            or (item.get("axis") == "role" and item.get("label") in appliance_roles)
+        )
+    ]
+    if not context:
+        return
+
+    cap_key = str(guard.get("management_cap_policy_key", "embedded_admin_web_server_cap"))
+    cap = _policy_int(policy, cap_key, 39)
+    web_candidate["confidence"] = min(int(web_candidate.get("confidence", 0)), cap)
+    web_candidate["decision"] = decision_for(
+        int(web_candidate["confidence"]),
+        minimum_possible=_policy_int(policy, "minimum_possible_score", 40),
+        minimum_classified=_policy_int(policy, "minimum_classified_score", 70),
+    )
+    reason = str(guard.get("management_uncertainty_reason", "embedded_admin_interface"))
+    web_candidate["uncertainty_reasons"] = list(
+        dict.fromkeys(web_candidate.get("uncertainty_reasons", []) + [reason])
+    )
+    web_candidate["management_context"] = [
+        {
+            "axis": str(item.get("axis")),
+            "label": str(item.get("label")),
+            "confidence": int(item.get("confidence", 0)),
+        }
+        for item in sorted(
+            context,
+            key=lambda value: (
+                str(value.get("axis")),
+                str(value.get("label")),
+            ),
+        )
+    ]
 
 
 def _apply_pairwise_contradictions(
@@ -447,6 +602,7 @@ def classify_host(
         _score_profile(profile, observed, generated_at, policy)
         for profile in profiles
     ]
+    _apply_embedded_admin_candidate_boundary(candidates, profiles, policy)
     for axis in {"device_family", "role", "platform"}:
         _apply_pairwise_contradictions(
             [item for item in candidates if item["axis"] == axis],

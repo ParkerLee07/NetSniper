@@ -69,7 +69,8 @@
       "family_not_inferable_from_role",
       "identity_instability",
       "unsupported_signature",
-      "legacy_projection_only"
+      "legacy_projection_only",
+      "embedded_admin_interface"
     ]
   },
   "coverage_requirements": {

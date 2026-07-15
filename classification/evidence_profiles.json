@@ -15,7 +15,8 @@
     "single_high_source_cap": 69,
     "strong_contradiction_penalty": 50,
     "close_candidate_delta": 9,
-    "false_confidence_rule": "Prefer unknown or review over a confident wrong classification."
+    "false_confidence_rule": "Prefer unknown or review over a confident wrong classification.",
+    "embedded_admin_web_server_cap": 39
   },
   "canonical_axes": {
     "device_families": [
@@ -793,7 +794,7 @@
     {
       "axis": "role",
       "label": "web_server",
-      "description": "HTTP service and server-product evidence supports a web-server role.",
+      "description": "Independent web-runtime and server-context evidence supports a web-server role; embedded administration interfaces remain review-only.",
       "positive_evidence": [
         {
           "id": "role_web_http_80",
@@ -802,7 +803,8 @@
           "reliability": "low",
           "points": 15,
           "reason": "HTTP service indicates a web interface or web server, but port-only evidence is weak.",
-          "source_group": "port"
+          "source_group": "web_endpoint",
+          "independence_group": "web_service"
         },
         {
           "id": "role_web_https_443",
@@ -811,7 +813,8 @@
           "reliability": "low",
           "points": 15,
           "reason": "HTTPS service indicates a web interface or web server, but port-only evidence is weak.",
-          "source_group": "port"
+          "source_group": "web_endpoint",
+          "independence_group": "web_service"
         },
         {
           "id": "role_web_http_alt_8080",
@@ -820,7 +823,8 @@
           "reliability": "low",
           "points": 15,
           "reason": "Alternate HTTP service may indicate a web application or admin interface.",
-          "source_group": "port"
+          "source_group": "web_endpoint",
+          "independence_group": "web_service"
         },
         {
           "id": "role_web_web_product_title",
@@ -828,8 +832,9 @@
           "value": "apache|nginx|iis|tomcat|jenkins|grafana|dashboard|webmin|admin console",
           "reliability": "medium",
           "points": 25,
-          "reason": "HTTP title contains a recognizable web server or web application hint.",
-          "source_group": "http_title"
+          "reason": "HTTP metadata contains a recognizable web runtime or application hint, but it remains part of the same web-service evidence domain.",
+          "source_group": "web_runtime",
+          "independence_group": "web_service"
         },
         {
           "id": "role_web_server_header",
@@ -837,8 +842,9 @@
           "value": "apache|nginx|iis|tomcat|jetty|gunicorn|uwsgi",
           "reliability": "medium",
           "points": 25,
-          "reason": "Service metadata contains a recognizable web server header or product.",
-          "source_group": "service"
+          "reason": "Recognized web-runtime product evidence supports a web-server candidate, but requires independent server context for classification.",
+          "source_group": "web_runtime",
+          "independence_group": "web_service"
         },
         {
           "id": "role_web_http_dev_3000",
@@ -847,7 +853,8 @@
           "reliability": "low",
           "points": 15,
           "reason": "tcp/3000 commonly hosts development dashboards or web applications, but port-only evidence is weak.",
-          "source_group": "port"
+          "source_group": "web_endpoint",
+          "independence_group": "web_service"
         },
         {
           "id": "role_web_dashboard_service_hint",
@@ -855,8 +862,9 @@
           "value": "grafana|prometheus|dashboard|web dashboard|admin dashboard|kibana",
           "reliability": "medium",
           "points": 25,
-          "reason": "Service metadata suggests a web dashboard or web application.",
-          "source_group": "service"
+          "reason": "Dashboard metadata supports a web-facing role candidate but does not independently establish a standalone web server.",
+          "source_group": "web_runtime",
+          "independence_group": "web_service"
         },
         {
           "id": "role_web_dashboard_title_hint",
@@ -864,8 +872,9 @@
           "value": "grafana|prometheus|kibana|dashboard|admin dashboard",
           "reliability": "medium",
           "points": 25,
-          "reason": "HTTP title suggests a dashboard or web application.",
-          "source_group": "http_title"
+          "reason": "Dashboard metadata supports a web-facing role candidate but does not independently establish a standalone web server.",
+          "source_group": "web_runtime",
+          "independence_group": "web_service"
         },
         {
           "id": "role_web_product_v2",
@@ -873,11 +882,87 @@
           "value": "nginx|apache|httpd|iis|tomcat|caddy|lighttpd",
           "reliability": "high",
           "points": 55,
-          "reason": "Recognized web-server product evidence strongly supports a web-server role.",
-          "source_group": "web_product"
+          "reason": "Recognized web-runtime product evidence supports a web-server candidate, but requires independent server context for classification.",
+          "source_group": "web_runtime",
+          "independence_group": "web_service"
+        },
+        {
+          "id": "role_web_server_os_context",
+          "source": "os",
+          "value": "linux|unix|freebsd|ubuntu|debian|centos|red hat|rocky|alma|windows server",
+          "reliability": "high",
+          "points": 25,
+          "reason": "Server-capable operating-system evidence independently supports a web-server role.",
+          "source_group": "server_context",
+          "independence_group": "server_context"
+        },
+        {
+          "id": "role_web_distinct_server_service_context",
+          "source": "service",
+          "value": "openssh|postgresql|mysql|mariadb|microsoft-ds|samba|nfs",
+          "reliability": "medium",
+          "points": 25,
+          "reason": "A distinct non-HTTP server service independently supports a general-purpose server context.",
+          "source_group": "server_context",
+          "independence_group": "server_context"
+        },
+        {
+          "id": "role_web_server_hostname_context",
+          "source": "hostname",
+          "value": "(^|[-_.])(web|www|server|srv|app)([-_.0-9]|$)",
+          "reliability": "low",
+          "points": 10,
+          "reason": "A server-oriented hostname weakly supports independent server context.",
+          "source_group": "server_context",
+          "independence_group": "server_context"
         }
       ],
-      "contradicts": []
+      "contradicts": [],
+      "classification_guard": {
+        "kind": "embedded_admin_web_server_boundary",
+        "minimum_classified_independence_groups": [
+          "web_service",
+          "server_context"
+        ],
+        "management_cap_policy_key": "embedded_admin_web_server_cap",
+        "management_uncertainty_reason": "embedded_admin_interface",
+        "management_observed_fields": [
+          "service_hints",
+          "http_titles",
+          "vendor_hints",
+          "hostname_hints"
+        ],
+        "appliance_family_labels": [
+          "network_infrastructure",
+          "printer",
+          "surveillance_device",
+          "storage_appliance",
+          "voice_device",
+          "power_device",
+          "iot_embedded"
+        ],
+        "appliance_role_labels": [
+          "gateway",
+          "wireless_access_point",
+          "managed_switch",
+          "security_gateway",
+          "hypervisor",
+          "nas_service",
+          "print_service",
+          "camera",
+          "network_video_recorder",
+          "voip_endpoint",
+          "pbx",
+          "ups_monitor"
+        ],
+        "minimum_appliance_context_confidence": 40,
+        "management_patterns": {
+          "service_hints": "printer|mfp|laserjet|officejet|jetdirect|image monitor|camera|webcam|doorbell|nvr|dvr|onvif|rtsp|doorbird|router|wireless access point|managed switch|switchos|firewall|security appliance|vpn gateway|nas appliance|synology|qnap|truenas|freenas|hypervisor|proxmox|esxi|vcenter|pbx|voip phone|ups|pdu|powerchute|embedded|firmware|iot|zigbee|tradfri|smart home|device controller|tp[- ]?link|meraki",
+          "http_titles": "printer|mfp|laserjet|officejet|image monitor|camera|webcam|doorbell|nvr|dvr|surveillance|router administration|gateway administration|access point|managed switch|firewall|security appliance|vpn gateway|nas administration|storage appliance|synology|qnap|truenas|freenas|proxmox|esxi|vcenter|pbx|voip|ups management|pdu management|embedded administration|firmware|zigbee|tradfri|smart home controller",
+          "vendor_hints": "tp[- ]?link|meraki|hikvision|dahua|reolink|axis|amcrest|doorbird|synology|qnap|ubiquiti|ruckus|aruba|fortinet|sonicwall|watchguard|brother|hewlett|canon|epson|xerox|ricoh|kyocera|lexmark|apc|eaton|cyberpower|tripplite",
+          "hostname_hints": "(^|[-_.])(printer|mfp|camera|cam|nvr|dvr|router|wap|ap|switch|nas|firewall|fw|pbx|ups|pdu|iot|zigbee)([-_.0-9]|$)"
+        }
+      }
     },
     {
       "axis": "role",

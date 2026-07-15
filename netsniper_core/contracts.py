@@ -78,6 +78,7 @@ UNCERTAINTY_REASONS = {
     "identity_instability",
     "unsupported_signature",
     "legacy_projection_only",
+    "embedded_admin_interface",
 }
 
 
