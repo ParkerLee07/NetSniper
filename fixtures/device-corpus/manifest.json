@@ -370,8 +370,10 @@
         "strong-positive",
         "network-infrastructure"
       ],
-      "source_artifacts": [],
-      "normalized_evidence_path": null,
+      "source_artifacts": [
+        "fixtures/device-corpus/evaluation/prepared/synthetic-security-gateway-01/source.json"
+      ],
+      "normalized_evidence_path": "fixtures/device-corpus/evaluation/prepared/synthetic-security-gateway-01/normalized.json",
       "ground_truth": {
         "device_family": "network_infrastructure",
         "roles": [
@@ -436,8 +438,8 @@
       "provenance": {
         "ground_truth_method": "synthetic_design",
         "recorded_by": "Parker Lee",
-        "recorded_at": null,
-        "notes": ""
+        "recorded_at": "2026-07-15T00:00:00Z",
+        "notes": "Prepared and sealed before evaluation replay; classifier output was not consulted."
       },
       "dataset_split": "evaluation",
       "split_assignment_reason": "Held for release-candidate evaluation; not used to tune v2.1 scoring."
@@ -538,8 +540,10 @@
         "platform",
         "server"
       ],
-      "source_artifacts": [],
-      "normalized_evidence_path": null,
+      "source_artifacts": [
+        "fixtures/device-corpus/evaluation/prepared/synthetic-linux-web-db-container-01/source.json"
+      ],
+      "normalized_evidence_path": "fixtures/device-corpus/evaluation/prepared/synthetic-linux-web-db-container-01/normalized.json",
       "ground_truth": {
         "device_family": "compute_host",
         "roles": [
@@ -611,8 +615,8 @@
       "provenance": {
         "ground_truth_method": "synthetic_design",
         "recorded_by": "Parker Lee",
-        "recorded_at": null,
-        "notes": ""
+        "recorded_at": "2026-07-15T00:00:00Z",
+        "notes": "Prepared and sealed before evaluation replay; classifier output was not consulted."
       },
       "dataset_split": "evaluation",
       "split_assignment_reason": "Held for release-candidate evaluation; not used to tune v2.1 scoring."
@@ -784,8 +788,10 @@
         "strong-positive",
         "surveillance"
       ],
-      "source_artifacts": [],
-      "normalized_evidence_path": null,
+      "source_artifacts": [
+        "fixtures/device-corpus/evaluation/prepared/synthetic-network-video-recorder-01/source.json"
+      ],
+      "normalized_evidence_path": "fixtures/device-corpus/evaluation/prepared/synthetic-network-video-recorder-01/normalized.json",
       "ground_truth": {
         "device_family": "surveillance_device",
         "roles": [
@@ -843,8 +849,8 @@
       "provenance": {
         "ground_truth_method": "synthetic_design",
         "recorded_by": "Parker Lee",
-        "recorded_at": null,
-        "notes": ""
+        "recorded_at": "2026-07-15T00:00:00Z",
+        "notes": "Prepared and sealed before evaluation replay; classifier output was not consulted."
       },
       "dataset_split": "evaluation",
       "split_assignment_reason": "Held for release-candidate evaluation; not used to tune v2.1 scoring."
@@ -860,8 +866,10 @@
         "strong-positive",
         "storage"
       ],
-      "source_artifacts": [],
-      "normalized_evidence_path": null,
+      "source_artifacts": [
+        "fixtures/device-corpus/evaluation/prepared/synthetic-nas-01/source.json"
+      ],
+      "normalized_evidence_path": "fixtures/device-corpus/evaluation/prepared/synthetic-nas-01/normalized.json",
       "ground_truth": {
         "device_family": "storage_appliance",
         "roles": [
@@ -926,8 +934,8 @@
       "provenance": {
         "ground_truth_method": "synthetic_design",
         "recorded_by": "Parker Lee",
-        "recorded_at": null,
-        "notes": ""
+        "recorded_at": "2026-07-15T00:00:00Z",
+        "notes": "Prepared and sealed before evaluation replay; classifier output was not consulted."
       },
       "dataset_split": "evaluation",
       "split_assignment_reason": "Held for release-candidate evaluation; not used to tune v2.1 scoring."
@@ -1010,8 +1018,10 @@
         "platform",
         "endpoint"
       ],
-      "source_artifacts": [],
-      "normalized_evidence_path": null,
+      "source_artifacts": [
+        "fixtures/device-corpus/evaluation/prepared/synthetic-linux-workstation-01/source.json"
+      ],
+      "normalized_evidence_path": "fixtures/device-corpus/evaluation/prepared/synthetic-linux-workstation-01/normalized.json",
       "ground_truth": {
         "device_family": "client_endpoint",
         "roles": [],
@@ -1062,8 +1072,8 @@
       "provenance": {
         "ground_truth_method": "synthetic_design",
         "recorded_by": "Parker Lee",
-        "recorded_at": null,
-        "notes": ""
+        "recorded_at": "2026-07-15T00:00:00Z",
+        "notes": "Prepared and sealed before evaluation replay; classifier output was not consulted."
       },
       "dataset_split": "evaluation",
       "split_assignment_reason": "Held for release-candidate evaluation; not used to tune v2.1 scoring."
@@ -1297,8 +1307,10 @@
         "role",
         "voice"
       ],
-      "source_artifacts": [],
-      "normalized_evidence_path": null,
+      "source_artifacts": [
+        "fixtures/device-corpus/evaluation/prepared/synthetic-pbx-01/source.json"
+      ],
+      "normalized_evidence_path": "fixtures/device-corpus/evaluation/prepared/synthetic-pbx-01/normalized.json",
       "ground_truth": {
         "device_family": "voice_device",
         "roles": [
@@ -1356,8 +1368,8 @@
       "provenance": {
         "ground_truth_method": "synthetic_design",
         "recorded_by": "Parker Lee",
-        "recorded_at": null,
-        "notes": ""
+        "recorded_at": "2026-07-15T00:00:00Z",
+        "notes": "Prepared and sealed before evaluation replay; classifier output was not consulted."
       },
       "dataset_split": "evaluation",
       "split_assignment_reason": "Held for release-candidate evaluation; not used to tune v2.1 scoring."
@@ -1372,8 +1384,10 @@
         "role",
         "power"
       ],
-      "source_artifacts": [],
-      "normalized_evidence_path": null,
+      "source_artifacts": [
+        "fixtures/device-corpus/evaluation/prepared/synthetic-ups-monitor-01/source.json"
+      ],
+      "normalized_evidence_path": "fixtures/device-corpus/evaluation/prepared/synthetic-ups-monitor-01/normalized.json",
       "ground_truth": {
         "device_family": "power_device",
         "roles": [
@@ -1431,8 +1445,8 @@
       "provenance": {
         "ground_truth_method": "synthetic_design",
         "recorded_by": "Parker Lee",
-        "recorded_at": null,
-        "notes": ""
+        "recorded_at": "2026-07-15T00:00:00Z",
+        "notes": "Prepared and sealed before evaluation replay; classifier output was not consulted."
       },
       "dataset_split": "evaluation",
       "split_assignment_reason": "Held for release-candidate evaluation; not used to tune v2.1 scoring."
@@ -1446,8 +1460,10 @@
         "family",
         "iot"
       ],
-      "source_artifacts": [],
-      "normalized_evidence_path": null,
+      "source_artifacts": [
+        "fixtures/device-corpus/evaluation/prepared/synthetic-iot-embedded-01/source.json"
+      ],
+      "normalized_evidence_path": "fixtures/device-corpus/evaluation/prepared/synthetic-iot-embedded-01/normalized.json",
       "ground_truth": {
         "device_family": "iot_embedded",
         "roles": [],
@@ -1496,8 +1512,8 @@
       "provenance": {
         "ground_truth_method": "synthetic_design",
         "recorded_by": "Parker Lee",
-        "recorded_at": null,
-        "notes": ""
+        "recorded_at": "2026-07-15T00:00:00Z",
+        "notes": "Prepared and sealed before evaluation replay; classifier output was not consulted."
       },
       "dataset_split": "evaluation",
       "split_assignment_reason": "Held for release-candidate evaluation; not used to tune v2.1 scoring."
@@ -1592,8 +1608,10 @@
         "role-without-family",
         "ambiguous"
       ],
-      "source_artifacts": [],
-      "normalized_evidence_path": null,
+      "source_artifacts": [
+        "fixtures/device-corpus/evaluation/prepared/synthetic-ambiguous-web-admin-01/source.json"
+      ],
+      "normalized_evidence_path": "fixtures/device-corpus/evaluation/prepared/synthetic-ambiguous-web-admin-01/normalized.json",
       "ground_truth": {
         "device_family": "unknown",
         "roles": [
@@ -1661,8 +1679,8 @@
       "provenance": {
         "ground_truth_method": "synthetic_design",
         "recorded_by": "Parker Lee",
-        "recorded_at": null,
-        "notes": ""
+        "recorded_at": "2026-07-15T00:00:00Z",
+        "notes": "Prepared and sealed before evaluation replay; classifier output was not consulted."
       },
       "dataset_split": "evaluation",
       "split_assignment_reason": "Held for release-candidate evaluation; not used to tune v2.1 scoring."

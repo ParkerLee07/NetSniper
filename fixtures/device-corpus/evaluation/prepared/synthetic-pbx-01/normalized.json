@@ -1,0 +1,53 @@
+{
+  "schema_version": "netsniper-corpus-input-v1",
+  "fixture_id": "synthetic-pbx-01",
+  "mode": "classification",
+  "host_record": {
+    "host": "198.51.100.50",
+    "ip": "198.51.100.50",
+    "mac": "02:10:00:00:00:50",
+    "hostname": "voice-core-01",
+    "vendor": "Grandstream",
+    "ports": [
+      {
+        "port": 5060,
+        "protocol": "udp",
+        "service": "sip",
+        "product": "Asterisk PBX"
+      },
+      {
+        "port": 443,
+        "protocol": "tcp",
+        "service": "https",
+        "product": "FreePBX administration"
+      }
+    ],
+    "service_hints": [
+      "Asterisk FreePBX VoIP call manager"
+    ],
+    "http_titles": [
+      "FreePBX Administration"
+    ],
+    "os_hints": [
+      "embedded Linux firmware"
+    ],
+    "observation_quality": {
+      "scan_completeness": "complete",
+      "requested_collectors": [
+        "discovery",
+        "tcp_services",
+        "os_detection",
+        "passive_neighbors"
+      ],
+      "completed_collectors": [
+        "discovery",
+        "tcp_services",
+        "os_detection",
+        "passive_neighbors"
+      ],
+      "failed_collectors": [],
+      "unavailable_collectors": [],
+      "inventory_complete": true
+    }
+  }
+}

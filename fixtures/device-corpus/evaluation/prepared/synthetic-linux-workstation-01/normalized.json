@@ -1,0 +1,43 @@
+{
+  "schema_version": "netsniper-corpus-input-v1",
+  "fixture_id": "synthetic-linux-workstation-01",
+  "mode": "classification",
+  "host_record": {
+    "host": "198.51.100.40",
+    "ip": "198.51.100.40",
+    "mac": "02:10:00:00:00:40",
+    "hostname": "workstation-lnx-02",
+    "ports": [
+      {
+        "port": 22,
+        "protocol": "tcp",
+        "service": "ssh",
+        "product": "OpenSSH Ubuntu"
+      }
+    ],
+    "service_hints": [
+      "OpenSSH Ubuntu desktop"
+    ],
+    "os_hints": [
+      "Ubuntu Linux 24.04 desktop"
+    ],
+    "observation_quality": {
+      "scan_completeness": "complete",
+      "requested_collectors": [
+        "discovery",
+        "tcp_services",
+        "os_detection",
+        "passive_neighbors"
+      ],
+      "completed_collectors": [
+        "discovery",
+        "tcp_services",
+        "os_detection",
+        "passive_neighbors"
+      ],
+      "failed_collectors": [],
+      "unavailable_collectors": [],
+      "inventory_complete": true
+    }
+  }
+}

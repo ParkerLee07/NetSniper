@@ -1,0 +1,64 @@
+{
+  "schema_version": "netsniper-corpus-source-v1",
+  "fixture_id": "synthetic-nas-01",
+  "fixture_kind": "synthetic",
+  "source_type": "designed_host_observation",
+  "synthetic_observation": {
+    "host": "198.51.100.30",
+    "ip": "198.51.100.30",
+    "mac": "02:10:00:00:00:30",
+    "hostname": "storage-07",
+    "vendor": "Synology",
+    "ports": [
+      {
+        "port": 445,
+        "protocol": "tcp",
+        "service": "microsoft-ds",
+        "product": "Samba file server"
+      },
+      {
+        "port": 2049,
+        "protocol": "tcp",
+        "service": "nfs",
+        "product": "NFS file server"
+      },
+      {
+        "port": 5000,
+        "protocol": "tcp",
+        "service": "http",
+        "product": "Synology DSM NAS"
+      }
+    ],
+    "service_hints": [
+      "Synology DSM NAS storage",
+      "Samba CIFS file server",
+      "NFS"
+    ],
+    "http_titles": [
+      "Synology DiskStation NAS"
+    ],
+    "os_hints": [
+      "embedded Linux firmware"
+    ],
+    "observation_quality": {
+      "scan_completeness": "complete",
+      "requested_collectors": [
+        "discovery",
+        "tcp_services",
+        "os_detection",
+        "passive_neighbors"
+      ],
+      "completed_collectors": [
+        "discovery",
+        "tcp_services",
+        "os_detection",
+        "passive_neighbors"
+      ],
+      "failed_collectors": [],
+      "unavailable_collectors": [],
+      "inventory_complete": true
+    }
+  },
+  "design_notes": "Dedicated NAS appliance exposing NAS and file-server roles.",
+  "evaluation_use": "sealed_holdout_input_not_replayed_during_preparation"
+}

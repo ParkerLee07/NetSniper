@@ -24,6 +24,7 @@ jobs:
             tools/generate_v2_1_run_artifacts.py \
             tools/replay_v2_1_corpus.py \
             tools/validate_v2_1_corpus_activation.py \
+            tools/validate_v2_1_evaluation_preparation.py \
             tools/validate_v2_1_stage1_2.py
-      - name: Run v2.1 classifier and corpus gate
+      - name: Run v2.1 classifier, corpus, and evaluation-preparation gate
         run: ./tools/validate_v2_1_stage1_2_all.sh
