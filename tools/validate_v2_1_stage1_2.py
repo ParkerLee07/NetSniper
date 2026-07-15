@@ -1,0 +1,238 @@
+#!/usr/bin/env python3
+from __future__ import annotations
+
+import importlib.util
+import json
+import subprocess
+import sys
+import tempfile
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
+from netsniper_core.classifier import classify_host
+from netsniper_core.contracts import (
+    CAPABILITY_SCHEMA_VERSION,
+    CLASSIFIER_VERSION,
+    EVIDENCE_PROFILE_VERSION,
+    HOST_CLASSIFICATION_SCHEMA_VERSION,
+    TAXONOMY_VERSION,
+    load_json,
+)
+
+
+def fail(message: str) -> None:
+    raise SystemExit(f"[FAIL] {message}")
+
+
+def passed(message: str) -> None:
+    print(f"[PASS] {message}")
+
+
+def assert_true(condition: bool, message: str) -> None:
+    if not condition:
+        fail(message)
+
+
+def write(path: Path, text: str) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(text, encoding="utf-8")
+
+
+def validate_source_boundaries() -> None:
+    shell = (ROOT / "netsniper.sh").read_text(encoding="utf-8")
+    assert_true('SCANNER_VERSION="v2.1.0-dev"' in shell, "scanner version is not v2.1.0-dev")
+    assert_true("analyze_v2_1_gnmap.py" in shell, "live analysis does not delegate to v2.1 Python runtime")
+    assert_true("generate_v2_1_run_artifacts.py" in shell, "bundle finalization does not invoke v2.1 generator")
+    assert_true("netsniper-capability-manifest-v1" in shell, "manifest lacks capability-contract version")
+    assert_true("netsniper-host-classification-v2" in shell, "manifest lacks host-classification version")
+    forbidden = [
+        "add_classification_evidence()",
+        "update_best_candidate()",
+        "WINDOWS_SERVER_SCORE=0",
+        "CLASSIFICATION_PRIMARY=\"Unknown / Ambiguous\"",
+    ]
+    for marker in forbidden:
+        assert_true(marker not in shell, f"retired shell scoring authority remains: {marker}")
+    passed("netsniper.sh is orchestration-only for v2.1 classification")
+
+
+def validate_data_contracts() -> tuple[dict, dict, dict, dict]:
+    profiles = load_json(ROOT / "classification/evidence_profiles.json")
+    taxonomy = load_json(ROOT / "classification/device_taxonomy.json")
+    capability_schema = load_json(ROOT / "contracts/v2.1/capability-manifest.schema.json")
+    host_schema = load_json(ROOT / "contracts/v2.1/host-classification.schema.json")
+    assert_true(profiles["schema_version"] == EVIDENCE_PROFILE_VERSION, "evidence profile version mismatch")
+    assert_true(taxonomy["schema_version"] == TAXONOMY_VERSION, "taxonomy version mismatch")
+    assert_true(len(profiles.get("axis_profiles", [])) >= 30, "too few v2.1 axis profiles")
+    axes = {item["axis"] for item in profiles["axis_profiles"]}
+    assert_true(axes == {"device_family", "role", "platform"}, "axis profile vocabulary mismatch")
+    assert_true(capability_schema["properties"]["schema_version"]["const"] == CAPABILITY_SCHEMA_VERSION, "capability schema mismatch")
+    assert_true(host_schema["properties"]["schema_version"]["const"] == HOST_CLASSIFICATION_SCHEMA_VERSION, "host schema mismatch")
+    passed("taxonomy, evidence profiles, and contract versions agree")
+    return profiles, taxonomy, capability_schema, host_schema
+
+
+def validate_classifier(profiles: dict, host_schema: dict) -> None:
+    timestamp = "2026-07-15T00:00:00Z"
+    multi = classify_host(
+        {
+            "host": "192.0.2.10",
+            "hostname": "lab-server",
+            "os_hints": ["Linux Ubuntu"],
+            "ports": [
+                {"port": 22, "service": "ssh", "product": "OpenSSH Ubuntu"},
+                {"port": 443, "service": "https", "product": "nginx"},
+                {"port": 5432, "service": "postgresql", "product": "PostgreSQL"},
+                {"port": 2376, "service": "docker", "product": "Docker API"},
+            ],
+        },
+        profiles,
+        generated_at=timestamp,
+    )
+    assert_true(multi["schema_version"] == HOST_CLASSIFICATION_SCHEMA_VERSION, "host result schema mismatch")
+    assert_true(multi["device_family"]["label"] == "compute_host", "multi-role host family mismatch")
+    labels = {item["label"] for item in multi["roles"] if item["decision"] == "classified"}
+    assert_true({"web_server", "database_server", "container_host"} <= labels, "multi-role classifier missed expected roles")
+    assert_true(multi["platform"]["label"] == "linux", "Linux platform classification missing")
+
+    port_only = classify_host(
+        {"host": "192.0.2.20", "ports": [{"port": 80, "service": "http"}]},
+        profiles,
+        generated_at=timestamp,
+    )
+    web = next(item for item in port_only["roles"] if item["label"] == "web_server")
+    assert_true(web["confidence"] <= 39, "port-only evidence exceeded confidence cap")
+    assert_true("port_only_evidence" in web["uncertainty_reasons"], "port-only uncertainty reason missing")
+    assert_true(port_only["device_family"]["label"] == "unknown", "web role improperly inferred a device family")
+
+    conflict = classify_host(
+        {
+            "host": "192.0.2.30",
+            "ports": [
+                {"port": 631, "service": "ipp", "product": "HP LaserJet printer"},
+                {"port": 9100, "service": "jetdirect", "product": "HP printer"},
+                {"port": 88, "service": "kerberos", "product": "Microsoft Windows Server"},
+                {"port": 389, "service": "ldap", "product": "Active Directory"},
+                {"port": 445, "service": "microsoft-ds", "product": "Windows Server SMB"},
+            ],
+            "os_hints": ["Microsoft Windows Server"],
+        },
+        profiles,
+        generated_at=timestamp,
+    )
+    assert_true(conflict["device_family"]["decision"] == "review", "strong family contradiction did not force review")
+    assert_true(conflict["legacy_projection"]["decision"] == "contradiction_review", "legacy contradiction projection mismatch")
+
+    unknown = classify_host({"host": "192.0.2.40", "ports": []}, profiles, generated_at=timestamp)
+    assert_true(unknown["device_family"]["label"] == "unknown", "empty evidence did not remain unknown")
+    assert_true(unknown["device_family"]["confidence"] == 0, "empty evidence has nonzero confidence")
+
+    if importlib.util.find_spec("jsonschema") is not None:
+        import jsonschema
+        for item in (multi, port_only, conflict, unknown):
+            jsonschema.validate(item, host_schema)
+        passed("classifier cases validate against host-classification JSON Schema")
+    else:
+        passed("classifier semantic cases passed without optional jsonschema")
+    passed("multi-axis, confidence-cap, contradiction, and unknown behavior")
+
+
+def validate_bundle_generator(profiles: dict, capability_schema: dict, host_schema: dict) -> None:
+    with tempfile.TemporaryDirectory(prefix="netsniper-v21-") as temporary:
+        bundle = Path(temporary)
+        write(bundle / "hosts.txt", "192.0.2.10\n192.0.2.20\n192.0.2.30\n")
+        analysis = [
+            {
+                "host": "192.0.2.10",
+                "ports": [
+                    {"port": 22, "service": "ssh", "product": "OpenSSH Ubuntu"},
+                    {"port": 443, "service": "https", "product": "nginx"},
+                    {"port": 5432, "service": "postgresql", "product": "PostgreSQL"},
+                ],
+            },
+            {
+                "host": "192.0.2.20",
+                "ports": [
+                    {"port": 631, "service": "ipp", "product": "HP LaserJet printer"},
+                    {"port": 9100, "service": "jetdirect", "product": "HP printer"},
+                ],
+            },
+            {"host": "192.0.2.30", "ports": []},
+        ]
+        (bundle / "analysis.json").write_text(json.dumps(analysis, indent=2) + "\n", encoding="utf-8")
+        write(bundle / "discovery.xml", "<?xml version='1.0'?><nmaprun><runstats><finished exit='success'/><hosts up='3'/></runstats></nmaprun>\n")
+        write(bundle / "services.xml", "<?xml version='1.0'?><nmaprun><runstats><finished exit='success'/><hosts up='3'/></runstats></nmaprun>\n")
+        write(bundle / "neighbors.txt", "192.0.2.10 dev eth0 lladdr 00:11:22:33:44:55 REACHABLE\n")
+
+        command = [
+            sys.executable,
+            str(ROOT / "tools/generate_v2_1_run_artifacts.py"),
+            "--bundle-dir", str(bundle),
+            "--run-id", "validator-run",
+            "--scanner-version", "v2.1.0-dev",
+            "--source-commit", "cdbfa8e966f96a26941c1ba6a219984ea00732e4",
+            "--target", "192.0.2.0/24",
+            "--requested-profile", "accurate",
+            "--effective-profile", "accurate",
+            "--started-at", "2026-07-15T00:00:00Z",
+            "--completed-at", "2026-07-15T00:01:00Z",
+            "--configuration-fingerprint", "a" * 64,
+            "--privilege-context", "unprivileged",
+        ]
+        completed = subprocess.run(command, cwd=ROOT, capture_output=True, text=True)
+        if completed.returncode != 0:
+            print(completed.stdout)
+            print(completed.stderr, file=sys.stderr)
+            fail("v2.1 bundle generator failed")
+
+        required = {
+            "analysis.enriched.json",
+            "host_classifications.json",
+            "classification_quality.json",
+            "classification_quality.md",
+            "capability_manifest.json",
+        }
+        missing = [name for name in required if not (bundle / name).is_file()]
+        assert_true(not missing, f"bundle generator missed artifacts: {missing}")
+
+        capability = load_json(bundle / "capability_manifest.json")
+        classifications = load_json(bundle / "host_classifications.json")
+        quality = load_json(bundle / "classification_quality.json")
+        assert_true(capability["schema_version"] == CAPABILITY_SCHEMA_VERSION, "generated capability version mismatch")
+        assert_true(capability["inventory"] == {
+            "discovered_host_count": 3,
+            "emitted_host_count": 3,
+            "omitted_host_count": 0,
+        }, "generated inventory counts mismatch")
+        assert_true(capability["integrity"]["host_inventory_preserved"] is True, "host inventory not preserved")
+        assert_true(capability["execution"]["status"] == "partial", "accurate run without OS/UDP evidence should be partial")
+        assert_true(len(classifications) == 3, "one host classification per discovered host was not emitted")
+        assert_true(quality["false_confidence_candidate_count"] == 0, "quality report found false high-confidence results")
+        artifact_ids = [item["artifact_id"] for item in capability["artifacts"]]
+        assert_true(len(artifact_ids) == len(set(artifact_ids)), "capability artifact IDs are not unique")
+
+        if importlib.util.find_spec("jsonschema") is not None:
+            import jsonschema
+            jsonschema.validate(capability, capability_schema)
+            for classification in classifications:
+                jsonschema.validate(classification, host_schema)
+            passed("generated capability and host objects validate against JSON Schemas")
+        else:
+            passed("generated bundle semantic validation passed without optional jsonschema")
+    passed("mandatory capability, host-classification, quality, and inventory artifacts")
+
+
+def main() -> int:
+    validate_source_boundaries()
+    profiles, _, capability_schema, host_schema = validate_data_contracts()
+    validate_classifier(profiles, host_schema)
+    validate_bundle_generator(profiles, capability_schema, host_schema)
+    passed("NetSniper v2.1 Stages 1-2 implementation validator complete")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

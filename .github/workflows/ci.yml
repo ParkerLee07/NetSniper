@@ -5,13 +5,23 @@ on:
   pull_request:
 
 jobs:
-  shell-validation:
+  validation:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Install ShellCheck
-        run: sudo apt-get update && sudo apt-get install -y shellcheck
+      - name: Install validation dependencies
+        run: sudo apt-get update && sudo apt-get install -y shellcheck jq iproute2
       - name: Validate Bash syntax
         run: bash -n netsniper.sh
       - name: Run ShellCheck warnings and errors
         run: shellcheck -x --severity=warning netsniper.sh
+      - name: Validate Python syntax
+        run: |
+          python3 -m py_compile \
+            netsniper_core/*.py \
+            tools/analyze_v2_1_gnmap.py \
+            tools/classify_v2_1_host.py \
+            tools/generate_v2_1_run_artifacts.py \
+            tools/validate_v2_1_stage1_2.py
+      - name: Run v2.1 Stages 1-2 gate
+        run: ./tools/validate_v2_1_stage1_2_all.sh
