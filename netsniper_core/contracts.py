@@ -110,10 +110,17 @@ def confidence_band(confidence: int) -> str:
     return "none"
 
 
-def decision_for(confidence: int) -> str:
+def decision_for(
+    confidence: int,
+    *,
+    minimum_possible: int = 40,
+    minimum_classified: int = 70,
+) -> str:
     confidence = max(0, min(100, int(confidence)))
-    if confidence >= 70:
+    if confidence >= int(minimum_classified):
         return "classified"
-    if confidence >= 1:
+    if confidence >= int(minimum_possible):
         return "possible"
+    if confidence >= 1:
+        return "review"
     return "unknown"

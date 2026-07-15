@@ -1773,20 +1773,20 @@
       "expectations": {
         "family": {
           "decision": "possible",
-          "minimum_confidence": 1,
+          "minimum_confidence": 40,
           "maximum_confidence": 69
         },
         "roles": [
           {
             "role": "print_service",
             "decision": "possible",
-            "minimum_confidence": 1,
+            "minimum_confidence": 40,
             "maximum_confidence": 69
           }
         ],
         "platform": {
           "decision": "possible",
-          "minimum_confidence": 1,
+          "minimum_confidence": 40,
           "maximum_confidence": 69
         },
         "required_uncertainty_reasons": [
@@ -1850,20 +1850,20 @@
       },
       "expectations": {
         "family": {
-          "decision": "possible",
+          "decision": "review",
           "minimum_confidence": 1,
           "maximum_confidence": 39
         },
         "roles": [
           {
             "role": "camera",
-            "decision": "possible",
+            "decision": "review",
             "minimum_confidence": 1,
             "maximum_confidence": 39
           }
         ],
         "platform": {
-          "decision": "possible",
+          "decision": "review",
           "minimum_confidence": 1,
           "maximum_confidence": 39
         },
@@ -1874,7 +1874,7 @@
         "forbidden_classified_families": [],
         "legacy_projection": {
           "primary_type": "IP Camera / NVR",
-          "decision": "possible"
+          "decision": "review"
         }
       },
       "provenance": {
@@ -1935,7 +1935,7 @@
         "roles": [
           {
             "role": "web_server",
-            "decision": "possible",
+            "decision": "review",
             "minimum_confidence": 1,
             "maximum_confidence": 39
           }
@@ -1962,7 +1962,7 @@
         ],
         "legacy_projection": {
           "primary_type": "Unknown / Ambiguous",
-          "decision": "possible"
+          "decision": "review"
         }
       },
       "provenance": {

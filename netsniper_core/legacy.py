@@ -52,19 +52,101 @@ def _legacy_band(confidence: int) -> str:
     return "unknown"
 
 
+def _review_context(
+    family: dict[str, Any],
+    roles: list[dict[str, Any]],
+    platform: dict[str, Any],
+) -> tuple[bool, bool]:
+    axis_results = [family, platform, *roles]
+    review = any(item.get("decision") == "review" for item in axis_results)
+    strong_contradiction = any(
+        item.get("contradictions")
+        or "strong_contradiction" in item.get("uncertainty_reasons", [])
+        for item in axis_results
+    )
+    return review, strong_contradiction
+
+
+def _leading_review_label(
+    family: dict[str, Any],
+    roles: list[dict[str, Any]],
+) -> tuple[str, int]:
+    family_label = str(family.get("label", "unknown"))
+    family_confidence = int(family.get("confidence", 0))
+
+    if family_label != "unknown":
+        return FAMILY_LABELS.get(family_label, "Unknown"), family_confidence
+
+    role_by_label = {
+        role.get("label"): role
+        for role in roles
+        if role.get("decision") in {"classified", "possible", "review"}
+    }
+    chosen = next(
+        (
+            (legacy_label, role_by_label[canonical])
+            for canonical, legacy_label in ROLE_PRIORITY
+            if canonical in role_by_label
+        ),
+        None,
+    )
+    if chosen:
+        label, role = chosen
+        return label, int(role.get("confidence", 0))
+
+    return "Unknown / Ambiguous", family_confidence
+
+
 def project_legacy(result: dict[str, Any]) -> dict[str, Any]:
     family = result["device_family"]
     roles = result.get("roles", [])
     platform = result.get("platform", {})
 
-    review = family.get("decision") == "review" or any(role.get("decision") == "review" for role in roles)
+    review, strong_contradiction = _review_context(
+        family,
+        roles,
+        platform,
+    )
+
     if review:
-        primary_type = "Ambiguous Device"
-        decision = "contradiction_review"
-        confidence = max([int(family.get("confidence", 0))] + [int(role.get("confidence", 0)) for role in roles])
+        confidence = max(
+            [
+                int(family.get("confidence", 0)),
+                int(platform.get("confidence", 0)),
+                *[
+                    int(role.get("confidence", 0))
+                    for role in roles
+                ],
+            ]
+        )
+
+        if strong_contradiction:
+            primary_type = "Ambiguous Device"
+            decision = "contradiction_review"
+        elif str(family.get("label", "unknown")) == "unknown":
+            primary_type = "Unknown / Ambiguous"
+            decision = "review"
+        else:
+            primary_type, leading_confidence = _leading_review_label(
+                family,
+                roles,
+            )
+            confidence = max(confidence, leading_confidence)
+            decision = "review"
     else:
-        role_by_label = {role.get("label"): role for role in roles if role.get("decision") == "classified"}
-        chosen = next(((label, role_by_label[role]) for role, label in ROLE_PRIORITY if role in role_by_label), None)
+        role_by_label = {
+            role.get("label"): role
+            for role in roles
+            if role.get("decision") == "classified"
+        }
+        chosen = next(
+            (
+                (legacy_label, role_by_label[canonical])
+                for canonical, legacy_label in ROLE_PRIORITY
+                if canonical in role_by_label
+            ),
+            None,
+        )
         if chosen:
             primary_type, chosen_result = chosen
             confidence = int(chosen_result.get("confidence", 0))
@@ -84,24 +166,48 @@ def project_legacy(result: dict[str, Any]) -> dict[str, Any]:
                     primary_type = "Windows Workstation"
                 elif platform.get("label") == "linux":
                     primary_type = "Linux Workstation"
-        if decision == "review":
-            decision = "contradiction_review"
 
     candidates: list[dict[str, Any]] = []
-    for role in sorted(roles, key=lambda item: int(item.get("confidence", 0)), reverse=True):
-        label = next((legacy for canonical, legacy in ROLE_PRIORITY if canonical == role.get("label")), None)
+    for role in sorted(
+        roles,
+        key=lambda item: int(item.get("confidence", 0)),
+        reverse=True,
+    ):
+        label = next(
+            (
+                legacy
+                for canonical, legacy in ROLE_PRIORITY
+                if canonical == role.get("label")
+            ),
+            None,
+        )
         if label and label != primary_type:
-            candidates.append({"device_type": label, "confidence": int(role.get("confidence", 0))})
+            candidates.append(
+                {
+                    "device_type": label,
+                    "confidence": int(role.get("confidence", 0)),
+                }
+            )
     if family.get("label") != "unknown":
-        label = FAMILY_LABELS.get(str(family.get("label")), "Unknown")
+        label = FAMILY_LABELS.get(
+            str(family.get("label")),
+            "Unknown",
+        )
         if label != primary_type:
-            candidates.append({"device_type": label, "confidence": int(family.get("confidence", 0))})
+            candidates.append(
+                {
+                    "device_type": label,
+                    "confidence": int(family.get("confidence", 0)),
+                }
+            )
 
     contradictions = list(family.get("contradictions", []))
+    contradictions.extend(platform.get("contradictions", []))
     for role in roles:
         contradictions.extend(role.get("contradictions", []))
 
     reasons = list(family.get("uncertainty_reasons", []))
+    reasons.extend(platform.get("uncertainty_reasons", []))
     for role in roles:
         reasons.extend(role.get("uncertainty_reasons", []))
 
@@ -111,10 +217,24 @@ def project_legacy(result: dict[str, Any]) -> dict[str, Any]:
         "device_type_confidence": confidence,
         "confidence": confidence,
         "confidence_label": _legacy_band(confidence),
-        "decision": decision if decision in {"classified", "possible", "unknown", "review", "contradiction_review"} else "unknown",
+        "decision": (
+            decision
+            if decision
+            in {
+                "classified",
+                "possible",
+                "unknown",
+                "review",
+                "contradiction_review",
+            }
+            else "unknown"
+        ),
         "secondary_candidates": candidates[:5],
         "contradictions": contradictions,
-        "calibration_reason": "; ".join(dict.fromkeys(reasons)) or "Derived from the authoritative v2.1 multi-axis classification.",
+        "calibration_reason": (
+            "; ".join(dict.fromkeys(reasons))
+            or "Derived from the authoritative v2.1 multi-axis classification."
+        ),
     }
 
 

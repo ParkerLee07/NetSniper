@@ -67,6 +67,21 @@ def validate_data_contracts() -> tuple[dict, dict, dict, dict]:
     assert_true(profiles["schema_version"] == EVIDENCE_PROFILE_VERSION, "evidence profile version mismatch")
     assert_true(taxonomy["schema_version"] == TAXONOMY_VERSION, "taxonomy version mismatch")
     assert_true(len(profiles.get("axis_profiles", [])) >= 30, "too few v2.1 axis profiles")
+    scoring_policy = profiles.get("scoring_policy", {})
+    assert_true(
+        scoring_policy.get("minimum_possible_score") == 40,
+        "possible threshold must remain 40",
+    )
+    assert_true(
+        scoring_policy.get("minimum_classified_score") == 70,
+        "classified threshold must remain 70",
+    )
+    assert_true(
+        scoring_policy.get("port_only_cap") == 39
+        and scoring_policy.get("vendor_only_cap") == 39
+        and scoring_policy.get("hostname_only_cap") == 39,
+        "weak-evidence confidence caps mismatch",
+    )
     axes = {item["axis"] for item in profiles["axis_profiles"]}
     assert_true(axes == {"device_family", "role", "platform"}, "axis profile vocabulary mismatch")
     assert_true(capability_schema["properties"]["schema_version"]["const"] == CAPABILITY_SCHEMA_VERSION, "capability schema mismatch")
@@ -105,8 +120,37 @@ def validate_classifier(profiles: dict, host_schema: dict) -> None:
     )
     web = next(item for item in port_only["roles"] if item["label"] == "web_server")
     assert_true(web["confidence"] <= 39, "port-only evidence exceeded confidence cap")
+    assert_true(web["decision"] == "review", "weak port-only evidence must require review")
     assert_true("port_only_evidence" in web["uncertainty_reasons"], "port-only uncertainty reason missing")
     assert_true(port_only["device_family"]["label"] == "unknown", "web role improperly inferred a device family")
+    assert_true(
+        port_only["legacy_projection"]["primary_type"] == "Unknown / Ambiguous"
+        and port_only["legacy_projection"]["decision"] == "review",
+        "weak port-only legacy projection mismatch",
+    )
+
+    vendor_only = classify_host(
+        {
+            "host": "192.0.2.21",
+            "vendor": "Hikvision",
+        },
+        profiles,
+        generated_at=timestamp,
+    )
+    assert_true(
+        vendor_only["device_family"]["label"] == "surveillance_device",
+        "vendor-only camera family candidate missing",
+    )
+    assert_true(
+        vendor_only["device_family"]["confidence"] <= 39
+        and vendor_only["device_family"]["decision"] == "review",
+        "vendor-only evidence must remain weak review",
+    )
+    assert_true(
+        "vendor_only_evidence"
+        in vendor_only["device_family"]["uncertainty_reasons"],
+        "vendor-only uncertainty reason missing",
+    )
 
     conflict = classify_host(
         {
@@ -126,6 +170,52 @@ def validate_classifier(profiles: dict, host_schema: dict) -> None:
     assert_true(conflict["device_family"]["decision"] == "review", "strong family contradiction did not force review")
     assert_true(conflict["legacy_projection"]["decision"] == "contradiction_review", "legacy contradiction projection mismatch")
 
+    partial = classify_host(
+        {
+            "host": "192.0.2.35",
+            "vendor": "HP",
+            "ports": [
+                {
+                    "port": 631,
+                    "service": "ipp",
+                    "product": "HP LaserJet printer",
+                }
+            ],
+            "observation_quality": {
+                "scan_completeness": "partial",
+                "requested_collectors": [
+                    "discovery",
+                    "tcp_services",
+                    "os_detection",
+                    "passive_neighbors",
+                ],
+                "completed_collectors": [
+                    "discovery",
+                    "os_detection",
+                    "passive_neighbors",
+                ],
+                "failed_collectors": ["tcp_services"],
+                "unavailable_collectors": [],
+                "inventory_complete": True,
+            },
+        },
+        profiles,
+        generated_at=timestamp,
+    )
+    for axis_result in [
+        partial["device_family"],
+        partial["platform"],
+        *partial["roles"],
+    ]:
+        assert_true(
+            "partial_scan" in axis_result["uncertainty_reasons"],
+            "partial-scan uncertainty reason missing",
+        )
+        assert_true(
+            "collector_failed" in axis_result["uncertainty_reasons"],
+            "collector-failed uncertainty reason missing",
+        )
+
     unknown = classify_host({"host": "192.0.2.40", "ports": []}, profiles, generated_at=timestamp)
     assert_true(unknown["device_family"]["label"] == "unknown", "empty evidence did not remain unknown")
     assert_true(unknown["device_family"]["confidence"] == 0, "empty evidence has nonzero confidence")
@@ -137,7 +227,80 @@ def validate_classifier(profiles: dict, host_schema: dict) -> None:
         passed("classifier cases validate against host-classification JSON Schema")
     else:
         passed("classifier semantic cases passed without optional jsonschema")
-    passed("multi-axis, confidence-cap, contradiction, and unknown behavior")
+    passed(
+        "multi-axis, threshold, confidence-cap, contradiction, "
+        "partial-scan, and unknown behavior"
+    )
+
+
+def validate_corpus_policy_alignment() -> None:
+    manifest = load_json(ROOT / "fixtures/device-corpus/manifest.json")
+    fixtures = {
+        item["fixture_id"]: item
+        for item in manifest.get("fixtures", [])
+    }
+
+    weak_camera = fixtures["synthetic-vendor-only-camera-01"]
+    assert_true(
+        weak_camera["expectations"]["family"]["decision"] == "review",
+        "vendor-only corpus family decision must be review",
+    )
+    assert_true(
+        all(
+            item["decision"] == "review"
+            for item in weak_camera["expectations"]["roles"]
+        ),
+        "vendor-only corpus role decision must be review",
+    )
+    assert_true(
+        weak_camera["expectations"]["platform"]["decision"] == "review",
+        "vendor-only corpus platform decision must be review",
+    )
+
+    port_web = fixtures["synthetic-port-only-web-01"]
+    web_expectation = next(
+        item
+        for item in port_web["expectations"]["roles"]
+        if item["role"] == "web_server"
+    )
+    assert_true(
+        web_expectation["decision"] == "review",
+        "port-only web role must require review",
+    )
+
+    partial = fixtures["synthetic-partial-printer-scan-01"]
+    possible_expectations = [
+        partial["expectations"]["family"],
+        partial["expectations"]["platform"],
+        *partial["expectations"]["roles"],
+    ]
+    assert_true(
+        all(
+            item["decision"] != "possible"
+            or int(item["minimum_confidence"]) >= 40
+            for item in possible_expectations
+        ),
+        "possible corpus outcomes must begin at confidence 40",
+    )
+
+    split_counts: dict[str, int] = {}
+    for item in fixtures.values():
+        split = item["dataset_split"]
+        split_counts[split] = split_counts.get(split, 0) + 1
+        assert_true(
+            item["status"] == "planned",
+            "policy alignment must not activate corpus fixtures",
+        )
+    assert_true(
+        split_counts
+        == {
+            "development": 14,
+            "evaluation": 12,
+            "regression": 4,
+        },
+        "frozen corpus split changed",
+    )
+    passed("corpus expectations align with the frozen confidence policy")
 
 
 def validate_bundle_generator(profiles: dict, capability_schema: dict, host_schema: dict) -> None:
@@ -229,6 +392,7 @@ def main() -> int:
     validate_source_boundaries()
     profiles, _, capability_schema, host_schema = validate_data_contracts()
     validate_classifier(profiles, host_schema)
+    validate_corpus_policy_alignment()
     validate_bundle_generator(profiles, capability_schema, host_schema)
     passed("NetSniper v2.1 Stages 1-2 implementation validator complete")
     return 0

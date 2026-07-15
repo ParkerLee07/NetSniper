@@ -28,8 +28,29 @@ def _collector_for(source: str) -> str:
     return "discovery"
 
 
-def _confidence_cap(matches: list[dict[str, Any]], raw: int) -> tuple[int, list[str]]:
-    confidence = max(0, min(100, raw))
+def _policy_int(policy: dict[str, Any], key: str, default: int) -> int:
+    try:
+        return int(policy.get(key, default))
+    except (TypeError, ValueError):
+        return default
+
+
+def _confidence_cap(
+    matches: list[dict[str, Any]],
+    raw: int,
+    policy: dict[str, Any],
+) -> tuple[int, list[str]]:
+    maximum = _policy_int(policy, "max_confidence", 100)
+    possible_minimum = _policy_int(policy, "minimum_possible_score", 40)
+    classified_minimum = _policy_int(policy, "minimum_classified_score", 70)
+    high_minimum = _policy_int(policy, "minimum_high_score", 90)
+    port_only_cap = _policy_int(policy, "port_only_cap", possible_minimum - 1)
+    vendor_only_cap = _policy_int(policy, "vendor_only_cap", possible_minimum - 1)
+    hostname_only_cap = _policy_int(policy, "hostname_only_cap", possible_minimum - 1)
+    single_medium_cap = _policy_int(policy, "single_medium_source_cap", 49)
+    single_high_cap = _policy_int(policy, "single_high_source_cap", classified_minimum - 1)
+
+    confidence = max(0, min(maximum, raw))
     reasons: list[str] = []
     if not matches:
         return 0, ["no_classification_evidence"]
@@ -41,42 +62,47 @@ def _confidence_cap(matches: list[dict[str, Any]], raw: int) -> tuple[int, list[
     medium_count = reliabilities.count("medium")
 
     if sources == {"port"}:
-        confidence = min(confidence, 39)
+        confidence = min(confidence, port_only_cap)
         reasons.append("port_only_evidence")
     elif sources == {"vendor"}:
-        confidence = min(confidence, 39)
+        confidence = min(confidence, vendor_only_cap)
         reasons.append("vendor_only_evidence")
     elif sources == {"hostname"}:
-        confidence = min(confidence, 39)
+        confidence = min(confidence, hostname_only_cap)
         reasons.append("hostname_only_evidence")
 
     if len(groups) == 1:
         if high_count:
             unique = any(bool(item.get("unique_identifying")) for item in matches)
-            confidence = min(confidence, 100 if unique else 69)
+            confidence = min(confidence, maximum if unique else single_high_cap)
         elif medium_count:
-            confidence = min(confidence, 49)
+            confidence = min(confidence, single_medium_cap)
         else:
-            confidence = min(confidence, 39)
+            confidence = min(confidence, possible_minimum - 1)
         reasons.append("insufficient_evidence_diversity")
 
-    if confidence >= 70 and len(groups) < 2 and not any(bool(item.get("unique_identifying")) for item in matches):
-        confidence = 69
+    if (
+        confidence >= classified_minimum
+        and len(groups) < 2
+        and not any(bool(item.get("unique_identifying")) for item in matches)
+    ):
+        confidence = classified_minimum - 1
         if "insufficient_evidence_diversity" not in reasons:
             reasons.append("insufficient_evidence_diversity")
 
-    if confidence >= 90:
+    if confidence >= high_minimum:
         corroborated = high_count >= 2 or (high_count >= 1 and len(groups) >= 3)
         if not corroborated:
-            confidence = 89
+            confidence = high_minimum - 1
 
-    return confidence, reasons
+    return max(0, min(maximum, confidence)), reasons
 
 
 def _score_profile(
     profile: dict[str, Any],
     observed: dict[str, list[str]],
     generated_at: str,
+    policy: dict[str, Any],
 ) -> dict[str, Any]:
     matches: list[dict[str, Any]] = []
     evidence: list[dict[str, Any]] = []
@@ -111,13 +137,20 @@ def _score_profile(
             )
         )
 
-    confidence, uncertainty = _confidence_cap(matches, raw)
+    confidence, uncertainty = _confidence_cap(matches, raw, policy)
+    possible_minimum = _policy_int(policy, "minimum_possible_score", 40)
+    classified_minimum = _policy_int(policy, "minimum_classified_score", 70)
+    maximum = _policy_int(policy, "max_confidence", 100)
     return {
         "axis": axis,
         "label": label,
-        "raw_confidence": min(100, raw),
+        "raw_confidence": min(maximum, raw),
         "confidence": confidence,
-        "decision": decision_for(confidence),
+        "decision": decision_for(
+            confidence,
+            minimum_possible=possible_minimum,
+            minimum_classified=classified_minimum,
+        ),
         "matches": matches,
         "evidence": evidence,
         "uncertainty_reasons": uncertainty,
@@ -127,13 +160,18 @@ def _score_profile(
     }
 
 
-def _apply_pairwise_contradictions(candidates: list[dict[str, Any]]) -> None:
+def _apply_pairwise_contradictions(
+    candidates: list[dict[str, Any]],
+    policy: dict[str, Any],
+) -> None:
     by_label = {item["label"]: item for item in candidates}
+    classified_minimum = _policy_int(policy, "minimum_classified_score", 70)
+    penalty = _policy_int(policy, "strong_contradiction_penalty", 50)
     for candidate in candidates:
         conflicts = []
         for label in candidate.get("contradicts", []):
             other = by_label.get(label)
-            if other and int(other.get("raw_confidence", 0)) >= 70:
+            if other and int(other.get("raw_confidence", 0)) >= classified_minimum:
                 conflicts.append(other)
         if not conflicts:
             continue
@@ -146,10 +184,13 @@ def _apply_pairwise_contradictions(candidates: list[dict[str, Any]]) -> None:
                 "severity": "strong",
                 "reason": "Strong evidence supports a conflicting classification candidate.",
                 "evidence_ids": list(dict.fromkeys(ids)),
-                "penalty": 50,
+                "penalty": penalty,
             }
         )
-        candidate["confidence"] = min(69, max(0, int(candidate["confidence"]) - 50))
+        candidate["confidence"] = min(
+            classified_minimum - 1,
+            max(0, int(candidate["confidence"]) - penalty),
+        )
         candidate["decision"] = "review"
         candidate["uncertainty_reasons"] = list(
             dict.fromkeys(candidate["uncertainty_reasons"] + ["strong_contradiction"])
@@ -168,6 +209,8 @@ def _axis_result(
     candidates: list[dict[str, Any]],
     unknown_label: str,
     *,
+    possible_minimum: int,
+    close_candidate_delta: int,
     force_review_on_close: bool = True,
 ) -> tuple[dict[str, Any], list[dict[str, Any]]]:
     active = [item for item in candidates if int(item["confidence"]) > 0]
@@ -201,7 +244,10 @@ def _axis_result(
     decision = winner["decision"]
     if force_review_on_close and len(active) > 1:
         second = active[1]
-        if int(second["confidence"]) >= 40 and abs(int(winner["confidence"]) - int(second["confidence"])) <= 9:
+        if (
+            int(second["confidence"]) >= possible_minimum
+            and abs(int(winner["confidence"]) - int(second["confidence"])) <= close_candidate_delta
+        ):
             decision = "review"
             reasons.append("candidate_scores_too_close")
     if winner["contradictions"]:
@@ -388,20 +434,42 @@ def classify_host(
     normalized = normalize_host_record(record)
     observed = normalized["observed"]
     profiles = profiles_data.get("axis_profiles", [])
+    policy = profiles_data.get("scoring_policy", {})
     if not isinstance(profiles, list):
         raise ValueError("evidence profiles are missing axis_profiles")
+    if not isinstance(policy, dict):
+        raise ValueError("evidence profiles are missing scoring_policy")
 
-    candidates = [_score_profile(profile, observed, generated_at) for profile in profiles]
+    possible_minimum = _policy_int(policy, "minimum_possible_score", 40)
+    close_candidate_delta = _policy_int(policy, "close_candidate_delta", 9)
+
+    candidates = [
+        _score_profile(profile, observed, generated_at, policy)
+        for profile in profiles
+    ]
     for axis in {"device_family", "role", "platform"}:
-        _apply_pairwise_contradictions([item for item in candidates if item["axis"] == axis])
+        _apply_pairwise_contradictions(
+            [item for item in candidates if item["axis"] == axis],
+            policy,
+        )
 
     family_candidates = [item for item in candidates if item["axis"] == "device_family"]
     role_candidates = [item for item in candidates if item["axis"] == "role"]
     platform_candidates = [item for item in candidates if item["axis"] == "platform"]
 
-    family, _ = _axis_result(family_candidates, "unknown")
+    family, _ = _axis_result(
+        family_candidates,
+        "unknown",
+        possible_minimum=possible_minimum,
+        close_candidate_delta=close_candidate_delta,
+    )
     roles = _role_results(role_candidates)
-    platform, _ = _axis_result(platform_candidates, "unknown")
+    platform, _ = _axis_result(
+        platform_candidates,
+        "unknown",
+        possible_minimum=possible_minimum,
+        close_candidate_delta=close_candidate_delta,
+    )
 
     if family["label"] == "unknown" and any(role["decision"] == "classified" for role in roles):
         family["uncertainty_reasons"] = list(
@@ -409,10 +477,20 @@ def classify_host(
         )
 
     observation_quality, missing_evidence = _observation_quality(normalized)
+    quality_uncertainty: list[str] = []
     if observation_quality["scan_completeness"] != "complete":
+        quality_uncertainty.append("partial_scan")
+    if observation_quality["failed_collectors"]:
+        quality_uncertainty.append("collector_failed")
+    if observation_quality["unavailable_collectors"]:
+        quality_uncertainty.append("collector_unavailable")
+    if quality_uncertainty:
         for axis_result in [family, platform, *roles]:
             axis_result["uncertainty_reasons"] = list(
-                dict.fromkeys(axis_result["uncertainty_reasons"] + ["partial_scan"])
+                dict.fromkeys(
+                    axis_result["uncertainty_reasons"]
+                    + quality_uncertainty
+                )
             )
 
     identity, identity_evidence = _identity_result(normalized, generated_at)
