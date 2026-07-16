@@ -281,3 +281,15 @@ def compatibility_classification(result: dict[str, Any]) -> dict[str, Any]:
         "candidates": legacy["secondary_candidates"],
         "secondary_candidates": legacy["secondary_candidates"],
     }
+
+# NETSNIPER_DELTAAEGIS_ENRICHMENT_V1
+# Additive wrapper keeps historical projection logic unchanged.
+from functools import wraps as _deltaaegis_wraps
+from .deltaaegis_enrichment import enrich_legacy_projection as _enrich_deltaaegis_projection
+
+_original_compatibility_classification = compatibility_classification
+
+@_deltaaegis_wraps(_original_compatibility_classification)
+def compatibility_classification(result):
+    legacy = _original_compatibility_classification(result)
+    return _enrich_deltaaegis_projection(legacy, result)
