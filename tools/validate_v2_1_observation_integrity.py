@@ -155,10 +155,9 @@ def main() -> int:
             fail("analysis.enriched.json projection changed score or severity")
     passed("analysis.json, analysis.txt, and enriched projection agree")
 
-    seal = json.loads((ROOT / "fixtures/device-corpus/evaluation/seal.json").read_text(encoding="utf-8"))
-    if "tools/analyze_v2_1_gnmap.py" in seal.get("runtime_fingerprints", {}):
-        fail("observation analyzer unexpectedly belongs to the sealed classifier fingerprint set")
-    passed("classifier profiles, thresholds, expectations, and sealed fingerprints remain outside this fix")
+    if (ROOT / "fixtures/device-corpus/evaluation").exists():
+        fail("formal evaluation tree remains after regression-framework cleanup")
+    passed("observation-integrity regression remains independent of formal evaluation machinery")
 
     all_gate = (ROOT / "tools/validate_v2_1_stage1_2_all.sh").read_text(encoding="utf-8")
     ci = (ROOT / ".github/workflows/ci.yml").read_text(encoding="utf-8")

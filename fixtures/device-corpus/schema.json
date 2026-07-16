@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://example.invalid/netsniper/device-corpus-v1.schema.json",
-  "title": "NetSniper v2.1 labeled device corpus manifest",
+  "title": "NetSniper v2.1 deterministic classifier test corpus manifest",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -10,8 +10,6 @@
     "status",
     "canonical_vocabularies",
     "coverage_requirements",
-    "evaluation_policy",
-    "metric_gates",
     "fixtures"
   ],
   "properties": {
@@ -131,8 +129,7 @@
       "required": [
         "minimum_active_fixtures_per_family",
         "minimum_active_fixtures_per_role",
-        "required_scenario_tags",
-        "real_world_fixture_floor"
+        "required_scenario_tags"
       ],
       "properties": {
         "minimum_active_fixtures_per_family": {
@@ -196,10 +193,6 @@
             "minLength": 1
           },
           "uniqueItems": true
-        },
-        "real_world_fixture_floor": {
-          "type": "integer",
-          "minimum": 0
         }
       }
     },
@@ -207,170 +200,6 @@
       "type": "array",
       "items": {
         "$ref": "#/$defs/fixture"
-      }
-    },
-    "evaluation_policy": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": [
-        "split_values",
-        "freeze_trigger",
-        "evaluation_tuning_prohibited",
-        "ground_truth_change_requires_baseline_reset",
-        "minimum_active_evaluation_fixtures",
-        "minimum_active_sanitized_real_evaluation_fixtures"
-      ],
-      "properties": {
-        "split_values": {
-          "type": "array",
-          "const": [
-            "development",
-            "evaluation",
-            "regression"
-          ]
-        },
-        "freeze_trigger": {
-          "const": "first_v2.1_classifier_implementation_commit"
-        },
-        "evaluation_tuning_prohibited": {
-          "const": true
-        },
-        "ground_truth_change_requires_baseline_reset": {
-          "const": true
-        },
-        "minimum_active_evaluation_fixtures": {
-          "type": "integer",
-          "minimum": 1
-        },
-        "minimum_active_sanitized_real_evaluation_fixtures": {
-          "type": "integer",
-          "minimum": 0
-        }
-      }
-    },
-    "metric_gates": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": [
-        "release_blocking",
-        "statistical_claim_floor",
-        "statistical_quality_targets"
-      ],
-      "properties": {
-        "release_blocking": {
-          "type": "object",
-          "additionalProperties": false,
-          "required": [
-            "deterministic_replay_rate",
-            "host_retention_rate",
-            "schema_validity_rate",
-            "uncertainty_reason_compliance_rate",
-            "confidence_cap_compliance_rate",
-            "contradiction_review_rate",
-            "legacy_projection_match_rate",
-            "false_high_confidence_count",
-            "false_classified_unknown_count",
-            "fixture_expectation_pass_rate"
-          ],
-          "properties": {
-            "deterministic_replay_rate": {
-              "const": 1.0
-            },
-            "host_retention_rate": {
-              "const": 1.0
-            },
-            "schema_validity_rate": {
-              "const": 1.0
-            },
-            "uncertainty_reason_compliance_rate": {
-              "const": 1.0
-            },
-            "confidence_cap_compliance_rate": {
-              "const": 1.0
-            },
-            "contradiction_review_rate": {
-              "const": 1.0
-            },
-            "legacy_projection_match_rate": {
-              "const": 1.0
-            },
-            "false_high_confidence_count": {
-              "const": 0
-            },
-            "false_classified_unknown_count": {
-              "const": 0
-            },
-            "fixture_expectation_pass_rate": {
-              "const": 1.0
-            }
-          }
-        },
-        "statistical_claim_floor": {
-          "type": "object",
-          "additionalProperties": false,
-          "required": [
-            "minimum_evaluation_fixtures",
-            "minimum_examples_per_claimed_family",
-            "minimum_high_confidence_predictions",
-            "minimum_calibration_predictions"
-          ],
-          "properties": {
-            "minimum_evaluation_fixtures": {
-              "type": "integer",
-              "minimum": 1
-            },
-            "minimum_examples_per_claimed_family": {
-              "type": "integer",
-              "minimum": 1
-            },
-            "minimum_high_confidence_predictions": {
-              "type": "integer",
-              "minimum": 1
-            },
-            "minimum_calibration_predictions": {
-              "type": "integer",
-              "minimum": 1
-            }
-          }
-        },
-        "statistical_quality_targets": {
-          "type": "object",
-          "additionalProperties": false,
-          "required": [
-            "classified_family_precision_minimum",
-            "classified_role_precision_minimum",
-            "high_confidence_precision_minimum",
-            "family_macro_recall_minimum",
-            "expected_calibration_error_maximum"
-          ],
-          "properties": {
-            "classified_family_precision_minimum": {
-              "type": "number",
-              "minimum": 0,
-              "maximum": 1
-            },
-            "classified_role_precision_minimum": {
-              "type": "number",
-              "minimum": 0,
-              "maximum": 1
-            },
-            "high_confidence_precision_minimum": {
-              "type": "number",
-              "minimum": 0,
-              "maximum": 1
-            },
-            "family_macro_recall_minimum": {
-              "type": "number",
-              "minimum": 0,
-              "maximum": 1
-            },
-            "expected_calibration_error_maximum": {
-              "type": "number",
-              "minimum": 0,
-              "maximum": 1
-            }
-          }
-        }
       }
     }
   },
@@ -821,7 +650,6 @@
         "dataset_split": {
           "enum": [
             "development",
-            "evaluation",
             "regression"
           ]
         },

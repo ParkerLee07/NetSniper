@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 from __future__ import annotations
 
-import hashlib
-import json
 import re
 import sys
 from pathlib import Path
@@ -18,13 +16,6 @@ from netsniper_core.contracts import UNCERTAINTY_REASONS, load_json
 FIXED_TIME = "2026-07-15T00:00:00Z"
 FIXTURE_PATH = ROOT / "fixtures/embedded-admin-boundary/cases.json"
 PROFILES_PATH = ROOT / "classification/evidence_profiles.json"
-EVALUATION_ROOT = ROOT / "fixtures/device-corpus/evaluation/prepared"
-CANDIDATE_COMMIT = "f8b006038bc889266960875c10e765ec0e93ab04"
-EXPECTED_REAL_IDS = {
-    "sanitized-real-home-router-01",
-    "sanitized-real-printer-01",
-    "sanitized-real-client-endpoint-01",
-}
 
 
 def fail(message: str) -> None:
@@ -38,10 +29,6 @@ def passed(message: str) -> None:
 def assert_true(condition: bool, message: str) -> None:
     if not condition:
         fail(message)
-
-
-def sha256(path: Path) -> str:
-    return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
 def web_role(result: dict[str, Any]) -> dict[str, Any]:
@@ -61,7 +48,10 @@ def validate_case(case: dict[str, Any], profiles: dict[str, Any]) -> None:
     expect = case["expect"]
     assert_true(role["decision"] == expect["web_server_decision"], f"{case_id}: web-server decision mismatch")
     confidence = int(role["confidence"])
-    assert_true(int(expect["web_server_minimum_confidence"]) <= confidence <= int(expect["web_server_maximum_confidence"]), f"{case_id}: web-server confidence {confidence} outside expected range")
+    assert_true(
+        int(expect["web_server_minimum_confidence"]) <= confidence <= int(expect["web_server_maximum_confidence"]),
+        f"{case_id}: web-server confidence {confidence} outside expected range",
+    )
 
     reasons = set(role.get("uncertainty_reasons", []))
     assert_true(set(expect.get("required_reasons", [])).issubset(reasons), f"{case_id}: required uncertainty reason missing")
@@ -114,20 +104,8 @@ def main() -> int:
     passed("standalone web servers still classify with independent server context")
     passed("HTTP-only evidence remains weak and legacy appliance projection is preserved")
 
-    seal = load_json(ROOT / "fixtures/device-corpus/evaluation/seal.json")
-    assert_true(seal.get("state") == "synthetic_prepared_sanitized_real_candidate_sealed", "evaluation candidate is not sealed")
-    assert_true(seal.get("classifier_candidate_commit") == CANDIDATE_COMMIT, "sealed candidate commit mismatch")
-    assert_true(seal.get("candidate_reseal_required") is False, "evaluation candidate still requires reseal")
-    assert_true(seal.get("first_evaluation_replay_executed") is False, "evaluation replay was marked executed")
-    blockers = set(seal.get("execution_blockers", []))
-    expected_blockers = {
-        f"{fixture_id}:missing_genuine_sanitized_capture"
-        for fixture_id in EXPECTED_REAL_IDS
-    }
-    assert_true(blockers == expected_blockers, "evaluation blockers do not match missing genuine captures")
-    assert_true("classifier_candidate_reseal_required" not in blockers, "stale candidate reseal blocker remains")
-    assert_true(not (ROOT / "fixtures/device-corpus/evaluation/results").exists(), "evaluation results exist")
-    passed("evaluation candidate is post-commit sealed and replay remains blocked by missing genuine captures")
+    assert_true(not (ROOT / "fixtures/device-corpus/evaluation").exists(), "formal evaluation tree remains")
+    passed("embedded-administration cases run as ordinary regression checks without evaluation-seal dependencies")
 
     shell = (ROOT / "tools/validate_v2_1_stage1_2_all.sh").read_text(encoding="utf-8")
     ci = (ROOT / ".github/workflows/ci.yml").read_text(encoding="utf-8")

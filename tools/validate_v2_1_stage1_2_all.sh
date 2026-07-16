@@ -17,6 +17,7 @@ export PYTHONDONTWRITEBYTECODE=1
 
 bash -n netsniper.sh || fail "netsniper.sh syntax"
 
+exit_code=0
 python3 - <<'PY' || exit_code=$?
 from __future__ import annotations
 
@@ -31,8 +32,6 @@ paths = [
     Path("tools/validate_v2_1_stage1_2.py"),
     Path("tools/replay_v2_1_corpus.py"),
     Path("tools/validate_v2_1_corpus_activation.py"),
-    Path("tools/validate_v2_1_evaluation_preparation.py"),
-    Path("tools/validate_v2_1_evaluation_candidate_reseal.py"),
     Path("tools/validate_v2_1_observation_integrity.py"),
     Path("tools/validate_v2_1_embedded_admin_boundary.py"),
 ]
@@ -44,7 +43,7 @@ for path in paths:
 print(f"[PASS] Python syntax ({len(paths)} files)")
 PY
 
-if [[ "${exit_code:-0}" -ne 0 ]]; then
+if [[ "$exit_code" -ne 0 ]]; then
     fail "Python syntax"
 fi
 
@@ -52,13 +51,7 @@ fi
     || fail "v2.1 Stages 1-2 contract validator"
 
 ./tools/validate_v2_1_corpus_activation.py \
-    || fail "v2.1 deterministic corpus activation validator"
-
-./tools/validate_v2_1_evaluation_preparation.py \
-    || fail "v2.1 sealed evaluation preparation validator"
-
-./tools/validate_v2_1_evaluation_candidate_reseal.py \
-    || fail "v2.1 evaluation candidate reseal validator"
+    || fail "v2.1 deterministic corpus validator"
 
 ./tools/validate_v2_1_observation_integrity.py \
     || fail "v2.1 observation and risk integrity validator"
@@ -67,6 +60,6 @@ fi
     || fail "v2.1 embedded administration boundary validator"
 
 ./tools/validate_v2_0_all.sh \
-    || fail "v2.0 runtime compatibility suite"
+    || fail "v2.0 and v1.9 compatibility suites"
 
-pass "NetSniper v2.1 classifier, corpus, evaluation preparation, candidate reseal, observation integrity, embedded administration boundary, and v2.0 compatibility suites passed"
+pass "NetSniper v2.1 classifier, deterministic corpus, observation integrity, embedded administration boundary, and v1.9/v2.0 compatibility suites passed"

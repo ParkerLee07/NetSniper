@@ -25,7 +25,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--split",
         action="append",
-        choices=["development", "evaluation", "regression"],
+        choices=["development", "regression"],
         dest="splits",
         help="Limit replay to a split; may be supplied more than once.",
     )

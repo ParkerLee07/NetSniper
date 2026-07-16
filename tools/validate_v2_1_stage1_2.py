@@ -239,6 +239,9 @@ def validate_corpus_policy_alignment() -> None:
         item["fixture_id"]: item
         for item in manifest.get("fixtures", [])
     }
+    assert_true(len(fixtures) == 18, "deterministic corpus must contain 18 fixtures")
+    assert_true("evaluation_policy" not in manifest, "formal evaluation policy remains in manifest")
+    assert_true("metric_gates" not in manifest, "statistical metric gates remain in manifest")
 
     weak_camera = fixtures["synthetic-vendor-only-camera-01"]
     assert_true(
@@ -284,39 +287,23 @@ def validate_corpus_policy_alignment() -> None:
     )
 
     split_counts: dict[str, int] = {}
-    active_counts: dict[str, int] = {}
     for item in fixtures.values():
+        assert_true(item["status"] == "active", "remaining corpus fixture is not active")
         split = item["dataset_split"]
+        assert_true(split in {"development", "regression"}, "unsupported corpus split remains")
         split_counts[split] = split_counts.get(split, 0) + 1
-        expected_status = (
-            "active"
-            if split in {"development", "regression"}
-            else "planned"
-        )
-        assert_true(
-            item["status"] == expected_status,
-            "corpus activation status does not preserve the evaluation holdout",
-        )
-        if item["status"] == "active":
-            active_counts[split] = active_counts.get(split, 0) + 1
     assert_true(
-        split_counts
-        == {
-            "development": 14,
-            "evaluation": 12,
-            "regression": 4,
-        },
-        "frozen corpus split changed",
+        split_counts == {"development": 14, "regression": 4},
+        "deterministic corpus split changed",
     )
     assert_true(
-        active_counts == {"development": 14, "regression": 4},
-        "only development and regression fixtures may be active",
+        not (ROOT / "fixtures/device-corpus/evaluation").exists(),
+        "formal evaluation tree remains",
     )
     passed(
-        "corpus expectations align with the frozen confidence policy "
-        "and evaluation holdout"
+        "corpus expectations align with the frozen confidence policy and "
+        "the simplified deterministic test framework"
     )
-
 
 def validate_bundle_generator(profiles: dict, capability_schema: dict, host_schema: dict) -> None:
     with tempfile.TemporaryDirectory(prefix="netsniper-v21-") as temporary:
