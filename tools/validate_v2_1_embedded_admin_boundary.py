@@ -19,6 +19,12 @@ FIXED_TIME = "2026-07-15T00:00:00Z"
 FIXTURE_PATH = ROOT / "fixtures/embedded-admin-boundary/cases.json"
 PROFILES_PATH = ROOT / "classification/evidence_profiles.json"
 EVALUATION_ROOT = ROOT / "fixtures/device-corpus/evaluation/prepared"
+CANDIDATE_COMMIT = "f8b006038bc889266960875c10e765ec0e93ab04"
+EXPECTED_REAL_IDS = {
+    "sanitized-real-home-router-01",
+    "sanitized-real-printer-01",
+    "sanitized-real-client-endpoint-01",
+}
 
 
 def fail(message: str) -> None:
@@ -109,11 +115,19 @@ def main() -> int:
     passed("HTTP-only evidence remains weak and legacy appliance projection is preserved")
 
     seal = load_json(ROOT / "fixtures/device-corpus/evaluation/seal.json")
-    assert_true(seal.get("candidate_reseal_required") is True, "evaluation candidate reseal is not required")
+    assert_true(seal.get("state") == "synthetic_prepared_sanitized_real_candidate_sealed", "evaluation candidate is not sealed")
+    assert_true(seal.get("classifier_candidate_commit") == CANDIDATE_COMMIT, "sealed candidate commit mismatch")
+    assert_true(seal.get("candidate_reseal_required") is False, "evaluation candidate still requires reseal")
     assert_true(seal.get("first_evaluation_replay_executed") is False, "evaluation replay was marked executed")
-    assert_true("classifier_candidate_reseal_required" in set(seal.get("execution_blockers", [])), "candidate reseal execution blocker missing")
+    blockers = set(seal.get("execution_blockers", []))
+    expected_blockers = {
+        f"{fixture_id}:missing_genuine_sanitized_capture"
+        for fixture_id in EXPECTED_REAL_IDS
+    }
+    assert_true(blockers == expected_blockers, "evaluation blockers do not match missing genuine captures")
+    assert_true("classifier_candidate_reseal_required" not in blockers, "stale candidate reseal blocker remains")
     assert_true(not (ROOT / "fixtures/device-corpus/evaluation/results").exists(), "evaluation results exist")
-    passed("evaluation inputs remain sealed and execution is blocked pending post-commit reseal")
+    passed("evaluation candidate is post-commit sealed and replay remains blocked by missing genuine captures")
 
     shell = (ROOT / "tools/validate_v2_1_stage1_2_all.sh").read_text(encoding="utf-8")
     ci = (ROOT / ".github/workflows/ci.yml").read_text(encoding="utf-8")

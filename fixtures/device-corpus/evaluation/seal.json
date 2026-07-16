@@ -1,9 +1,9 @@
 {
   "schema_version": "netsniper-evaluation-preparation-seal-v1",
-  "seal_id": "d042728fa62464d1d821620113d43e3f1ac4cf512cc726f4a51ba8559101167d",
-  "state": "synthetic_prepared_sanitized_real_pending_candidate_reseal",
+  "seal_id": "199b104e15275856188324d254ff01784fa81362ba4f7fbff19a0c78a277f440",
+  "state": "synthetic_prepared_sanitized_real_candidate_sealed",
   "prepared_at": "2026-07-15T00:00:00Z",
-  "classifier_candidate_commit": null,
+  "classifier_candidate_commit": "f8b006038bc889266960875c10e765ec0e93ab04",
   "evaluation_holdout_frozen_at": "a4c027c9ab5f2fd1e7484b2ae9f8a76b10988c03",
   "evaluation_tuning_prohibited": true,
   "first_evaluation_replay_executed": false,
@@ -59,16 +59,16 @@
     "sanitized-real-printer-01"
   ],
   "execution_blockers": [
-    "classifier_candidate_reseal_required",
     "sanitized-real-client-endpoint-01:missing_genuine_sanitized_capture",
     "sanitized-real-home-router-01:missing_genuine_sanitized_capture",
     "sanitized-real-printer-01:missing_genuine_sanitized_capture"
   ],
   "results_path": "fixtures/device-corpus/evaluation/results",
-  "notes": "Preparation seal records inputs and candidate fingerprints before any evaluation replay. No classifier output is stored or consulted at this checkpoint.",
+  "notes": "Post-commit reseal records the finalized classifier candidate and immutable runtime/input fingerprints before any evaluation replay. No classifier output is stored or consulted.",
   "previous_classifier_candidate_commit": "a760fc7e125a223181cf44c63a151c3eebcbe460",
   "candidate_base_commit": "809b23432348b6d0dc861948532cb4d5de21da78",
-  "candidate_reseal_required": true,
-  "candidate_reseal_reason": "Classifier semantic correction requires a post-commit candidate reseal before first evaluation replay.",
-  "candidate_runtime_index_sha256": "f93446916eb3ee4a6e71a37f7d853d10b662b5ed22e470e1db7d49e22b7dcb29"
+  "candidate_reseal_required": false,
+  "candidate_reseal_reason": "Completed after the embedded-administration semantic correction was committed and validated.",
+  "candidate_runtime_index_sha256": "f93446916eb3ee4a6e71a37f7d853d10b662b5ed22e470e1db7d49e22b7dcb29",
+  "candidate_resealed_at_commit": "f8b006038bc889266960875c10e765ec0e93ab04"
 }
