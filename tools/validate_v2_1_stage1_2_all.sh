@@ -67,3 +67,4 @@ fi
     || fail "v2.0 and v1.9 compatibility suites"
 
 pass "NetSniper v2.1 classifier, deterministic corpus, observation integrity, embedded administration boundary, observed-behavior corrections, and v1.9/v2.0 compatibility suites passed"
+python3 tools/validate_v2_1_empirical_calibration.py
