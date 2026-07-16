@@ -1851,6 +1851,13 @@ analyze_hosts() {
         --timestamp "$timestamp"
     )
 
+    local route_context_available=false
+    local target_route_address="${NET%%/*}"
+    if command -v ip >/dev/null 2>&1; then
+        route_context_available=true
+        args+=(--route-context -)
+    fi
+
     if [ -s "$SCAN_DIR/os_detection.xml" ]; then
         args+=(--os-xml "$SCAN_DIR/os_detection.xml")
     fi
@@ -1859,7 +1866,18 @@ analyze_hosts() {
         args+=(--udp-xml "$SCAN_DIR/udp_lite.xml")
     fi
 
-    if ! python3 "$BASE/tools/analyze_v2_1_gnmap.py" "${args[@]}" >/dev/null; then
+    if [ "$route_context_available" = true ]; then
+        if ! {
+            printf '%s\n' 'NETSNIPER_ROUTE_CONTEXT_V1'
+            printf '%s\n' '[target]'
+            ip -4 route get "$target_route_address" 2>/dev/null || :
+            printf '%s\n' '[default]'
+            ip -4 route show default table main 2>/dev/null || :
+        } | python3 "$BASE/tools/analyze_v2_1_gnmap.py" "${args[@]}" >/dev/null; then
+            echo -e "${RED}[-] NetSniper v2.1 analysis failed.${RESET}"
+            return 1
+        fi
+    elif ! python3 "$BASE/tools/analyze_v2_1_gnmap.py" "${args[@]}" >/dev/null; then
         echo -e "${RED}[-] NetSniper v2.1 analysis failed.${RESET}"
         return 1
     fi

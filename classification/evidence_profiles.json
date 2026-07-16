@@ -683,10 +683,10 @@
         {
           "id": "security_ports",
           "source": "port",
-          "value": "tcp/443|udp/500|udp/4500",
+          "value": "udp/500|udp/4500",
           "reliability": "low",
           "points": 10,
-          "reason": "Common gateway ports weakly support a security role.",
+          "reason": "IKE/IPsec gateway ports weakly support a security role.",
           "source_group": "port"
         }
       ],
@@ -1212,10 +1212,10 @@
         {
           "id": "vcenter_port",
           "source": "port",
-          "value": "tcp/9443|tcp/443",
+          "value": "tcp/9443",
           "reliability": "low",
           "points": 10,
-          "reason": "Management TLS port weakly supports a hypervisor role.",
+          "reason": "A dedicated management TLS port weakly supports a hypervisor role.",
           "source_group": "port"
         }
       ],

@@ -34,6 +34,7 @@ paths = [
     Path("tools/validate_v2_1_corpus_activation.py"),
     Path("tools/validate_v2_1_observation_integrity.py"),
     Path("tools/validate_v2_1_embedded_admin_boundary.py"),
+    Path("tools/validate_v2_1_observed_behavior_corrections.py"),
 ]
 
 for path in paths:
@@ -59,7 +60,10 @@ fi
 ./tools/validate_v2_1_embedded_admin_boundary.py \
     || fail "v2.1 embedded administration boundary validator"
 
+./tools/validate_v2_1_observed_behavior_corrections.py \
+    || fail "v2.1 observed-behavior correction validator"
+
 ./tools/validate_v2_0_all.sh \
     || fail "v2.0 and v1.9 compatibility suites"
 
-pass "NetSniper v2.1 classifier, deterministic corpus, observation integrity, embedded administration boundary, and v1.9/v2.0 compatibility suites passed"
+pass "NetSniper v2.1 classifier, deterministic corpus, observation integrity, embedded administration boundary, observed-behavior corrections, and v1.9/v2.0 compatibility suites passed"

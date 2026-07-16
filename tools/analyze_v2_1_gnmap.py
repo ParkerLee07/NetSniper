@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+import ipaddress
 import json
 import sys
 from datetime import datetime, timezone
@@ -101,6 +102,171 @@ def _value_richness(value: Any) -> int:
     return 1
 
 
+ROUTE_CONTEXT_HEADER = "NETSNIPER_ROUTE_CONTEXT_V1"
+
+
+def _token_after(tokens: list[str], marker: str) -> str | None:
+    try:
+        index = tokens.index(marker)
+    except ValueError:
+        return None
+    if index + 1 >= len(tokens):
+        return None
+    value = tokens[index + 1].strip()
+    return value or None
+
+
+def _route_context_sections(text: str) -> dict[str, list[str]]:
+    sections: dict[str, list[str]] = {"target": [], "default": []}
+    current: str | None = None
+    header_seen = False
+    for raw_line in text.splitlines():
+        line = raw_line.strip()
+        if not line:
+            continue
+        if not header_seen:
+            if line != ROUTE_CONTEXT_HEADER:
+                return {"target": [], "default": []}
+            header_seen = True
+            continue
+        if line == "[target]":
+            current = "target"
+            continue
+        if line == "[default]":
+            current = "default"
+            continue
+        if current in sections:
+            sections[current].append(line)
+    return sections if header_seen else {"target": [], "default": []}
+
+
+def _route_metric(tokens: list[str]) -> int | None:
+    value = _token_after(tokens, "metric")
+    if value is None:
+        return 0
+    try:
+        metric = int(value)
+    except ValueError:
+        return None
+    return metric if metric >= 0 else None
+
+
+def _read_route_context(route_context: str | None) -> str | None:
+    if route_context is None:
+        return None
+    if route_context == "-":
+        try:
+            return sys.stdin.read()
+        except OSError:
+            return None
+    path = Path(route_context)
+    if not path.is_file():
+        return None
+    try:
+        return path.read_text(encoding="utf-8", errors="replace")
+    except OSError:
+        return None
+
+
+def resolve_default_gateway(
+    route_context: str | None,
+    target: str,
+) -> str | None:
+    """Return one unambiguous in-scope IPv4 default gateway, or None."""
+    route_text = _read_route_context(route_context)
+    if route_text is None:
+        return None
+    try:
+        network = ipaddress.ip_network(target, strict=False)
+    except ValueError:
+        return None
+    if network.version != 4:
+        return None
+    sections = _route_context_sections(route_text)
+
+    target_interfaces: set[str] = set()
+    for line in sections["target"]:
+        tokens = line.split()
+        if not tokens or tokens[0] in {
+            "blackhole",
+            "prohibit",
+            "throw",
+            "unreachable",
+        }:
+            continue
+        if tokens.count("dev") != 1:
+            continue
+        interface = _token_after(tokens, "dev")
+        if interface:
+            target_interfaces.add(interface)
+    if len(target_interfaces) != 1:
+        return None
+    target_interface = next(iter(target_interfaces))
+
+    eligible: dict[tuple[str, str, int], None] = {}
+    for line in sections["default"]:
+        tokens = line.split()
+        if not tokens or tokens[0] != "default":
+            continue
+        if tokens.count("dev") != 1 or tokens.count("via") != 1:
+            continue
+        interface = _token_after(tokens, "dev")
+        gateway_text = _token_after(tokens, "via")
+        if interface != target_interface or gateway_text is None:
+            continue
+        try:
+            gateway = ipaddress.ip_address(gateway_text)
+        except ValueError:
+            continue
+        if gateway.version != 4 or gateway not in network:
+            continue
+        if network.prefixlen <= 30 and gateway in {
+            network.network_address,
+            network.broadcast_address,
+        }:
+            continue
+        metric = _route_metric(tokens)
+        if metric is None:
+            continue
+        eligible[(str(gateway), interface, metric)] = None
+
+    if not eligible:
+        return None
+    best_metric = min(item[2] for item in eligible)
+    preferred = [item for item in eligible if item[2] == best_metric]
+    gateways = {item[0] for item in preferred}
+    if len(gateways) != 1:
+        return None
+    return next(iter(gateways))
+
+
+def _same_ipv4(left: str, right: str) -> bool:
+    try:
+        left_ip = ipaddress.ip_address(left)
+        right_ip = ipaddress.ip_address(right)
+    except ValueError:
+        return False
+    return left_ip.version == 4 and left_ip == right_ip
+
+
+def add_default_gateway_observation(
+    record: dict[str, Any],
+    host: str,
+    default_gateway: str | None,
+) -> dict[str, Any]:
+    output = dict(record)
+    if default_gateway is None or not _same_ipv4(host, default_gateway):
+        return output
+    roles = output.get("network_roles", [])
+    if not isinstance(roles, list):
+        roles = [roles]
+    normalized_roles = [str(item).strip() for item in roles if str(item).strip()]
+    if "default_gateway" not in normalized_roles:
+        normalized_roles.append("default_gateway")
+    output["network_roles"] = normalized_roles
+    return output
+
+
 def canonicalize_port_observations(record: dict[str, Any]) -> dict[str, Any]:
     """Merge duplicate Nmap records while retaining the richest metadata."""
     output = dict(record)
@@ -190,6 +356,7 @@ def main() -> int:
     parser.add_argument("--services-xml")
     parser.add_argument("--os-xml")
     parser.add_argument("--udp-xml")
+    parser.add_argument("--route-context")
     parser.add_argument("--profiles", default=str(ROOT / "classification/evidence_profiles.json"))
     parser.add_argument("--scanner-version", required=True)
     parser.add_argument("--network", required=True)
@@ -212,6 +379,10 @@ def main() -> int:
 
     all_hosts = [line.strip() for line in Path(args.hosts).read_text(encoding="utf-8").splitlines() if line.strip()]
     generated_at = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+    default_gateway = resolve_default_gateway(
+        args.route_context,
+        args.network,
+    )
     output: list[dict[str, Any]] = []
     text_lines = [
         "=========================================",
@@ -230,6 +401,11 @@ def main() -> int:
         for xml_map in xml_maps:
             record = merge_host_records(record, xml_map.get(host))
         record = canonicalize_port_observations(record)
+        record = add_default_gateway_observation(
+            record,
+            host,
+            default_gateway,
+        )
         record["observation_quality"] = {
             "scan_completeness": "complete",
             "requested_collectors": ["discovery", "tcp_services"],

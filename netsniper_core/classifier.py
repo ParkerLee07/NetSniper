@@ -367,6 +367,7 @@ def _axis_result(
     possible_minimum: int,
     close_candidate_delta: int,
     force_review_on_close: bool = True,
+    suppress_hostname_only_below_possible: bool = False,
 ) -> tuple[dict[str, Any], list[dict[str, Any]]]:
     active = [item for item in candidates if int(item["confidence"]) > 0]
     active.sort(
@@ -397,6 +398,36 @@ def _axis_result(
     winner = active[0]
     reasons = list(winner["uncertainty_reasons"])
     decision = winner["decision"]
+
+    winner_sources = {
+        str(match.get("source", "other"))
+        for match in winner.get("matches", [])
+    }
+    if (
+        suppress_hostname_only_below_possible
+        and int(winner["confidence"]) < possible_minimum
+        and winner_sources == {"hostname"}
+    ):
+        return (
+            {
+                "label": unknown_label,
+                "confidence": 0,
+                "confidence_band": "none",
+                "decision": "unknown",
+                "evidence_ids": [],
+                "contradictions": [],
+                "secondary_candidates": [
+                    _candidate_view(item)
+                    for item in active[:5]
+                ],
+                "uncertainty_reasons": list(dict.fromkeys(reasons)),
+                "explanation": (
+                    "Only sub-threshold hostname evidence supports a platform "
+                    "candidate; the canonical platform remains unknown."
+                ),
+            },
+            active,
+        )
     if force_review_on_close and len(active) > 1:
         second = active[1]
         if (
@@ -625,6 +656,7 @@ def classify_host(
         "unknown",
         possible_minimum=possible_minimum,
         close_candidate_delta=close_candidate_delta,
+        suppress_hostname_only_below_possible=True,
     )
 
     if family["label"] == "unknown" and any(

@@ -46,6 +46,8 @@ def validate_source_boundaries() -> None:
     assert_true('SCANNER_VERSION="v2.1.0-dev"' in shell, "scanner version is not v2.1.0-dev")
     assert_true("analyze_v2_1_gnmap.py" in shell, "live analysis does not delegate to v2.1 Python runtime")
     assert_true("generate_v2_1_run_artifacts.py" in shell, "bundle finalization does not invoke v2.1 generator")
+    assert_true("NETSNIPER_ROUTE_CONTEXT_V1" in shell, "local route context is not captured")
+    assert_true("--route-context" in shell, "local route context is not passed to analysis")
     assert_true("netsniper-capability-manifest-v1" in shell, "manifest lacks capability-contract version")
     assert_true("netsniper-host-classification-v2" in shell, "manifest lacks host-classification version")
     forbidden = [
@@ -84,6 +86,28 @@ def validate_data_contracts() -> tuple[dict, dict, dict, dict]:
     )
     axes = {item["axis"] for item in profiles["axis_profiles"]}
     assert_true(axes == {"device_family", "role", "platform"}, "axis profile vocabulary mismatch")
+    by_label = {
+        (item["axis"], item["label"]): item
+        for item in profiles["axis_profiles"]
+    }
+    security_ports = next(
+        item
+        for item in by_label[("role", "security_gateway")]["positive_evidence"]
+        if item["id"] == "security_ports"
+    )
+    hypervisor_tls = next(
+        item
+        for item in by_label[("role", "hypervisor")]["positive_evidence"]
+        if item["id"] == "vcenter_port"
+    )
+    assert_true(
+        security_ports["value"] == "udp/500|udp/4500",
+        "generic HTTPS still supports security_gateway",
+    )
+    assert_true(
+        hypervisor_tls["value"] == "tcp/9443",
+        "generic HTTPS still supports hypervisor",
+    )
     assert_true(capability_schema["properties"]["schema_version"]["const"] == CAPABILITY_SCHEMA_VERSION, "capability schema mismatch")
     assert_true(host_schema["properties"]["schema_version"]["const"] == HOST_CLASSIFICATION_SCHEMA_VERSION, "host schema mismatch")
     passed("taxonomy, evidence profiles, and contract versions agree")
@@ -219,6 +243,21 @@ def validate_classifier(profiles: dict, host_schema: dict) -> None:
     unknown = classify_host({"host": "192.0.2.40", "ports": []}, profiles, generated_at=timestamp)
     assert_true(unknown["device_family"]["label"] == "unknown", "empty evidence did not remain unknown")
     assert_true(unknown["device_family"]["confidence"] == 0, "empty evidence has nonzero confidence")
+
+    hostname_platform = classify_host(
+        {"host": "192.0.2.41", "hostname": "gateway-lab"},
+        profiles,
+        generated_at=timestamp,
+    )
+    assert_true(
+        hostname_platform["platform"]["label"] == "unknown",
+        "hostname-only evidence became the canonical platform",
+    )
+    assert_true(
+        hostname_platform["platform"]["secondary_candidates"]
+        and hostname_platform["platform"]["secondary_candidates"][0]["label"] == "network_os",
+        "hostname-only platform candidate was not preserved for review",
+    )
 
     if importlib.util.find_spec("jsonschema") is not None:
         import jsonschema
