@@ -54,9 +54,9 @@ grep -Fq "invalid scan profile" /tmp/netsniper-profile-invalid.out \
     || fail "invalid profile error message is not useful"
 
 help_output="$(./netsniper.sh --help 2>&1 || true)"
-printf '%s\n' "$help_output" | grep -Fq -- '--profile <name>' \
+grep -Fq -- '--profile <name>' <<<"$help_output" \
     || fail "--help output missing --profile"
-printf '%s\n' "$help_output" | grep -Fq -- '--scan-profile <name>' \
+grep -Fq -- '--scan-profile <name>' <<<"$help_output" \
     || fail "--help output missing --scan-profile"
 
 if ./netsniper.sh \
