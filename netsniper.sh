@@ -5,7 +5,7 @@
 # License: MIT
 
 # =========================
-# NETSNIPER ENGINE v2.1.0-dev
+# NETSNIPER ENGINE v2.1.0
 # NETSNIPER_CLASSIFICATION_ENGINE_V150
 # Compatibility marker retained for v1.5 regression validators.
 # NETSNIPER_CLASSIFICATION_ENGINE_V160
@@ -67,7 +67,7 @@ CONFIG_FILE="$CONFIG_DIR/netsniper.conf"
 RUN_DIR="$BASE/runs"
 SOCK="/run/gvmd/gvmd.sock"
 
-SCANNER_VERSION="v2.1.0-dev"
+SCANNER_VERSION="v2.1.0"
 SCAN_PROFILE="${NETSNIPER_SCAN_PROFILE:-balanced}"
 SCAN_PROFILE_RESOLVED_JSON=""
 SCAN_PROFILE_EFFECTIVE="balanced"
@@ -146,7 +146,7 @@ resolve_selected_scan_profile() {
             SCAN_PROFILE_RUNTIME_STAGE="accurate_tcp_service_depth_os_udp_lite"
             ;;
         deep)
-            echo "[-] Scan profile 'deep' is planned but runtime execution is not enabled in NetSniper v2.1.0-dev." >&2
+            echo "[-] Scan profile 'deep' is planned but runtime execution is not enabled in NetSniper v2.1.0." >&2
             echo "[-] Use quick, balanced, or accurate." >&2
             return 1
             ;;
@@ -351,7 +351,7 @@ parse_cli_args() {
                 echo "[!] Accurate profile enables TCP service-depth plus non-fatal OS and UDP-lite evidence." >&2
                 ;;
             deep)
-                echo "[-] Scan profile 'deep' is planned but runtime execution is not enabled in NetSniper v2.1.0-dev." >&2
+                echo "[-] Scan profile 'deep' is planned but runtime execution is not enabled in NetSniper v2.1.0." >&2
                 echo "[-] Use --profile quick, --profile balanced, or --profile accurate until deep scan wiring is validated." >&2
                 emit_headless_status "failed" 2 ""
                 exit 2
@@ -371,7 +371,7 @@ parse_cli_args() {
         fi
 
         if [ "$HEADLESS_GREENBONE" = "yes" ]; then
-            echo "[-] Headless Greenbone launch is not enabled in NetSniper v2.1.0-dev. Use --greenbone no." >&2
+            echo "[-] Headless Greenbone launch is not enabled in NetSniper v2.1.0. Use --greenbone no." >&2
             emit_headless_status "failed" 1 ""
             exit 1
         fi

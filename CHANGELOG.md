@@ -1,5 +1,40 @@
 # Changelog
 
+## v2.1.0 - 2026-07-17
+
+### Added
+
+- Added canonical v2.1 device-family, role, capability, uncertainty, and evidence-axis contracts.
+- Added deterministic v2.1 host classification, GNMAP normalization, bundle generation, and corpus replay tooling.
+- Activated an exact 14-development and 4-regression corpus with deterministic 100% software-test gates.
+- Added observation-integrity protections that merge duplicate GNMAP/XML evidence and prevent duplicate risk scoring.
+- Added embedded-administration safeguards that keep appliance web interfaces review-only without independent server evidence.
+- Added conservative real-world behavior corrections for generic HTTPS, printers, gateways, hypervisors, hostname-only evidence, and route context.
+- Added measurement-only empirical calibration infrastructure with an intentionally empty empirical corpus.
+- Added stable additive `deltaaegis_context` evidence for DeltaAegis without changing the authoritative classification projection.
+- Added `tools/validate_v2_1_release_metadata.py` and `tools/validate_v2_1_release_gate.sh`.
+- Added `docs/V2_1_RELEASE_CHECKLIST.md` with explicit validation, commit, merge, tag, and publication holds.
+
+### Changed
+
+- Finalized `SCANNER_VERSION` as `v2.1.0`.
+- Updated the README and CI workflow for the v2.1.0 release candidate.
+- Extended v2.0 compatibility validators to accept the finalized v2.1.0 version while preserving all existing contract assertions.
+
+### Compatibility
+
+- Preserved the `netsniper-status-v1` and `netsniper-run-v3` telemetry contracts.
+- Preserved v2 manifest aliases for downstream migration.
+- Preserved `quick`, `balanced`, and `accurate` profile behavior and the blocked non-interactive `deep` boundary.
+- Preserved full-inventory bundle output and additive DeltaAegis enrichment.
+
+### Notes
+
+NetSniper v2.1.0 remains CLI/headless. It does not add a web dashboard, service,
+scheduler, exploit checks, credential collection, or intrusive probing. The
+release improves evidence quality and uncertainty handling without claiming a
+measured real-world accuracy percentage.
+
 ## v2.0.0 - 2026-06-29
 
 ### Added

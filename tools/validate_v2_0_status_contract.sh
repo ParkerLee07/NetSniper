@@ -15,8 +15,8 @@ cd "$(dirname "$0")/.." || exit 1
 bash -n netsniper.sh \
     || fail "netsniper.sh has a syntax error"
 
-grep -Eq 'SCANNER_VERSION="v(2\.0\.0(-dev)?|2\.1\.0-dev)"' netsniper.sh \
-    || fail "scanner version is not v2.0.0-dev, v2.0.0, or v2.1.0-dev"
+grep -Eq 'SCANNER_VERSION="v(2\.0\.0(-dev)?|2\.1\.0(-dev)?)"' netsniper.sh \
+    || fail "scanner version is not v2.0.0-dev, v2.0.0, v2.1.0-dev, or v2.1.0"
 
 grep -Fq 'HEADLESS_JSON_STATUS_FILE=""' netsniper.sh \
     || fail "missing HEADLESS_JSON_STATUS_FILE variable"
@@ -67,7 +67,7 @@ path = Path(sys.argv[1])
 data = json.loads(path.read_text(encoding="utf-8"))
 
 assert data["schema_version"] == "netsniper-status-v1", data
-assert data["scanner_version"] in {"v2.0.0-dev", "v2.0.0", "v2.1.0-dev"}, data
+assert data["scanner_version"] in {"v2.0.0-dev", "v2.0.0", "v2.1.0-dev", "v2.1.0"}, data
 assert data["status"] == "failed", data
 assert data["return_code"] == 1, data
 assert data["target"] == "8.8.8.0/24", data
