@@ -16,6 +16,45 @@ set -Eeuo pipefail
 IFS=$'\n\t'
 trap 'echo -e "\n[ERROR] Failed at line $LINENO while executing $BASH_COMMAND"' ERR
 
+print_usage() {
+    cat <<'EOF'
+NetSniper - Network Recon & Exposure Intelligence Engine
+
+Usage:
+  ./netsniper.sh
+  ./netsniper.sh --non-interactive --target <private-cidr> [--greenbone no] [--json-status] [--json-status-file <path>] [--profile balanced]
+  ./netsniper.sh --help
+
+Interactive mode:
+  Launches the normal NetSniper setup prompt and menu.
+
+Headless mode:
+  Runs the full NetSniper pipeline without prompting. This is intended for automation and DeltaAegis dashboard or schedule orchestration.
+
+Options:
+  --non-interactive        Run the full pipeline without the interactive menu.
+  --target <CIDR>          Target private IPv4 subnet, such as 192.168.5.0/24.
+  --greenbone yes|no       Optional Greenbone integration setting. Headless mode
+                           currently supports no; use the interactive menu for Greenbone.
+  --json-status            Print a final machine-readable status object.
+  --json-status-file <path> Write the final machine-readable status object to a file.
+  --profile <name>          Optional v2.0 scan profile: quick, balanced, accurate, or deep.
+  --scan-profile <name>     Alias for --profile. Balanced remains the default.
+  -h, --help               Show this help text.
+
+Safety:
+  Headless mode rejects non-private targets by default.
+EOF
+}
+
+# Keep informational help available even when scan-time dependencies are absent.
+case "${1:-}" in
+    -h|--help)
+        print_usage
+        exit 0
+        ;;
+esac
+
 command -v nmap >/dev/null 2>&1 || { echo "nmap required"; exit 1; }
 command -v jq >/dev/null 2>&1 || { echo "jq required"; exit 1; }
 command -v base64 >/dev/null 2>&1 || { echo "base64 required"; exit 1; }
@@ -95,36 +134,7 @@ JSON_STATUS=0
 HEADLESS_JSON_STATUS_FILE=""
 LAST_BUNDLE_DIR=""
 
-print_usage() {
-    cat <<'EOF'
-NetSniper - Network Recon & Exposure Intelligence Engine
 
-Usage:
-  ./netsniper.sh
-  ./netsniper.sh --non-interactive --target <private-cidr> [--greenbone no] [--json-status] [--json-status-file <path>] [--profile balanced]
-  ./netsniper.sh --help
-
-Interactive mode:
-  Launches the normal NetSniper setup prompt and menu.
-
-Headless mode:
-  Runs the full NetSniper pipeline without prompting. This is intended for automation and DeltaAegis dashboard or schedule orchestration.
-
-Options:
-  --non-interactive        Run the full pipeline without the interactive menu.
-  --target <CIDR>          Target private IPv4 subnet, such as 192.168.5.0/24.
-  --greenbone yes|no       Optional Greenbone integration setting. Headless mode
-                           currently supports no; use the interactive menu for Greenbone.
-  --json-status            Print a final machine-readable status object.
-  --json-status-file <path> Write the final machine-readable status object to a file.
-  --profile <name>          Optional v2.0 scan profile: quick, balanced, accurate, or deep.
-  --scan-profile <name>     Alias for --profile. Balanced remains the default.
-  -h, --help               Show this help text.
-
-Safety:
-  Headless mode rejects non-private targets by default.
-EOF
-}
 
 resolve_selected_scan_profile() {
     local resolved_profile_json

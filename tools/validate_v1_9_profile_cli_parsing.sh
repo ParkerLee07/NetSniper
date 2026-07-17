@@ -59,6 +59,33 @@ grep -Fq -- '--profile <name>' <<<"$help_output" \
 grep -Fq -- '--scan-profile <name>' <<<"$help_output" \
     || fail "--help output missing --scan-profile"
 
+dependency_free_path="$(mktemp -d)"
+trap 'rm -rf "$dependency_free_path"' EXIT
+
+cat_path="$(command -v cat)"
+[[ -n "$cat_path" ]] || fail "cat is required for dependency-free help validation"
+ln -s "$cat_path" "$dependency_free_path/cat"
+
+for dependency in nmap jq base64; do
+    if PATH="$dependency_free_path" command -v "$dependency" >/dev/null 2>&1; then
+        fail "dependency-starved help PATH unexpectedly contains $dependency"
+    fi
+done
+
+if ! dependency_free_help_output="$(
+    PATH="$dependency_free_path" ./netsniper.sh --help 2>&1
+)"; then
+    fail "--help should succeed without scan-time dependencies"
+fi
+
+grep -Fq -- '--profile <name>' <<<"$dependency_free_help_output" \
+    || fail "dependency-free --help output missing --profile"
+grep -Fq -- '--scan-profile <name>' <<<"$dependency_free_help_output" \
+    || fail "dependency-free --help output missing --scan-profile"
+
+rm -rf "$dependency_free_path"
+trap - EXIT
+
 if ./netsniper.sh \
     --non-interactive \
     --target 192.168.56.0/30 \
