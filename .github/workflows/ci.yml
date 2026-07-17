@@ -10,7 +10,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Install validation dependencies
-        run: sudo apt-get update && sudo apt-get install -y shellcheck jq iproute2
+        run: sudo apt-get update && sudo apt-get install -y shellcheck jq iproute2 nmap
       - name: Validate Bash syntax
         run: bash -n netsniper.sh
       - name: Run ShellCheck warnings and errors
