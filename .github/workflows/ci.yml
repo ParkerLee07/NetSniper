@@ -5,13 +5,35 @@ on:
   pull_request:
 
 jobs:
-  shell-validation:
+  validation:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Install ShellCheck
-        run: sudo apt-get update && sudo apt-get install -y shellcheck
+      - name: Install validation dependencies
+        run: sudo apt-get update && sudo apt-get install -y shellcheck jq iproute2 nmap
       - name: Validate Bash syntax
         run: bash -n netsniper.sh
       - name: Run ShellCheck warnings and errors
         run: shellcheck -x --severity=warning netsniper.sh
+      - name: Validate Python syntax
+        run: |
+          python3 -m py_compile \
+            netsniper_core/*.py \
+            tools/analyze_v2_1_gnmap.py \
+            tools/classify_v2_1_host.py \
+            tools/generate_v2_1_run_artifacts.py \
+            tools/replay_v2_1_corpus.py \
+            tools/validate_v2_1_corpus_activation.py \
+            tools/validate_v2_1_deltaaegis_enrichment.py \
+            tools/validate_v2_1_embedded_admin_boundary.py \
+            tools/validate_v2_1_empirical_calibration.py \
+            tools/validate_v2_1_observation_integrity.py \
+            tools/validate_v2_1_observed_behavior_corrections.py \
+            tools/validate_v2_1_release_metadata.py \
+            tools/validate_v2_1_stage1_2.py
+      - name: Run NetSniper v2.1.0 release gate
+        if: ${{ github.ref_name == 'main' || github.ref_name == 'feature/v2.1-evidence-calibration' || github.head_ref == 'main' || github.head_ref == 'feature/v2.1-evidence-calibration' }}
+        run: ./tools/validate_v2_1_release_gate.sh
+      - name: Run NetSniper v2.1 behavioral and compatibility gate
+        if: ${{ github.ref_name != 'main' && github.ref_name != 'feature/v2.1-evidence-calibration' && github.head_ref != 'main' && github.head_ref != 'feature/v2.1-evidence-calibration' }}
+        run: ./tools/validate_v2_1_stage1_2_all.sh

@@ -1,0 +1,39 @@
+{
+  "schema_version": "netsniper-corpus-source-v1",
+  "fixture_id": "synthetic-partial-printer-scan-01",
+  "fixture_kind": "synthetic",
+  "source_type": "designed_host_observation",
+  "synthetic_observation": {
+    "host": "192.0.2.61",
+    "ip": "192.0.2.61",
+    "mac": "02:00:00:00:00:61",
+    "observation_quality": {
+      "scan_completeness": "partial",
+      "requested_collectors": [
+        "discovery",
+        "tcp_services",
+        "os_detection",
+        "passive_neighbors"
+      ],
+      "completed_collectors": [
+        "discovery",
+        "os_detection",
+        "passive_neighbors"
+      ],
+      "failed_collectors": [
+        "tcp_services"
+      ],
+      "unavailable_collectors": [],
+      "inventory_complete": true
+    },
+    "hostname": "printer-partial",
+    "vendor": "HP",
+    "ports": [
+      631
+    ],
+    "os_hints": [
+      "embedded"
+    ]
+  },
+  "design_notes": "Known printer observed during a partial scan with service collection failure."
+}

@@ -1,0 +1,42 @@
+{
+  "schema_version": "netsniper-corpus-input-v1",
+  "fixture_id": "synthetic-camera-01",
+  "mode": "classification",
+  "host_record": {
+    "host": "192.0.2.21",
+    "ip": "192.0.2.21",
+    "mac": "02:00:00:00:00:21",
+    "observation_quality": {
+      "scan_completeness": "complete",
+      "requested_collectors": [
+        "discovery",
+        "tcp_services",
+        "os_detection",
+        "passive_neighbors"
+      ],
+      "completed_collectors": [
+        "discovery",
+        "tcp_services",
+        "os_detection",
+        "passive_neighbors"
+      ],
+      "failed_collectors": [],
+      "unavailable_collectors": [],
+      "inventory_complete": true
+    },
+    "hostname": "camera01",
+    "vendor": "Hikvision",
+    "ports": [
+      554
+    ],
+    "service_hints": [
+      "ONVIF"
+    ],
+    "http_titles": [
+      "IP Camera"
+    ],
+    "os_hints": [
+      "embedded firmware"
+    ]
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "schema_version": "netsniper-corpus-source-v1",
+  "fixture_id": "synthetic-unknown-no-evidence-01",
+  "fixture_kind": "synthetic",
+  "source_type": "designed_host_observation",
+  "synthetic_observation": {
+    "host": "192.0.2.50",
+    "ip": "192.0.2.50",
+    "mac": "02:00:00:00:00:50",
+    "observation_quality": {
+      "scan_completeness": "complete",
+      "requested_collectors": [
+        "discovery",
+        "tcp_services",
+        "os_detection",
+        "passive_neighbors"
+      ],
+      "completed_collectors": [
+        "discovery",
+        "tcp_services",
+        "os_detection",
+        "passive_neighbors"
+      ],
+      "failed_collectors": [],
+      "unavailable_collectors": [],
+      "inventory_complete": true
+    }
+  },
+  "design_notes": "Discovered host with no defensible classification evidence."
+}

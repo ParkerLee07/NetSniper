@@ -1,0 +1,9 @@
+{
+  "entries": [],
+  "privacy": {
+    "allow_raw_private_identifiers": false,
+    "require_sanitization_before_commit": true
+  },
+  "purpose": "Measurement-only real-world characterization inputs.",
+  "schema_version": "netsniper-v2.1-empirical-corpus-manifest-v1"
+}

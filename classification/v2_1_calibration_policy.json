@@ -1,0 +1,14 @@
+{
+  "automatic_weight_changes": false,
+  "minimum_distinct_networks_before_weight_proposal": 5,
+  "minimum_labeled_hosts_before_weight_proposal": 100,
+  "minimum_samples_per_evidence_id": 10,
+  "mode": "measurement_only",
+  "protected_scope": {
+    "contract_versions": true,
+    "deterministic_corpus": true,
+    "scan_profiles": true,
+    "taxonomy": true
+  },
+  "schema_version": "netsniper-v2.1-empirical-calibration-policy-v1"
+}

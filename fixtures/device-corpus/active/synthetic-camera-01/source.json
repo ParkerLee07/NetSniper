@@ -1,0 +1,44 @@
+{
+  "schema_version": "netsniper-corpus-source-v1",
+  "fixture_id": "synthetic-camera-01",
+  "fixture_kind": "synthetic",
+  "source_type": "designed_host_observation",
+  "synthetic_observation": {
+    "host": "192.0.2.21",
+    "ip": "192.0.2.21",
+    "mac": "02:00:00:00:00:21",
+    "observation_quality": {
+      "scan_completeness": "complete",
+      "requested_collectors": [
+        "discovery",
+        "tcp_services",
+        "os_detection",
+        "passive_neighbors"
+      ],
+      "completed_collectors": [
+        "discovery",
+        "tcp_services",
+        "os_detection",
+        "passive_neighbors"
+      ],
+      "failed_collectors": [],
+      "unavailable_collectors": [],
+      "inventory_complete": true
+    },
+    "hostname": "camera01",
+    "vendor": "Hikvision",
+    "ports": [
+      554
+    ],
+    "service_hints": [
+      "ONVIF"
+    ],
+    "http_titles": [
+      "IP Camera"
+    ],
+    "os_hints": [
+      "embedded firmware"
+    ]
+  },
+  "design_notes": "Standalone IP camera with protocol-specific surveillance evidence."
+}

@@ -1,0 +1,34 @@
+{
+  "schema_version": "netsniper-corpus-input-v1",
+  "fixture_id": "legacy-v2-router-projection-01",
+  "mode": "legacy_projection",
+  "legacy_record": {
+    "schema_version": "netsniper-classification-v1",
+    "host_id": "192.0.2.70",
+    "ip": "192.0.2.70",
+    "mac": "02:00:00:00:00:70",
+    "hostname": "legacy-gateway",
+    "primary_type": "Router / Gateway",
+    "device_type": "Router / Gateway",
+    "confidence": 85,
+    "decision": "classified",
+    "observation_quality": {
+      "scan_completeness": "complete",
+      "requested_collectors": [
+        "discovery",
+        "tcp_services",
+        "os_detection",
+        "passive_neighbors"
+      ],
+      "completed_collectors": [
+        "discovery",
+        "tcp_services",
+        "os_detection",
+        "passive_neighbors"
+      ],
+      "failed_collectors": [],
+      "unavailable_collectors": [],
+      "inventory_complete": true
+    }
+  }
+}

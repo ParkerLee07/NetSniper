@@ -1,0 +1,309 @@
+{
+  "schema_version": "netsniper-host-classification-v2",
+  "classifier_version": "netsniper-classifier-v2",
+  "taxonomy_version": "netsniper-device-taxonomy-v2",
+  "evidence_profile_version": "netsniper-evidence-profiles-v2",
+  "host_id": "host-192-168-50-20",
+  "generated_at": "2026-07-15T15:00:00Z",
+  "identity": {
+    "decision": "stable",
+    "confidence": 95,
+    "observed_keys": [
+      {
+        "kind": "ip",
+        "value": "192.168.50.20",
+        "stable": false
+      },
+      {
+        "kind": "mac",
+        "value": "02:00:00:00:00:20",
+        "stable": true
+      },
+      {
+        "kind": "hostname",
+        "value": "lab-server",
+        "stable": true
+      }
+    ],
+    "evidence_ids": [
+      "ev-mac",
+      "ev-hostname"
+    ],
+    "uncertainty_reasons": []
+  },
+  "device_family": {
+    "label": "compute_host",
+    "confidence": 88,
+    "confidence_band": "strong",
+    "decision": "classified",
+    "evidence_ids": [
+      "ev-os-linux",
+      "ev-hostname"
+    ],
+    "contradictions": [],
+    "secondary_candidates": [],
+    "uncertainty_reasons": [],
+    "explanation": "Linux OS evidence and stable server identity support a compute-host family."
+  },
+  "roles": [
+    {
+      "label": "web_server",
+      "confidence": 92,
+      "confidence_band": "high",
+      "decision": "classified",
+      "evidence_ids": [
+        "ev-http-product",
+        "ev-tls-cert"
+      ],
+      "contradictions": [],
+      "secondary_candidates": [],
+      "uncertainty_reasons": [],
+      "explanation": "HTTP product and TLS certificate evidence support a web-server role."
+    },
+    {
+      "label": "database_server",
+      "confidence": 76,
+      "confidence_band": "strong",
+      "decision": "classified",
+      "evidence_ids": [
+        "ev-db-product",
+        "ev-db-protocol"
+      ],
+      "contradictions": [],
+      "secondary_candidates": [],
+      "uncertainty_reasons": [],
+      "explanation": "Database product and protocol evidence support a database-server role."
+    },
+    {
+      "label": "container_host",
+      "confidence": 84,
+      "confidence_band": "strong",
+      "decision": "classified",
+      "evidence_ids": [
+        "ev-container-api",
+        "ev-container-product"
+      ],
+      "contradictions": [],
+      "secondary_candidates": [],
+      "uncertainty_reasons": [],
+      "explanation": "Container API and product evidence support a container-host role."
+    }
+  ],
+  "platform": {
+    "label": "linux",
+    "confidence": 90,
+    "confidence_band": "high",
+    "decision": "classified",
+    "evidence_ids": [
+      "ev-os-linux",
+      "ev-ssh-banner"
+    ],
+    "contradictions": [],
+    "secondary_candidates": [],
+    "uncertainty_reasons": [],
+    "explanation": "OS fingerprint and SSH banner support Linux."
+  },
+  "observation_quality": {
+    "scan_completeness": "complete",
+    "coverage_score": 100,
+    "requested_collectors": [
+      "discovery",
+      "tcp_services",
+      "os_detection"
+    ],
+    "completed_collectors": [
+      "discovery",
+      "tcp_services",
+      "os_detection"
+    ],
+    "failed_collectors": [],
+    "unavailable_collectors": [],
+    "inventory_complete": true,
+    "negative_evidence_allowed": true,
+    "reasons": []
+  },
+  "evidence": [
+    {
+      "evidence_id": "ev-mac",
+      "source_type": "neighbor_table",
+      "collector_id": "passive_neighbors",
+      "reliability": "high",
+      "effect": "positive",
+      "observed_at": "2026-07-15T14:55:10Z",
+      "summary": "Stable MAC address observed.",
+      "normalized_value": {
+        "mac": "02:00:00:00:00:20"
+      },
+      "raw_reference": "neighbors.txt#2",
+      "affected_axes": [
+        "identity"
+      ]
+    },
+    {
+      "evidence_id": "ev-hostname",
+      "source_type": "hostname_pattern",
+      "collector_id": "discovery",
+      "reliability": "medium",
+      "effect": "positive",
+      "observed_at": "2026-07-15T14:55:20Z",
+      "summary": "Stable hostname observed.",
+      "normalized_value": {
+        "hostname": "lab-server"
+      },
+      "raw_reference": "discovery.xml#host-2",
+      "affected_axes": [
+        "identity",
+        "device_family"
+      ]
+    },
+    {
+      "evidence_id": "ev-os-linux",
+      "source_type": "os_fingerprint",
+      "collector_id": "os_detection",
+      "reliability": "high",
+      "effect": "positive",
+      "observed_at": "2026-07-15T14:58:20Z",
+      "summary": "OS fingerprint indicates Linux.",
+      "normalized_value": {
+        "platform": "linux"
+      },
+      "raw_reference": "os_detection.xml#host-2",
+      "affected_axes": [
+        "device_family",
+        "platform"
+      ]
+    },
+    {
+      "evidence_id": "ev-ssh-banner",
+      "source_type": "service_fingerprint",
+      "collector_id": "tcp_services",
+      "reliability": "medium",
+      "effect": "positive",
+      "observed_at": "2026-07-15T14:57:10Z",
+      "summary": "SSH service banner is consistent with Linux.",
+      "normalized_value": {
+        "service": "ssh",
+        "product": "OpenSSH"
+      },
+      "raw_reference": "services.xml#host-2-port-22",
+      "affected_axes": [
+        "platform"
+      ]
+    },
+    {
+      "evidence_id": "ev-http-product",
+      "source_type": "product_fingerprint",
+      "collector_id": "tcp_services",
+      "reliability": "high",
+      "effect": "positive",
+      "observed_at": "2026-07-15T14:57:20Z",
+      "summary": "HTTP product fingerprint observed.",
+      "normalized_value": {
+        "service": "http",
+        "product": "nginx"
+      },
+      "raw_reference": "services.xml#host-2-port-443",
+      "affected_axes": [
+        "role"
+      ]
+    },
+    {
+      "evidence_id": "ev-tls-cert",
+      "source_type": "tls_metadata",
+      "collector_id": "tcp_services",
+      "reliability": "medium",
+      "effect": "positive",
+      "observed_at": "2026-07-15T14:57:25Z",
+      "summary": "TLS certificate metadata supports a web application endpoint.",
+      "normalized_value": {
+        "subject_cn": "lab-server"
+      },
+      "raw_reference": "services.xml#host-2-tls",
+      "affected_axes": [
+        "role"
+      ]
+    },
+    {
+      "evidence_id": "ev-db-product",
+      "source_type": "product_fingerprint",
+      "collector_id": "tcp_services",
+      "reliability": "high",
+      "effect": "positive",
+      "observed_at": "2026-07-15T14:57:30Z",
+      "summary": "Database product fingerprint observed.",
+      "normalized_value": {
+        "service": "postgresql",
+        "product": "PostgreSQL"
+      },
+      "raw_reference": "services.xml#host-2-port-5432",
+      "affected_axes": [
+        "role"
+      ]
+    },
+    {
+      "evidence_id": "ev-db-protocol",
+      "source_type": "protocol_response",
+      "collector_id": "tcp_services",
+      "reliability": "medium",
+      "effect": "positive",
+      "observed_at": "2026-07-15T14:57:31Z",
+      "summary": "Database protocol response observed.",
+      "normalized_value": {
+        "protocol": "postgresql"
+      },
+      "raw_reference": "services.xml#host-2-port-5432-script",
+      "affected_axes": [
+        "role"
+      ]
+    },
+    {
+      "evidence_id": "ev-container-api",
+      "source_type": "protocol_response",
+      "collector_id": "tcp_services",
+      "reliability": "high",
+      "effect": "positive",
+      "observed_at": "2026-07-15T14:57:40Z",
+      "summary": "Container API response observed.",
+      "normalized_value": {
+        "protocol": "docker_api"
+      },
+      "raw_reference": "services.xml#host-2-port-2376",
+      "affected_axes": [
+        "role"
+      ]
+    },
+    {
+      "evidence_id": "ev-container-product",
+      "source_type": "product_fingerprint",
+      "collector_id": "tcp_services",
+      "reliability": "medium",
+      "effect": "positive",
+      "observed_at": "2026-07-15T14:57:41Z",
+      "summary": "Container product fingerprint observed.",
+      "normalized_value": {
+        "product": "Docker"
+      },
+      "raw_reference": "services.xml#host-2-port-2376-product",
+      "affected_axes": [
+        "role"
+      ]
+    }
+  ],
+  "missing_evidence": [],
+  "legacy_projection": {
+    "primary_type": "Container Infrastructure",
+    "device_type": "Container Infrastructure",
+    "device_type_confidence": 84,
+    "confidence": 84,
+    "confidence_label": "strong",
+    "decision": "classified",
+    "secondary_candidates": [
+      {
+        "candidate": "Database Server",
+        "confidence": 76
+      }
+    ],
+    "contradictions": [],
+    "calibration_reason": "Derived from the authoritative v2.1 multi-axis classification."
+  }
+}

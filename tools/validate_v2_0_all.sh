@@ -23,8 +23,8 @@ cd "$(dirname "$0")/.." || exit 1
 bash -n netsniper.sh \
     || fail "netsniper.sh has shell syntax errors"
 
-grep -Eq 'SCANNER_VERSION="v2\.0\.0(-dev)?"' netsniper.sh \
-    || fail "SCANNER_VERSION must be v2.0.0-dev or v2.0.0"
+grep -Eq 'SCANNER_VERSION="v(2\.0\.0(-dev)?|2\.1\.0(-dev)?)"' netsniper.sh \
+    || fail "SCANNER_VERSION must be v2.0.0-dev, v2.0.0, v2.1.0-dev, or v2.1.0"
 
 # Run the expensive v1.9 compatibility/fake-Nmap suite exactly once.
 # This produces a fresh valid bundle for the later v2 validators to inspect.

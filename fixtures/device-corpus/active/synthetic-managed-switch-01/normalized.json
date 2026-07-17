@@ -1,0 +1,43 @@
+{
+  "schema_version": "netsniper-corpus-input-v1",
+  "fixture_id": "synthetic-managed-switch-01",
+  "mode": "classification",
+  "host_record": {
+    "host": "192.0.2.3",
+    "ip": "192.0.2.3",
+    "mac": "02:00:00:00:00:03",
+    "observation_quality": {
+      "scan_completeness": "complete",
+      "requested_collectors": [
+        "discovery",
+        "tcp_services",
+        "os_detection",
+        "passive_neighbors"
+      ],
+      "completed_collectors": [
+        "discovery",
+        "tcp_services",
+        "os_detection",
+        "passive_neighbors"
+      ],
+      "failed_collectors": [],
+      "unavailable_collectors": [],
+      "inventory_complete": true
+    },
+    "hostname": "switch01",
+    "vendor": "Cisco",
+    "ports": [
+      {
+        "port": 161,
+        "protocol": "udp"
+      }
+    ],
+    "service_hints": [
+      "managed switch",
+      "cisco ios"
+    ],
+    "os_hints": [
+      "switchos network device"
+    ]
+  }
+}

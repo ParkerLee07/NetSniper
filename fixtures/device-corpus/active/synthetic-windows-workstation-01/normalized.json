@@ -1,0 +1,38 @@
+{
+  "schema_version": "netsniper-corpus-input-v1",
+  "fixture_id": "synthetic-windows-workstation-01",
+  "mode": "classification",
+  "host_record": {
+    "host": "192.0.2.30",
+    "ip": "192.0.2.30",
+    "mac": "02:00:00:00:00:30",
+    "observation_quality": {
+      "scan_completeness": "complete",
+      "requested_collectors": [
+        "discovery",
+        "tcp_services",
+        "os_detection",
+        "passive_neighbors"
+      ],
+      "completed_collectors": [
+        "discovery",
+        "tcp_services",
+        "os_detection",
+        "passive_neighbors"
+      ],
+      "failed_collectors": [],
+      "unavailable_collectors": [],
+      "inventory_complete": true
+    },
+    "hostname": "workstation01",
+    "ports": [
+      3389
+    ],
+    "service_hints": [
+      "RDP"
+    ],
+    "os_hints": [
+      "Windows 11"
+    ]
+  }
+}

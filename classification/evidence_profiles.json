@@ -1,14 +1,1885 @@
 {
-  "schema_version": "netsniper-evidence-profiles-v1",
-  "release_target": "v1.7.0",
+  "schema_version": "netsniper-evidence-profiles-v2",
+  "legacy_schema_version": "netsniper-evidence-profiles-v1",
+  "release_target": "v2.1.0",
   "scoring_policy": {
     "max_confidence": 100,
-    "contradiction_penalty_default": 35,
-    "strong_contradiction_penalty": 50,
-    "minimum_classified_score": 70,
+    "minimum_candidate_score": 1,
     "minimum_possible_score": 40,
-    "false_confidence_rule": "Prefer Unknown or Ambiguous Device over a confident wrong classification."
+    "minimum_classified_score": 70,
+    "minimum_high_score": 90,
+    "port_only_cap": 39,
+    "vendor_only_cap": 39,
+    "hostname_only_cap": 39,
+    "single_medium_source_cap": 49,
+    "single_high_source_cap": 69,
+    "strong_contradiction_penalty": 50,
+    "close_candidate_delta": 9,
+    "false_confidence_rule": "Prefer unknown or review over a confident wrong classification.",
+    "embedded_admin_web_server_cap": 39
   },
+  "canonical_axes": {
+    "device_families": [
+      "network_infrastructure",
+      "compute_host",
+      "client_endpoint",
+      "printer",
+      "surveillance_device",
+      "storage_appliance",
+      "voice_device",
+      "power_device",
+      "iot_embedded",
+      "unknown"
+    ],
+    "roles": [
+      "gateway",
+      "wireless_access_point",
+      "managed_switch",
+      "security_gateway",
+      "domain_controller",
+      "dns_server",
+      "web_server",
+      "web_application_host",
+      "database_server",
+      "container_host",
+      "container_orchestrator",
+      "hypervisor",
+      "file_server",
+      "nas_service",
+      "print_service",
+      "camera",
+      "network_video_recorder",
+      "voip_endpoint",
+      "pbx",
+      "ups_monitor",
+      "mail_server",
+      "development_admin_interface"
+    ],
+    "platforms": [
+      "windows",
+      "linux",
+      "macos",
+      "ios",
+      "android",
+      "network_os",
+      "embedded",
+      "unknown"
+    ]
+  },
+  "axis_profiles": [
+    {
+      "axis": "device_family",
+      "label": "network_infrastructure",
+      "description": "Routing, gateway, wireless-controller, or infrastructure product evidence supports network infrastructure.",
+      "positive_evidence": [
+        {
+          "id": "infrastructure_network_product",
+          "source": "service",
+          "value": "unifi|wireless access point|managed switch|procurve|edgeswitch|catalyst|switchos|network switch|cisco ios",
+          "reliability": "high",
+          "points": 50,
+          "reason": "Recognized wireless or switching product evidence supports the network-infrastructure family.",
+          "source_group": "network_product"
+        },
+        {
+          "id": "gateway_default_gateway_role",
+          "source": "network_role",
+          "value": "default_gateway",
+          "reliability": "high",
+          "points": 45,
+          "reason": "Host is the observed default gateway.",
+          "source_group": "network_role"
+        },
+        {
+          "id": "gateway_dns_service",
+          "source": "port",
+          "value": "tcp/53|udp/53",
+          "reliability": "medium",
+          "points": 20,
+          "reason": "DNS service commonly appears on routers or gateways.",
+          "source_group": "port"
+        },
+        {
+          "id": "gateway_dhcp_service",
+          "source": "port",
+          "value": "udp/67|udp/68",
+          "reliability": "medium",
+          "points": 20,
+          "reason": "DHCP service commonly appears on routers or gateways.",
+          "source_group": "port"
+        },
+        {
+          "id": "gateway_router_vendor_hint",
+          "source": "vendor",
+          "value": "netgear|arris|asus|tp-link|ubiquiti|cisco|mikrotik|linksys|eero",
+          "reliability": "medium",
+          "points": 25,
+          "reason": "Vendor hint matches common router or gateway manufacturers.",
+          "source_group": "vendor"
+        },
+        {
+          "id": "gateway_web_admin_interface",
+          "source": "service",
+          "value": "http_admin|https_admin",
+          "reliability": "low",
+          "points": 10,
+          "reason": "Web administration interface may support router/gateway classification.",
+          "source_group": "service"
+        },
+        {
+          "id": "ap_wireless_vendor_hint",
+          "source": "vendor",
+          "value": "ubiquiti|unifi|ruckus|aruba|meraki|tp-link|netgear|linksys|eero",
+          "reliability": "medium",
+          "points": 30,
+          "reason": "Vendor hint matches common wireless access point manufacturers.",
+          "source_group": "vendor"
+        },
+        {
+          "id": "ap_ap_hostname_hint",
+          "source": "hostname",
+          "value": "ap|wap|unifi|access-point|wifi",
+          "reliability": "medium",
+          "points": 25,
+          "reason": "Hostname suggests a wireless access point.",
+          "source_group": "hostname"
+        },
+        {
+          "id": "ap_web_admin_interface",
+          "source": "service",
+          "value": "http_admin|https_admin",
+          "reliability": "low",
+          "points": 10,
+          "reason": "Web administration interface may support access point classification.",
+          "source_group": "service"
+        }
+      ],
+      "contradicts": [
+        "compute_host",
+        "printer",
+        "surveillance_device"
+      ]
+    },
+    {
+      "axis": "device_family",
+      "label": "compute_host",
+      "description": "General-purpose server or workstation evidence supports a compute host.",
+      "positive_evidence": [
+        {
+          "id": "compute_windows_server",
+          "source": "service",
+          "value": "windows server|active directory|domain controller|microsoft-ds",
+          "reliability": "high",
+          "points": 45,
+          "reason": "Server-oriented Windows or directory-service product evidence supports a compute host.",
+          "source_group": "server_product"
+        },
+        {
+          "id": "compute_linux_server",
+          "source": "service",
+          "value": "openssh|ubuntu|debian|centos|red hat|rocky|alma|apache|nginx|postgresql|mysql",
+          "reliability": "medium",
+          "points": 30,
+          "reason": "Server-oriented operating-system or service product evidence supports a compute host.",
+          "source_group": "server_product"
+        },
+        {
+          "id": "compute_os_server",
+          "source": "os",
+          "value": "linux|windows server|unix|freebsd|solaris",
+          "reliability": "high",
+          "points": 45,
+          "reason": "Operating-system fingerprint supports a general-purpose compute host.",
+          "source_group": "os_fingerprint"
+        },
+        {
+          "id": "compute_hostname",
+          "source": "hostname",
+          "value": "server|srv|host|node|dc[0-9]|db[0-9]|web[0-9]",
+          "reliability": "low",
+          "points": 10,
+          "reason": "Hostname pattern weakly supports a compute host.",
+          "source_group": "hostname"
+        }
+      ],
+      "contradicts": [
+        "network_infrastructure",
+        "printer",
+        "surveillance_device"
+      ]
+    },
+    {
+      "axis": "device_family",
+      "label": "client_endpoint",
+      "description": "Endpoint operating-system and hostname evidence supports a client device.",
+      "positive_evidence": [
+        {
+          "id": "client_windows_os",
+          "source": "os",
+          "value": "windows 10|windows 11|microsoft windows",
+          "reliability": "high",
+          "points": 55,
+          "reason": "Desktop Windows OS evidence supports a client endpoint.",
+          "source_group": "os_fingerprint"
+        },
+        {
+          "id": "client_macos_os",
+          "source": "os",
+          "value": "mac os|macos|apple darwin",
+          "reliability": "high",
+          "points": 55,
+          "reason": "macOS evidence supports a client endpoint.",
+          "source_group": "os_fingerprint"
+        },
+        {
+          "id": "client_mobile_os",
+          "source": "os",
+          "value": "android|ios|iphone|ipad",
+          "reliability": "high",
+          "points": 55,
+          "reason": "Mobile OS evidence supports a client endpoint.",
+          "source_group": "os_fingerprint"
+        },
+        {
+          "id": "client_hostname",
+          "source": "hostname",
+          "value": "laptop|desktop|workstation|iphone|ipad|android|pixel|galaxy",
+          "reliability": "medium",
+          "points": 20,
+          "reason": "Endpoint-oriented hostname evidence supports a client endpoint.",
+          "source_group": "hostname"
+        }
+      ],
+      "contradicts": [
+        "network_infrastructure",
+        "printer",
+        "surveillance_device"
+      ]
+    },
+    {
+      "axis": "device_family",
+      "label": "printer",
+      "description": "Printer protocol, product, title, and vendor evidence supports a printer family.",
+      "positive_evidence": [
+        {
+          "id": "printer_jetdirect_9100",
+          "source": "port",
+          "value": "tcp/9100",
+          "reliability": "high",
+          "points": 40,
+          "reason": "JetDirect/raw print service is strong printer evidence.",
+          "source_group": "port"
+        },
+        {
+          "id": "printer_ipp_631",
+          "source": "port",
+          "value": "tcp/631",
+          "reliability": "high",
+          "points": 35,
+          "reason": "IPP service is strong printer evidence.",
+          "source_group": "port"
+        },
+        {
+          "id": "printer_lpd_515",
+          "source": "port",
+          "value": "tcp/515",
+          "reliability": "medium",
+          "points": 25,
+          "reason": "LPD service commonly appears on network printers.",
+          "source_group": "port"
+        },
+        {
+          "id": "printer_printer_vendor_hint",
+          "source": "vendor",
+          "value": "hp|hewlett|canon|brother|epson|xerox|ricoh|kyocera|lexmark",
+          "reliability": "medium",
+          "points": 25,
+          "reason": "Vendor hint matches common printer or MFP manufacturers.",
+          "source_group": "vendor"
+        },
+        {
+          "id": "printer_printer_web_title",
+          "source": "http_title",
+          "value": "printer|print|mfp|laserjet|officejet|web image monitor",
+          "reliability": "high",
+          "points": 35,
+          "reason": "HTTP title contains printer or MFP language.",
+          "source_group": "http_title"
+        }
+      ],
+      "contradicts": [
+        "compute_host",
+        "surveillance_device"
+      ]
+    },
+    {
+      "axis": "device_family",
+      "label": "surveillance_device",
+      "description": "Camera, recorder, ONVIF, RTSP, and surveillance product evidence supports a surveillance family.",
+      "positive_evidence": [
+        {
+          "id": "surveillance_rtsp_554",
+          "source": "port",
+          "value": "tcp/554",
+          "reliability": "medium",
+          "points": 25,
+          "reason": "RTSP service commonly appears on IP cameras and NVRs.",
+          "source_group": "port"
+        },
+        {
+          "id": "surveillance_rtsp_alt_8554",
+          "source": "port",
+          "value": "tcp/8554",
+          "reliability": "medium",
+          "points": 20,
+          "reason": "Alternate RTSP service commonly appears on cameras or media devices.",
+          "source_group": "port"
+        },
+        {
+          "id": "surveillance_onvif_hint",
+          "source": "service",
+          "value": "onvif",
+          "reliability": "high",
+          "points": 40,
+          "reason": "ONVIF-related service strongly indicates an IP camera or NVR.",
+          "source_group": "service"
+        },
+        {
+          "id": "surveillance_camera_vendor_hint",
+          "source": "vendor",
+          "value": "hikvision|dahua|reolink|axis|amcrest|uniview|lorex",
+          "reliability": "medium",
+          "points": 25,
+          "reason": "Vendor hint matches common IP camera or NVR manufacturers.",
+          "source_group": "vendor"
+        },
+        {
+          "id": "surveillance_camera_web_title",
+          "source": "http_title",
+          "value": "camera|nvr|dvr|surveillance|ipcam|webcam",
+          "reliability": "high",
+          "points": 35,
+          "reason": "HTTP title contains camera or recorder language.",
+          "source_group": "http_title"
+        }
+      ],
+      "contradicts": [
+        "compute_host",
+        "printer"
+      ]
+    },
+    {
+      "axis": "device_family",
+      "label": "storage_appliance",
+      "description": "Storage-product, NAS-title, and file-service evidence supports a storage appliance.",
+      "positive_evidence": [
+        {
+          "id": "storage_smb_445",
+          "source": "port",
+          "value": "tcp/445",
+          "reliability": "medium",
+          "points": 25,
+          "reason": "SMB service may indicate network storage when combined with storage hints.",
+          "source_group": "port"
+        },
+        {
+          "id": "storage_nfs_2049",
+          "source": "port",
+          "value": "tcp/2049",
+          "reliability": "high",
+          "points": 35,
+          "reason": "NFS service supports NAS or storage appliance classification.",
+          "source_group": "port"
+        },
+        {
+          "id": "storage_storage_vendor_hint",
+          "source": "vendor",
+          "value": "synology|qnap|netgear|asustor|truenas|freenas|western digital",
+          "reliability": "medium",
+          "points": 30,
+          "reason": "Vendor hint matches common NAS or storage platforms.",
+          "source_group": "vendor"
+        },
+        {
+          "id": "storage_nas_web_title",
+          "source": "http_title",
+          "value": "synology|qnap|nas|storage|truenas|freenas",
+          "reliability": "high",
+          "points": 35,
+          "reason": "HTTP title contains NAS or storage platform language.",
+          "source_group": "http_title"
+        }
+      ],
+      "contradicts": [
+        "compute_host"
+      ]
+    },
+    {
+      "axis": "device_family",
+      "label": "voice_device",
+      "description": "SIP, PBX, handset product, and vendor evidence supports a voice device.",
+      "positive_evidence": [
+        {
+          "id": "voice_sip",
+          "source": "port",
+          "value": "tcp/5060|udp/5060|tcp/5061|udp/5061",
+          "reliability": "medium",
+          "points": 25,
+          "reason": "SIP service supports a voice-device candidate.",
+          "source_group": "sip_port"
+        },
+        {
+          "id": "voice_product",
+          "source": "service",
+          "value": "sip|voip|asterisk|freepbx|cisco ip phone|polycom|yealink",
+          "reliability": "high",
+          "points": 45,
+          "reason": "Voice or PBX product evidence supports a voice device.",
+          "source_group": "voice_product"
+        },
+        {
+          "id": "voice_vendor",
+          "source": "vendor",
+          "value": "polycom|yealink|grandstream|avaya|mitel",
+          "reliability": "medium",
+          "points": 25,
+          "reason": "Voice-device vendor evidence supports a voice family.",
+          "source_group": "vendor"
+        }
+      ],
+      "contradicts": [
+        "compute_host"
+      ]
+    },
+    {
+      "axis": "device_family",
+      "label": "power_device",
+      "description": "UPS, PDU, and power-management evidence supports a power-device family.",
+      "positive_evidence": [
+        {
+          "id": "power_snmp",
+          "source": "port",
+          "value": "udp/161|tcp/161",
+          "reliability": "low",
+          "points": 10,
+          "reason": "SNMP is weak power-device evidence.",
+          "source_group": "port"
+        },
+        {
+          "id": "power_product",
+          "source": "service",
+          "value": "\\bups\\b|\\bpdu\\b|powerchute|network management card|\\bapc\\b|eaton|cyberpower|tripplite",
+          "reliability": "high",
+          "points": 50,
+          "reason": "UPS or power-management product evidence supports a power device.",
+          "source_group": "power_product"
+        },
+        {
+          "id": "power_vendor",
+          "source": "vendor",
+          "value": "apc|eaton|cyberpower|tripplite",
+          "reliability": "medium",
+          "points": 25,
+          "reason": "Power-device vendor evidence supports a power device.",
+          "source_group": "vendor"
+        }
+      ],
+      "contradicts": [
+        "compute_host"
+      ]
+    },
+    {
+      "axis": "device_family",
+      "label": "iot_embedded",
+      "description": "Embedded-product and device-management evidence supports an IoT family.",
+      "positive_evidence": [
+        {
+          "id": "iot_product",
+          "source": "service",
+          "value": "esp32|espressif|arduino|microcontroller|embedded|iot",
+          "reliability": "high",
+          "points": 45,
+          "reason": "Embedded or IoT product evidence supports an IoT family.",
+          "source_group": "iot_product"
+        },
+        {
+          "id": "iot_vendor",
+          "source": "vendor",
+          "value": "espressif|tuya|sonoff|shelly|arduino",
+          "reliability": "medium",
+          "points": 25,
+          "reason": "Embedded-device vendor evidence supports an IoT family.",
+          "source_group": "vendor"
+        },
+        {
+          "id": "iot_debug",
+          "source": "port",
+          "value": "tcp/5555|tcp/7547",
+          "reliability": "low",
+          "points": 15,
+          "reason": "Embedded management or debug ports weakly support an IoT family.",
+          "source_group": "port"
+        }
+      ],
+      "contradicts": [
+        "compute_host"
+      ]
+    },
+    {
+      "axis": "role",
+      "label": "gateway",
+      "description": "Gateway and routing evidence supports the gateway role.",
+      "positive_evidence": [
+        {
+          "id": "role_gateway_default_gateway_role",
+          "source": "network_role",
+          "value": "default_gateway",
+          "reliability": "high",
+          "points": 45,
+          "reason": "Host is the observed default gateway.",
+          "source_group": "network_role"
+        },
+        {
+          "id": "role_gateway_dns_service",
+          "source": "port",
+          "value": "tcp/53|udp/53",
+          "reliability": "medium",
+          "points": 20,
+          "reason": "DNS service commonly appears on routers or gateways.",
+          "source_group": "port"
+        },
+        {
+          "id": "role_gateway_dhcp_service",
+          "source": "port",
+          "value": "udp/67|udp/68",
+          "reliability": "medium",
+          "points": 20,
+          "reason": "DHCP service commonly appears on routers or gateways.",
+          "source_group": "port"
+        },
+        {
+          "id": "role_gateway_router_vendor_hint",
+          "source": "vendor",
+          "value": "netgear|arris|asus|tp-link|ubiquiti|cisco|mikrotik|linksys|eero",
+          "reliability": "medium",
+          "points": 25,
+          "reason": "Vendor hint matches common router or gateway manufacturers.",
+          "source_group": "vendor"
+        },
+        {
+          "id": "role_gateway_web_admin_interface",
+          "source": "service",
+          "value": "http_admin|https_admin",
+          "reliability": "low",
+          "points": 10,
+          "reason": "Web administration interface may support router/gateway classification.",
+          "source_group": "service"
+        }
+      ],
+      "contradicts": []
+    },
+    {
+      "axis": "role",
+      "label": "wireless_access_point",
+      "description": "Wireless-controller and access-point evidence supports the AP role.",
+      "positive_evidence": [
+        {
+          "id": "role_ap_product",
+          "source": "service",
+          "value": "unifi|wireless access point|aruba instant|ruckus|meraki",
+          "reliability": "high",
+          "points": 50,
+          "reason": "Recognized access-point product evidence strongly supports the wireless access point role.",
+          "source_group": "ap_product"
+        },
+        {
+          "id": "role_ap_wireless_vendor_hint",
+          "source": "vendor",
+          "value": "ubiquiti|unifi|ruckus|aruba|meraki|tp-link|netgear|linksys|eero",
+          "reliability": "medium",
+          "points": 30,
+          "reason": "Vendor hint matches common wireless access point manufacturers.",
+          "source_group": "vendor"
+        },
+        {
+          "id": "role_ap_ap_hostname_hint",
+          "source": "hostname",
+          "value": "ap|wap|unifi|access-point|wifi",
+          "reliability": "medium",
+          "points": 25,
+          "reason": "Hostname suggests a wireless access point.",
+          "source_group": "hostname"
+        },
+        {
+          "id": "role_ap_web_admin_interface",
+          "source": "service",
+          "value": "http_admin|https_admin",
+          "reliability": "low",
+          "points": 10,
+          "reason": "Web administration interface may support access point classification.",
+          "source_group": "service"
+        }
+      ],
+      "contradicts": []
+    },
+    {
+      "axis": "role",
+      "label": "managed_switch",
+      "description": "Switch product and management evidence supports a managed-switch role.",
+      "positive_evidence": [
+        {
+          "id": "switch_product",
+          "source": "service",
+          "value": "managed switch|procurve|edgeswitch|catalyst|switchos|network switch",
+          "reliability": "high",
+          "points": 50,
+          "reason": "Managed-switch product evidence supports the switch role.",
+          "source_group": "switch_product"
+        },
+        {
+          "id": "switch_vendor",
+          "source": "vendor",
+          "value": "cisco|aruba|juniper|netgear|tp-link|ubiquiti",
+          "reliability": "medium",
+          "points": 20,
+          "reason": "Infrastructure vendor evidence supports a managed-switch candidate.",
+          "source_group": "vendor"
+        },
+        {
+          "id": "switch_snmp",
+          "source": "port",
+          "value": "udp/161|tcp/161",
+          "reliability": "low",
+          "points": 10,
+          "reason": "SNMP weakly supports a managed-switch candidate.",
+          "source_group": "port"
+        }
+      ],
+      "contradicts": []
+    },
+    {
+      "axis": "role",
+      "label": "security_gateway",
+      "description": "Firewall and VPN product evidence supports a security-gateway role.",
+      "positive_evidence": [
+        {
+          "id": "security_product",
+          "source": "service",
+          "value": "pfsense|opnsense|fortinet|fortigate|sonicwall|palo alto|sophos|watchguard|firewall|vpn gateway",
+          "reliability": "high",
+          "points": 55,
+          "reason": "Firewall or VPN-gateway product evidence supports a security-gateway role.",
+          "source_group": "security_product"
+        },
+        {
+          "id": "security_title",
+          "source": "http_title",
+          "value": "firewall|vpn|security gateway|pfsense|opnsense|fortigate",
+          "reliability": "high",
+          "points": 40,
+          "reason": "Security-gateway web title supports the role.",
+          "source_group": "http_metadata"
+        },
+        {
+          "id": "security_ports",
+          "source": "port",
+          "value": "udp/500|udp/4500",
+          "reliability": "low",
+          "points": 10,
+          "reason": "IKE/IPsec gateway ports weakly support a security role.",
+          "source_group": "port"
+        }
+      ],
+      "contradicts": []
+    },
+    {
+      "axis": "role",
+      "label": "domain_controller",
+      "description": "Kerberos, LDAP, SMB, DNS, and domain product evidence supports a domain-controller role.",
+      "positive_evidence": [
+        {
+          "id": "role_dc_kerberos_88",
+          "source": "port",
+          "value": "tcp/88",
+          "reliability": "high",
+          "points": 35,
+          "reason": "Kerberos service is strong Active Directory evidence when combined with LDAP/SMB/DNS.",
+          "source_group": "port"
+        },
+        {
+          "id": "role_dc_ldap_389",
+          "source": "port",
+          "value": "tcp/389",
+          "reliability": "high",
+          "points": 35,
+          "reason": "LDAP service is strong domain controller evidence when combined with Kerberos/SMB/DNS.",
+          "source_group": "port"
+        },
+        {
+          "id": "role_dc_ldaps_636",
+          "source": "port",
+          "value": "tcp/636",
+          "reliability": "high",
+          "points": 30,
+          "reason": "LDAPS service supports Active Directory or directory-service classification.",
+          "source_group": "port"
+        },
+        {
+          "id": "role_dc_smb_445",
+          "source": "port",
+          "value": "tcp/445",
+          "reliability": "medium",
+          "points": 20,
+          "reason": "SMB supports Windows server or domain-controller classification.",
+          "source_group": "port"
+        },
+        {
+          "id": "role_dc_dns_53",
+          "source": "port",
+          "value": "tcp/53|udp/53",
+          "reliability": "medium",
+          "points": 20,
+          "reason": "DNS is commonly present on domain controllers.",
+          "source_group": "port"
+        },
+        {
+          "id": "role_dc_domain_hint",
+          "source": "service",
+          "value": "domain|active directory|ldap|kerberos",
+          "reliability": "high",
+          "points": 40,
+          "reason": "Service metadata suggests a domain or directory role.",
+          "source_group": "service"
+        }
+      ],
+      "contradicts": [
+        "print_service"
+      ]
+    },
+    {
+      "axis": "role",
+      "label": "dns_server",
+      "description": "DNS protocol and product evidence supports a DNS-server role.",
+      "positive_evidence": [
+        {
+          "id": "dns_tcp",
+          "source": "port",
+          "value": "tcp/53",
+          "reliability": "low",
+          "points": 10,
+          "reason": "TCP DNS port supports a DNS-server candidate.",
+          "source_group": "port"
+        },
+        {
+          "id": "dns_udp",
+          "source": "port",
+          "value": "udp/53",
+          "reliability": "low",
+          "points": 10,
+          "reason": "UDP DNS port supports a DNS-server candidate.",
+          "source_group": "port"
+        },
+        {
+          "id": "dns_product",
+          "source": "service",
+          "value": "domain|dns|bind|unbound|dnsmasq",
+          "reliability": "high",
+          "points": 55,
+          "reason": "DNS product evidence supports a DNS-server role.",
+          "source_group": "dns_product"
+        }
+      ],
+      "contradicts": []
+    },
+    {
+      "axis": "role",
+      "label": "web_server",
+      "description": "Independent web-runtime and server-context evidence supports a web-server role; embedded administration interfaces remain review-only.",
+      "positive_evidence": [
+        {
+          "id": "role_web_http_80",
+          "source": "port",
+          "value": "tcp/80",
+          "reliability": "low",
+          "points": 15,
+          "reason": "HTTP service indicates a web interface or web server, but port-only evidence is weak.",
+          "source_group": "web_endpoint",
+          "independence_group": "web_service"
+        },
+        {
+          "id": "role_web_https_443",
+          "source": "port",
+          "value": "tcp/443",
+          "reliability": "low",
+          "points": 15,
+          "reason": "HTTPS service indicates a web interface or web server, but port-only evidence is weak.",
+          "source_group": "web_endpoint",
+          "independence_group": "web_service"
+        },
+        {
+          "id": "role_web_http_alt_8080",
+          "source": "port",
+          "value": "tcp/8080",
+          "reliability": "low",
+          "points": 15,
+          "reason": "Alternate HTTP service may indicate a web application or admin interface.",
+          "source_group": "web_endpoint",
+          "independence_group": "web_service"
+        },
+        {
+          "id": "role_web_web_product_title",
+          "source": "http_title",
+          "value": "apache|nginx|iis|tomcat|jenkins|grafana|dashboard|webmin|admin console",
+          "reliability": "medium",
+          "points": 25,
+          "reason": "HTTP metadata contains a recognizable web runtime or application hint, but it remains part of the same web-service evidence domain.",
+          "source_group": "web_runtime",
+          "independence_group": "web_service"
+        },
+        {
+          "id": "role_web_server_header",
+          "source": "service",
+          "value": "apache|nginx|iis|tomcat|jetty|gunicorn|uwsgi",
+          "reliability": "medium",
+          "points": 25,
+          "reason": "Recognized web-runtime product evidence supports a web-server candidate, but requires independent server context for classification.",
+          "source_group": "web_runtime",
+          "independence_group": "web_service"
+        },
+        {
+          "id": "role_web_http_dev_3000",
+          "source": "port",
+          "value": "tcp/3000",
+          "reliability": "low",
+          "points": 15,
+          "reason": "tcp/3000 commonly hosts development dashboards or web applications, but port-only evidence is weak.",
+          "source_group": "web_endpoint",
+          "independence_group": "web_service"
+        },
+        {
+          "id": "role_web_dashboard_service_hint",
+          "source": "service",
+          "value": "grafana|prometheus|dashboard|web dashboard|admin dashboard|kibana",
+          "reliability": "medium",
+          "points": 25,
+          "reason": "Dashboard metadata supports a web-facing role candidate but does not independently establish a standalone web server.",
+          "source_group": "web_runtime",
+          "independence_group": "web_service"
+        },
+        {
+          "id": "role_web_dashboard_title_hint",
+          "source": "http_title",
+          "value": "grafana|prometheus|kibana|dashboard|admin dashboard",
+          "reliability": "medium",
+          "points": 25,
+          "reason": "Dashboard metadata supports a web-facing role candidate but does not independently establish a standalone web server.",
+          "source_group": "web_runtime",
+          "independence_group": "web_service"
+        },
+        {
+          "id": "role_web_product_v2",
+          "source": "service",
+          "value": "nginx|apache|httpd|iis|tomcat|caddy|lighttpd",
+          "reliability": "high",
+          "points": 55,
+          "reason": "Recognized web-runtime product evidence supports a web-server candidate, but requires independent server context for classification.",
+          "source_group": "web_runtime",
+          "independence_group": "web_service"
+        },
+        {
+          "id": "role_web_server_os_context",
+          "source": "os",
+          "value": "linux|unix|freebsd|ubuntu|debian|centos|red hat|rocky|alma|windows server",
+          "reliability": "high",
+          "points": 25,
+          "reason": "Server-capable operating-system evidence independently supports a web-server role.",
+          "source_group": "server_context",
+          "independence_group": "server_context"
+        },
+        {
+          "id": "role_web_distinct_server_service_context",
+          "source": "service",
+          "value": "openssh|postgresql|mysql|mariadb|microsoft-ds|samba|nfs",
+          "reliability": "medium",
+          "points": 25,
+          "reason": "A distinct non-HTTP server service independently supports a general-purpose server context.",
+          "source_group": "server_context",
+          "independence_group": "server_context"
+        },
+        {
+          "id": "role_web_server_hostname_context",
+          "source": "hostname",
+          "value": "(^|[-_.])(web|www|server|srv|app)([-_.0-9]|$)",
+          "reliability": "low",
+          "points": 10,
+          "reason": "A server-oriented hostname weakly supports independent server context.",
+          "source_group": "server_context",
+          "independence_group": "server_context"
+        }
+      ],
+      "contradicts": [],
+      "classification_guard": {
+        "kind": "embedded_admin_web_server_boundary",
+        "minimum_classified_independence_groups": [
+          "web_service",
+          "server_context"
+        ],
+        "management_cap_policy_key": "embedded_admin_web_server_cap",
+        "management_uncertainty_reason": "embedded_admin_interface",
+        "management_observed_fields": [
+          "service_hints",
+          "http_titles",
+          "vendor_hints",
+          "hostname_hints"
+        ],
+        "appliance_family_labels": [
+          "network_infrastructure",
+          "printer",
+          "surveillance_device",
+          "storage_appliance",
+          "voice_device",
+          "power_device",
+          "iot_embedded"
+        ],
+        "appliance_role_labels": [
+          "gateway",
+          "wireless_access_point",
+          "managed_switch",
+          "security_gateway",
+          "hypervisor",
+          "nas_service",
+          "print_service",
+          "camera",
+          "network_video_recorder",
+          "voip_endpoint",
+          "pbx",
+          "ups_monitor"
+        ],
+        "minimum_appliance_context_confidence": 40,
+        "management_patterns": {
+          "service_hints": "printer|mfp|laserjet|officejet|jetdirect|image monitor|camera|webcam|doorbell|nvr|dvr|onvif|rtsp|doorbird|router|wireless access point|managed switch|switchos|firewall|security appliance|vpn gateway|nas appliance|synology|qnap|truenas|freenas|hypervisor|proxmox|esxi|vcenter|pbx|voip phone|ups|pdu|powerchute|embedded|firmware|iot|zigbee|tradfri|smart home|device controller|tp[- ]?link|meraki",
+          "http_titles": "printer|mfp|laserjet|officejet|image monitor|camera|webcam|doorbell|nvr|dvr|surveillance|router administration|gateway administration|access point|managed switch|firewall|security appliance|vpn gateway|nas administration|storage appliance|synology|qnap|truenas|freenas|proxmox|esxi|vcenter|pbx|voip|ups management|pdu management|embedded administration|firmware|zigbee|tradfri|smart home controller",
+          "vendor_hints": "tp[- ]?link|meraki|hikvision|dahua|reolink|axis|amcrest|doorbird|synology|qnap|ubiquiti|ruckus|aruba|fortinet|sonicwall|watchguard|brother|hewlett|canon|epson|xerox|ricoh|kyocera|lexmark|apc|eaton|cyberpower|tripplite",
+          "hostname_hints": "(^|[-_.])(printer|mfp|camera|cam|nvr|dvr|router|wap|ap|switch|nas|firewall|fw|pbx|ups|pdu|iot|zigbee)([-_.0-9]|$)"
+        }
+      }
+    },
+    {
+      "axis": "role",
+      "label": "web_application_host",
+      "description": "Application runtime and title evidence supports a web-application-host role.",
+      "positive_evidence": [
+        {
+          "id": "webapp_title",
+          "source": "http_title",
+          "value": "dashboard|login|portal|grafana|jenkins|gitlab|jupyter|webmin|cockpit",
+          "reliability": "high",
+          "points": 40,
+          "reason": "Application-specific HTTP title supports a web-application role.",
+          "source_group": "http_metadata"
+        },
+        {
+          "id": "webapp_product",
+          "source": "service",
+          "value": "tomcat|gunicorn|node.js|express|django|flask|rails|php",
+          "reliability": "high",
+          "points": 45,
+          "reason": "Application runtime product evidence supports a web-application role.",
+          "source_group": "application_product"
+        },
+        {
+          "id": "webapp_port",
+          "source": "port",
+          "value": "tcp/3000|tcp/8000|tcp/8080|tcp/8081|tcp/8443|tcp/8888",
+          "reliability": "low",
+          "points": 10,
+          "reason": "Alternate web port weakly supports a web-application role.",
+          "source_group": "port"
+        }
+      ],
+      "contradicts": []
+    },
+    {
+      "axis": "role",
+      "label": "database_server",
+      "description": "Database protocol and product evidence supports a database-server role.",
+      "positive_evidence": [
+        {
+          "id": "role_db_mysql_3306",
+          "source": "port",
+          "value": "tcp/3306",
+          "reliability": "high",
+          "points": 40,
+          "reason": "MySQL/MariaDB port indicates a database service.",
+          "source_group": "port"
+        },
+        {
+          "id": "role_db_postgres_5432",
+          "source": "port",
+          "value": "tcp/5432",
+          "reliability": "high",
+          "points": 40,
+          "reason": "PostgreSQL port indicates a database service.",
+          "source_group": "port"
+        },
+        {
+          "id": "role_db_mssql_1433",
+          "source": "port",
+          "value": "tcp/1433",
+          "reliability": "high",
+          "points": 40,
+          "reason": "Microsoft SQL Server port indicates a database service.",
+          "source_group": "port"
+        },
+        {
+          "id": "role_db_mongodb_27017",
+          "source": "port",
+          "value": "tcp/27017",
+          "reliability": "high",
+          "points": 40,
+          "reason": "MongoDB port indicates a database service.",
+          "source_group": "port"
+        },
+        {
+          "id": "role_db_redis_6379",
+          "source": "port",
+          "value": "tcp/6379",
+          "reliability": "high",
+          "points": 40,
+          "reason": "Redis port indicates a database/cache service.",
+          "source_group": "port"
+        },
+        {
+          "id": "role_db_elasticsearch_9200",
+          "source": "port",
+          "value": "tcp/9200",
+          "reliability": "high",
+          "points": 40,
+          "reason": "Elasticsearch port indicates a search/database service.",
+          "source_group": "port"
+        },
+        {
+          "id": "role_db_product_v2",
+          "source": "service",
+          "value": "postgresql|mysql|mariadb|microsoft sql|oracle|mongodb|redis|elasticsearch",
+          "reliability": "high",
+          "points": 70,
+          "reason": "Recognized database product evidence strongly supports a database-server role.",
+          "source_group": "database_product",
+          "unique_identifying": true
+        }
+      ],
+      "contradicts": []
+    },
+    {
+      "axis": "role",
+      "label": "container_host",
+      "description": "Docker, container runtime, registry, and management evidence supports a container-host role.",
+      "positive_evidence": [
+        {
+          "id": "role_container_docker_2375",
+          "source": "port",
+          "value": "tcp/2375",
+          "reliability": "high",
+          "points": 45,
+          "reason": "Docker API over cleartext is strong container infrastructure evidence.",
+          "source_group": "port"
+        },
+        {
+          "id": "role_container_docker_tls_2376",
+          "source": "port",
+          "value": "tcp/2376",
+          "reliability": "high",
+          "points": 45,
+          "reason": "Docker API over TLS is strong container infrastructure evidence.",
+          "source_group": "port"
+        },
+        {
+          "id": "role_container_registry_5000",
+          "source": "port",
+          "value": "tcp/5000",
+          "reliability": "medium",
+          "points": 30,
+          "reason": "Docker registry service suggests container infrastructure.",
+          "source_group": "port"
+        },
+        {
+          "id": "role_container_kubernetes_6443",
+          "source": "port",
+          "value": "tcp/6443",
+          "reliability": "high",
+          "points": 45,
+          "reason": "Kubernetes API server port is strong container orchestration evidence.",
+          "source_group": "port"
+        },
+        {
+          "id": "role_container_kubelet_10250",
+          "source": "port",
+          "value": "tcp/10250",
+          "reliability": "high",
+          "points": 45,
+          "reason": "Kubelet API port is strong Kubernetes node evidence.",
+          "source_group": "port"
+        },
+        {
+          "id": "role_container_portainer_9000",
+          "source": "port",
+          "value": "tcp/9000",
+          "reliability": "medium",
+          "points": 25,
+          "reason": "Portainer commonly exposes a management UI on tcp/9000.",
+          "source_group": "port"
+        },
+        {
+          "id": "role_container_portainer_9443",
+          "source": "port",
+          "value": "tcp/9443",
+          "reliability": "medium",
+          "points": 25,
+          "reason": "Portainer commonly exposes a TLS management UI on tcp/9443.",
+          "source_group": "port"
+        },
+        {
+          "id": "role_container_product_v2",
+          "source": "service",
+          "value": "docker|containerd|podman|cri-o|portainer",
+          "reliability": "high",
+          "points": 55,
+          "reason": "Recognized container runtime product evidence strongly supports a container-host role.",
+          "source_group": "container_product"
+        }
+      ],
+      "contradicts": []
+    },
+    {
+      "axis": "role",
+      "label": "container_orchestrator",
+      "description": "Kubernetes API, kubelet, and orchestrator product evidence supports a container-orchestrator role.",
+      "positive_evidence": [
+        {
+          "id": "kube_api",
+          "source": "port",
+          "value": "tcp/6443",
+          "reliability": "medium",
+          "points": 30,
+          "reason": "Kubernetes API port supports an orchestrator candidate.",
+          "source_group": "port"
+        },
+        {
+          "id": "kubelet",
+          "source": "port",
+          "value": "tcp/10250|tcp/10255",
+          "reliability": "medium",
+          "points": 25,
+          "reason": "Kubelet port supports an orchestrator candidate.",
+          "source_group": "port"
+        },
+        {
+          "id": "kubernetes_product",
+          "source": "service",
+          "value": "kubernetes|kubelet|kube-apiserver",
+          "reliability": "high",
+          "points": 50,
+          "reason": "Kubernetes product evidence supports an orchestrator role.",
+          "source_group": "orchestrator_product"
+        }
+      ],
+      "contradicts": []
+    },
+    {
+      "axis": "role",
+      "label": "hypervisor",
+      "description": "Virtualization product and management evidence supports a hypervisor role.",
+      "positive_evidence": [
+        {
+          "id": "hypervisor_product",
+          "source": "service",
+          "value": "proxmox|vmware|esxi|vcenter|hyper-v|xenserver|libvirt",
+          "reliability": "high",
+          "points": 55,
+          "reason": "Virtualization product evidence supports a hypervisor role.",
+          "source_group": "hypervisor_product"
+        },
+        {
+          "id": "proxmox_port",
+          "source": "port",
+          "value": "tcp/8006",
+          "reliability": "medium",
+          "points": 30,
+          "reason": "Proxmox management port supports a hypervisor role.",
+          "source_group": "port"
+        },
+        {
+          "id": "vcenter_port",
+          "source": "port",
+          "value": "tcp/9443",
+          "reliability": "low",
+          "points": 10,
+          "reason": "A dedicated management TLS port weakly supports a hypervisor role.",
+          "source_group": "port"
+        }
+      ],
+      "contradicts": []
+    },
+    {
+      "axis": "role",
+      "label": "file_server",
+      "description": "SMB, NFS, and file-service product evidence supports a file-server role.",
+      "positive_evidence": [
+        {
+          "id": "file_smb",
+          "source": "port",
+          "value": "tcp/445|tcp/139",
+          "reliability": "low",
+          "points": 15,
+          "reason": "SMB ports support a file-server candidate.",
+          "source_group": "port"
+        },
+        {
+          "id": "file_nfs",
+          "source": "port",
+          "value": "tcp/2049|udp/2049",
+          "reliability": "medium",
+          "points": 25,
+          "reason": "NFS service supports a file-server candidate.",
+          "source_group": "port"
+        },
+        {
+          "id": "file_product",
+          "source": "service",
+          "value": "samba|nfs|file server|cifs",
+          "reliability": "high",
+          "points": 45,
+          "reason": "File-service product evidence supports a file-server role.",
+          "source_group": "file_product"
+        }
+      ],
+      "contradicts": []
+    },
+    {
+      "axis": "role",
+      "label": "nas_service",
+      "description": "NAS and storage-product evidence supports a NAS-service role.",
+      "positive_evidence": [
+        {
+          "id": "role_nas_smb_445",
+          "source": "port",
+          "value": "tcp/445",
+          "reliability": "medium",
+          "points": 25,
+          "reason": "SMB service may indicate network storage when combined with storage hints.",
+          "source_group": "port"
+        },
+        {
+          "id": "role_nas_nfs_2049",
+          "source": "port",
+          "value": "tcp/2049",
+          "reliability": "high",
+          "points": 35,
+          "reason": "NFS service supports NAS or storage appliance classification.",
+          "source_group": "port"
+        },
+        {
+          "id": "role_nas_storage_vendor_hint",
+          "source": "vendor",
+          "value": "synology|qnap|netgear|asustor|truenas|freenas|western digital",
+          "reliability": "medium",
+          "points": 30,
+          "reason": "Vendor hint matches common NAS or storage platforms.",
+          "source_group": "vendor"
+        },
+        {
+          "id": "role_nas_nas_web_title",
+          "source": "http_title",
+          "value": "synology|qnap|nas|storage|truenas|freenas",
+          "reliability": "high",
+          "points": 35,
+          "reason": "HTTP title contains NAS or storage platform language.",
+          "source_group": "http_title"
+        }
+      ],
+      "contradicts": []
+    },
+    {
+      "axis": "role",
+      "label": "print_service",
+      "description": "IPP, LPD, JetDirect, and printer-product evidence supports a print-service role.",
+      "positive_evidence": [
+        {
+          "id": "role_print_jetdirect_9100",
+          "source": "port",
+          "value": "tcp/9100",
+          "reliability": "high",
+          "points": 40,
+          "reason": "JetDirect/raw print service is strong printer evidence.",
+          "source_group": "port"
+        },
+        {
+          "id": "role_print_ipp_631",
+          "source": "port",
+          "value": "tcp/631",
+          "reliability": "high",
+          "points": 35,
+          "reason": "IPP service is strong printer evidence.",
+          "source_group": "port"
+        },
+        {
+          "id": "role_print_lpd_515",
+          "source": "port",
+          "value": "tcp/515",
+          "reliability": "medium",
+          "points": 25,
+          "reason": "LPD service commonly appears on network printers.",
+          "source_group": "port"
+        },
+        {
+          "id": "role_print_printer_vendor_hint",
+          "source": "vendor",
+          "value": "hp|hewlett|canon|brother|epson|xerox|ricoh|kyocera|lexmark",
+          "reliability": "medium",
+          "points": 25,
+          "reason": "Vendor hint matches common printer or MFP manufacturers.",
+          "source_group": "vendor"
+        },
+        {
+          "id": "role_print_printer_web_title",
+          "source": "http_title",
+          "value": "printer|print|mfp|laserjet|officejet|web image monitor",
+          "reliability": "high",
+          "points": 35,
+          "reason": "HTTP title contains printer or MFP language.",
+          "source_group": "http_title"
+        }
+      ],
+      "contradicts": [
+        "domain_controller"
+      ]
+    },
+    {
+      "axis": "role",
+      "label": "camera",
+      "description": "ONVIF, RTSP, camera product, title, and vendor evidence supports a camera role.",
+      "positive_evidence": [
+        {
+          "id": "role_camera_rtsp_554",
+          "source": "port",
+          "value": "tcp/554",
+          "reliability": "medium",
+          "points": 25,
+          "reason": "RTSP service commonly appears on IP cameras and NVRs.",
+          "source_group": "port"
+        },
+        {
+          "id": "role_camera_rtsp_alt_8554",
+          "source": "port",
+          "value": "tcp/8554",
+          "reliability": "medium",
+          "points": 20,
+          "reason": "Alternate RTSP service commonly appears on cameras or media devices.",
+          "source_group": "port"
+        },
+        {
+          "id": "role_camera_onvif_hint",
+          "source": "service",
+          "value": "onvif",
+          "reliability": "high",
+          "points": 40,
+          "reason": "ONVIF-related service strongly indicates an IP camera or NVR.",
+          "source_group": "service"
+        },
+        {
+          "id": "role_camera_camera_vendor_hint",
+          "source": "vendor",
+          "value": "hikvision|dahua|reolink|axis|amcrest|uniview|lorex",
+          "reliability": "medium",
+          "points": 25,
+          "reason": "Vendor hint matches common IP camera or NVR manufacturers.",
+          "source_group": "vendor"
+        },
+        {
+          "id": "role_camera_camera_web_title",
+          "source": "http_title",
+          "value": "camera|nvr|dvr|surveillance|ipcam|webcam",
+          "reliability": "high",
+          "points": 35,
+          "reason": "HTTP title contains camera or recorder language.",
+          "source_group": "http_title"
+        }
+      ],
+      "contradicts": []
+    },
+    {
+      "axis": "role",
+      "label": "network_video_recorder",
+      "description": "Recorder-specific product and title evidence supports an NVR role.",
+      "positive_evidence": [
+        {
+          "id": "nvr_product",
+          "source": "service",
+          "value": "nvr|dvr|network video recorder|surveillance recorder",
+          "reliability": "high",
+          "points": 55,
+          "reason": "Recorder product evidence supports an NVR role.",
+          "source_group": "nvr_product"
+        },
+        {
+          "id": "nvr_title",
+          "source": "http_title",
+          "value": "nvr|dvr|recorder|surveillance storage",
+          "reliability": "high",
+          "points": 45,
+          "reason": "Recorder web title supports an NVR role.",
+          "source_group": "http_metadata"
+        },
+        {
+          "id": "nvr_rtsp",
+          "source": "port",
+          "value": "tcp/554|tcp/8554",
+          "reliability": "low",
+          "points": 10,
+          "reason": "RTSP weakly supports an NVR candidate.",
+          "source_group": "port"
+        }
+      ],
+      "contradicts": []
+    },
+    {
+      "axis": "role",
+      "label": "voip_endpoint",
+      "description": "SIP handset product and vendor evidence supports a VoIP endpoint role.",
+      "positive_evidence": [
+        {
+          "id": "voip_product",
+          "source": "service",
+          "value": "sip|voip|ip phone|polycom|yealink|grandstream",
+          "reliability": "high",
+          "points": 50,
+          "reason": "Handset or SIP product evidence supports a VoIP endpoint.",
+          "source_group": "voice_product"
+        },
+        {
+          "id": "voip_port",
+          "source": "port",
+          "value": "tcp/5060|udp/5060|tcp/5061|udp/5061",
+          "reliability": "medium",
+          "points": 25,
+          "reason": "SIP port supports a VoIP endpoint candidate.",
+          "source_group": "port"
+        },
+        {
+          "id": "voip_vendor",
+          "source": "vendor",
+          "value": "polycom|yealink|grandstream|avaya|mitel",
+          "reliability": "medium",
+          "points": 25,
+          "reason": "Voice-device vendor supports a VoIP endpoint.",
+          "source_group": "vendor"
+        }
+      ],
+      "contradicts": []
+    },
+    {
+      "axis": "role",
+      "label": "pbx",
+      "description": "PBX product and management evidence supports a PBX role.",
+      "positive_evidence": [
+        {
+          "id": "pbx_product",
+          "source": "service",
+          "value": "asterisk|freepbx|3cx|pbx|call manager|cucm",
+          "reliability": "high",
+          "points": 55,
+          "reason": "PBX product evidence supports a PBX role.",
+          "source_group": "pbx_product"
+        },
+        {
+          "id": "pbx_title",
+          "source": "http_title",
+          "value": "freepbx|pbx|call manager|3cx",
+          "reliability": "high",
+          "points": 45,
+          "reason": "PBX web title supports a PBX role.",
+          "source_group": "http_metadata"
+        },
+        {
+          "id": "pbx_port",
+          "source": "port",
+          "value": "tcp/5060|udp/5060|tcp/5061|udp/5061",
+          "reliability": "medium",
+          "points": 20,
+          "reason": "SIP port supports a PBX candidate.",
+          "source_group": "port"
+        }
+      ],
+      "contradicts": []
+    },
+    {
+      "axis": "role",
+      "label": "ups_monitor",
+      "description": "UPS and power-management evidence supports an UPS-monitor role.",
+      "positive_evidence": [
+        {
+          "id": "ups_product",
+          "source": "service",
+          "value": "\\bups\\b|\\bpdu\\b|powerchute|network management card|\\bapc\\b|eaton|cyberpower|tripplite",
+          "reliability": "high",
+          "points": 55,
+          "reason": "UPS management product evidence supports an UPS-monitor role.",
+          "source_group": "power_product"
+        },
+        {
+          "id": "ups_title",
+          "source": "http_title",
+          "value": "\\bups\\b|\\bpdu\\b|power management|powerchute",
+          "reliability": "high",
+          "points": 45,
+          "reason": "UPS web title supports an UPS-monitor role.",
+          "source_group": "http_metadata"
+        },
+        {
+          "id": "ups_snmp",
+          "source": "port",
+          "value": "udp/161|tcp/161",
+          "reliability": "low",
+          "points": 10,
+          "reason": "SNMP weakly supports an UPS-monitor candidate.",
+          "source_group": "port"
+        }
+      ],
+      "contradicts": []
+    },
+    {
+      "axis": "role",
+      "label": "mail_server",
+      "description": "Mail protocol, product, and hostname evidence supports a mail-server role.",
+      "positive_evidence": [
+        {
+          "id": "mail_ports",
+          "source": "port",
+          "value": "tcp/25|tcp/465|tcp/587|tcp/110|tcp/143|tcp/993|tcp/995",
+          "reliability": "low",
+          "points": 10,
+          "reason": "Mail protocol port weakly supports a mail-server role.",
+          "source_group": "port"
+        },
+        {
+          "id": "mail_product",
+          "source": "service",
+          "value": "postfix|exim|sendmail|dovecot|exchange|smtp|imap|pop3",
+          "reliability": "high",
+          "points": 45,
+          "reason": "Mail product evidence supports a mail-server role.",
+          "source_group": "mail_product"
+        },
+        {
+          "id": "mail_hostname",
+          "source": "hostname",
+          "value": "mail|smtp|imap|mx[0-9]",
+          "reliability": "medium",
+          "points": 20,
+          "reason": "Mail-oriented hostname supports a mail-server candidate.",
+          "source_group": "hostname"
+        }
+      ],
+      "contradicts": []
+    },
+    {
+      "axis": "role",
+      "label": "development_admin_interface",
+      "description": "Administration and development product evidence supports an admin-interface role.",
+      "positive_evidence": [
+        {
+          "id": "admin_product",
+          "source": "service",
+          "value": "jenkins|grafana|prometheus|kibana|gitlab|gitea|jupyter|webmin|cockpit|phpmyadmin|adminer|portainer",
+          "reliability": "high",
+          "points": 50,
+          "reason": "Administration or development product evidence supports an admin-interface role.",
+          "source_group": "admin_product"
+        },
+        {
+          "id": "admin_title",
+          "source": "http_title",
+          "value": "jenkins|grafana|prometheus|kibana|gitlab|jupyter|webmin|cockpit|phpmyadmin|portainer",
+          "reliability": "high",
+          "points": 45,
+          "reason": "Administration web title supports an admin-interface role.",
+          "source_group": "http_metadata"
+        },
+        {
+          "id": "admin_port",
+          "source": "port",
+          "value": "tcp/3000|tcp/5601|tcp/8006|tcp/9000|tcp/9090|tcp/9443",
+          "reliability": "low",
+          "points": 10,
+          "reason": "Common administration port weakly supports an admin-interface role.",
+          "source_group": "port"
+        }
+      ],
+      "contradicts": []
+    },
+    {
+      "axis": "platform",
+      "label": "windows",
+      "description": "OS and Windows-specific service evidence supports Windows.",
+      "positive_evidence": [
+        {
+          "id": "windows_os",
+          "source": "os",
+          "value": "windows|microsoft",
+          "reliability": "high",
+          "points": 55,
+          "reason": "Operating-system fingerprint supports Windows.",
+          "source_group": "os_fingerprint"
+        },
+        {
+          "id": "windows_service",
+          "source": "service",
+          "value": "microsoft-ds|msrpc|windows server|iis|rdp",
+          "reliability": "medium",
+          "points": 30,
+          "reason": "Windows-specific service evidence supports Windows.",
+          "source_group": "platform_product"
+        },
+        {
+          "id": "windows_ports",
+          "source": "port",
+          "value": "tcp/135|tcp/139|tcp/445|tcp/3389",
+          "reliability": "low",
+          "points": 10,
+          "reason": "Windows-associated port weakly supports Windows.",
+          "source_group": "port"
+        }
+      ],
+      "contradicts": [
+        "linux",
+        "macos"
+      ]
+    },
+    {
+      "axis": "platform",
+      "label": "linux",
+      "description": "OS and Linux-specific service evidence supports Linux.",
+      "positive_evidence": [
+        {
+          "id": "linux_os",
+          "source": "os",
+          "value": "linux|ubuntu|debian|centos|red hat|rocky|alma|unix",
+          "reliability": "high",
+          "points": 55,
+          "reason": "Operating-system fingerprint supports Linux.",
+          "source_group": "os_fingerprint"
+        },
+        {
+          "id": "linux_service",
+          "source": "service",
+          "value": "openssh|ubuntu|debian|centos|red hat|linux|unix",
+          "reliability": "medium",
+          "points": 30,
+          "reason": "Linux or Unix service product evidence supports Linux.",
+          "source_group": "platform_product"
+        },
+        {
+          "id": "linux_ports",
+          "source": "port",
+          "value": "tcp/22|tcp/111|tcp/2049",
+          "reliability": "low",
+          "points": 10,
+          "reason": "Unix-associated port weakly supports Linux.",
+          "source_group": "port"
+        }
+      ],
+      "contradicts": [
+        "windows",
+        "macos"
+      ]
+    },
+    {
+      "axis": "platform",
+      "label": "macos",
+      "description": "Apple OS and service evidence supports macOS.",
+      "positive_evidence": [
+        {
+          "id": "macos_os",
+          "source": "os",
+          "value": "mac os|macos|darwin",
+          "reliability": "high",
+          "points": 60,
+          "reason": "OS fingerprint supports macOS.",
+          "source_group": "os_fingerprint",
+          "unique_identifying": true
+        },
+        {
+          "id": "macos_service",
+          "source": "service",
+          "value": "apple|afp|bonjour",
+          "reliability": "medium",
+          "points": 25,
+          "reason": "Apple service evidence supports macOS.",
+          "source_group": "platform_product"
+        },
+        {
+          "id": "macos_hostname",
+          "source": "hostname",
+          "value": "macbook|imac|mac-mini",
+          "reliability": "medium",
+          "points": 20,
+          "reason": "Apple endpoint hostname supports macOS.",
+          "source_group": "hostname"
+        }
+      ],
+      "contradicts": [
+        "windows",
+        "linux"
+      ]
+    },
+    {
+      "axis": "platform",
+      "label": "ios",
+      "description": "Apple mobile evidence supports iOS.",
+      "positive_evidence": [
+        {
+          "id": "ios_os",
+          "source": "os",
+          "value": "ios|iphone|ipad",
+          "reliability": "high",
+          "points": 60,
+          "reason": "OS fingerprint supports iOS.",
+          "source_group": "os_fingerprint",
+          "unique_identifying": true
+        },
+        {
+          "id": "ios_hostname",
+          "source": "hostname",
+          "value": "iphone|ipad",
+          "reliability": "medium",
+          "points": 25,
+          "reason": "Apple mobile hostname supports iOS.",
+          "source_group": "hostname"
+        },
+        {
+          "id": "ios_service",
+          "source": "service",
+          "value": "apple mobile|airplay",
+          "reliability": "medium",
+          "points": 25,
+          "reason": "Apple mobile service evidence supports iOS.",
+          "source_group": "platform_product"
+        }
+      ],
+      "contradicts": [
+        "android"
+      ]
+    },
+    {
+      "axis": "platform",
+      "label": "android",
+      "description": "Android OS and ADB evidence supports Android.",
+      "positive_evidence": [
+        {
+          "id": "android_os",
+          "source": "os",
+          "value": "android",
+          "reliability": "high",
+          "points": 60,
+          "reason": "OS fingerprint supports Android.",
+          "source_group": "os_fingerprint",
+          "unique_identifying": true
+        },
+        {
+          "id": "android_adb",
+          "source": "service",
+          "value": "adb|android debug bridge",
+          "reliability": "high",
+          "points": 50,
+          "reason": "ADB product evidence supports Android.",
+          "source_group": "platform_product"
+        },
+        {
+          "id": "android_hostname",
+          "source": "hostname",
+          "value": "android|pixel|galaxy",
+          "reliability": "medium",
+          "points": 20,
+          "reason": "Android-oriented hostname supports Android.",
+          "source_group": "hostname"
+        }
+      ],
+      "contradicts": [
+        "ios"
+      ]
+    },
+    {
+      "axis": "platform",
+      "label": "network_os",
+      "description": "Network OS and infrastructure product evidence supports network_os.",
+      "positive_evidence": [
+        {
+          "id": "network_os",
+          "source": "os",
+          "value": "ios xe|junos|routeros|switchos|network device|embedded linux",
+          "reliability": "high",
+          "points": 55,
+          "reason": "Network operating-system fingerprint supports network_os.",
+          "source_group": "os_fingerprint"
+        },
+        {
+          "id": "network_product",
+          "source": "service",
+          "value": "cisco ios|junos|routeros|unifi|procurve|arubaos",
+          "reliability": "high",
+          "points": 45,
+          "reason": "Network product evidence supports network_os.",
+          "source_group": "platform_product"
+        },
+        {
+          "id": "network_hostname",
+          "source": "hostname",
+          "value": "router|gateway|switch|ap[0-9]|firewall",
+          "reliability": "medium",
+          "points": 20,
+          "reason": "Network-device hostname supports network_os.",
+          "source_group": "hostname"
+        }
+      ],
+      "contradicts": []
+    },
+    {
+      "axis": "platform",
+      "label": "embedded",
+      "description": "Embedded OS, product, and vendor evidence supports embedded.",
+      "positive_evidence": [
+        {
+          "id": "embedded_os",
+          "source": "os",
+          "value": "embedded|vxworks|busybox|firmware",
+          "reliability": "high",
+          "points": 50,
+          "reason": "Embedded OS evidence supports embedded.",
+          "source_group": "os_fingerprint"
+        },
+        {
+          "id": "embedded_product",
+          "source": "service",
+          "value": "embedded|firmware|busybox|microcontroller",
+          "reliability": "medium",
+          "points": 30,
+          "reason": "Embedded product evidence supports embedded.",
+          "source_group": "platform_product"
+        },
+        {
+          "id": "embedded_vendor",
+          "source": "vendor",
+          "value": "espressif|axis|hikvision|dahua|apc|eaton",
+          "reliability": "medium",
+          "points": 20,
+          "reason": "Embedded-device vendor evidence supports embedded.",
+          "source_group": "vendor"
+        }
+      ],
+      "contradicts": []
+    }
+  ],
   "profiles": [
     {
       "primary_type": "IP Camera / NVR",

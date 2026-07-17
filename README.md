@@ -6,27 +6,28 @@ NetSniper is a Bash-based network discovery and service-enumeration pipeline. It
 
 ## Current Release
 
-Current release: **NetSniper v2.0.0 — Reliable Telemetry Sensor for DeltaAegis**
+Current release: **NetSniper v2.1.0 — Evidence-Calibrated Device Intelligence**
 
-NetSniper v2.0.0 promotes NetSniper from a scan-output generator into a stable
-telemetry sensor for DeltaAegis and other defensive consumers. The release adds
-machine-readable headless status, a v3 bundle manifest contract, profile runtime
-budgets, bundle quality reports, and synthetic DeltaAegis fixture bundles while
-preserving the v1.9 accuracy-profile behavior.
+NetSniper v2.1.0 finalizes the evidence-calibration work developed on the v2.1
+branch. The release adds multi-axis classification contracts, a deterministic
+18-case development and regression corpus, observation-integrity safeguards,
+conservative embedded-administration and route-context boundaries, measurement-
+only empirical calibration infrastructure, and additive evidence context for
+DeltaAegis. It preserves the v2.0 telemetry contract and the v1.9 scan-profile
+behavior.
 
-## v2.0.0 Highlights
+## v2.1.0 Highlights
 
-- Added `--json-status-file <path>` for machine-readable headless orchestration.
-- Added the `netsniper-status-v1` status contract.
-- Added the `netsniper-run-v3` manifest contract with v2 compatibility aliases.
-- Preserved legacy manifest fields such as `scan_profile_requested` and `scan_profile_effective`.
-- Added profile runtime budget metadata for `quick`, `balanced`, and `accurate`.
-- Added budget duration tracking and budget-exceeded reporting.
-- Added `bundle_quality.json` using the `netsniper-bundle-quality-v1` schema.
-- Embedded the bundle quality report into `manifest.quality`.
-- Added synthetic DeltaAegis fixture bundles for complete and failed-quality ingestion tests.
-- Added `tools/validate_v2_0_all.sh` and `tools/validate_v2_0_release_gate.sh`.
-- Preserved v1.9 compatibility validators and profile behavior.
+- Added canonical device-family, role, capability, and uncertainty contracts.
+- Added deterministic v2.1 classification and bundle-generation tooling.
+- Activated 14 development and 4 regression fixtures with exact replay gates.
+- Prevented duplicate GNMAP/XML observations from inflating findings or risk.
+- Kept embedded administration interfaces review-only without independent server evidence.
+- Corrected generic HTTPS, printer, gateway, hypervisor, hostname-only, and route-context behavior conservatively.
+- Added measurement-only empirical calibration files without unsupported accuracy claims.
+- Added stable, additive `deltaaegis_context` evidence for downstream review.
+- Added `tools/validate_v2_1_release_gate.sh` as the final release-candidate gate.
+- Preserved v2.0 status, manifest, runtime-budget, bundle-quality, and DeltaAegis fixture compatibility.
 
 ## Bundle Artifacts
 
@@ -50,7 +51,7 @@ should treat `deltaaegis_ready: false` as a rejection or quarantine condition, n
 
 ## Classification Philosophy
 
-NetSniper v2.0.0 remains intentionally conservative.
+NetSniper v2.1.0 remains intentionally conservative.
 
 A weak or generic service should remain `possible` or `review_queue` instead of becoming a
 confident but unreliable classification. The goal is to produce explainable network intelligence
@@ -58,24 +59,30 @@ for review, not pretend that every open port proves device identity.
 
 ## Recommended Validation
 
-For quick local iteration, run:
+For focused classifier development and pre-commit review, run:
 
-    ./tools/validate_v2_0_fast.sh
+    ./tools/validate_v2_1_stage1_2_all.sh
+    python3 tools/validate_v2_1_release_metadata.py
 
-Before release, demo use, or downstream DeltaAegis ingestion, run:
+Review the exact release-finalization diff before requesting approval to stage and
+commit it. After separate approval to stage and commit, run the authoritative
+release gate from the clean committed feature branch:
 
-    ./tools/validate_v2_0_release_gate.sh
+    ./tools/validate_v2_1_release_gate.sh
 
-The v2.0 release gate checks:
+Rerun the same clean-tree gate after an approved merge and before creating or
+moving the `v2.1.0` tag or publishing the GitHub Release.
 
-- shell syntax
-- finalized v2.0 version and README/CHANGELOG metadata
-- status contract compatibility
-- manifest v3 compatibility
-- profile runtime budget metadata
-- bundle quality reports
-- DeltaAegis fixture bundles
-- v1.9 compatibility validators
+The v2.1 release gate checks:
+
+- finalized v2.1.0 scanner, README, CHANGELOG, checklist, and CI metadata;
+- Bash and Python syntax;
+- deterministic classification and corpus behavior;
+- observation and risk integrity;
+- embedded-administration and observed-behavior boundaries;
+- measurement-only empirical calibration safeguards;
+- additive DeltaAegis evidence enrichment; and
+- complete v1.9 and v2.0 compatibility suites.
 
 ## Features
 

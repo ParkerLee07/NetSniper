@@ -1,0 +1,49 @@
+{
+  "schema_version": "netsniper-corpus-source-v1",
+  "fixture_id": "synthetic-router-gateway-01",
+  "fixture_kind": "synthetic",
+  "source_type": "designed_host_observation",
+  "synthetic_observation": {
+    "host": "192.0.2.1",
+    "ip": "192.0.2.1",
+    "mac": "02:00:00:00:00:01",
+    "observation_quality": {
+      "scan_completeness": "complete",
+      "requested_collectors": [
+        "discovery",
+        "tcp_services",
+        "os_detection",
+        "passive_neighbors"
+      ],
+      "completed_collectors": [
+        "discovery",
+        "tcp_services",
+        "os_detection",
+        "passive_neighbors"
+      ],
+      "failed_collectors": [],
+      "unavailable_collectors": [],
+      "inventory_complete": true
+    },
+    "hostname": "gateway01",
+    "vendor": "MikroTik",
+    "ports": [
+      {
+        "port": 53,
+        "protocol": "tcp"
+      },
+      {
+        "port": 67,
+        "protocol": "udp"
+      }
+    ],
+    "service_hints": [
+      "routeros",
+      "http_admin"
+    ],
+    "os_hints": [
+      "RouterOS network device"
+    ]
+  },
+  "design_notes": "Dedicated router and default gateway with corroborating network evidence."
+}

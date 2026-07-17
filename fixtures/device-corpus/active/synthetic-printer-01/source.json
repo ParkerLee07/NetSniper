@@ -1,0 +1,45 @@
+{
+  "schema_version": "netsniper-corpus-source-v1",
+  "fixture_id": "synthetic-printer-01",
+  "fixture_kind": "synthetic",
+  "source_type": "designed_host_observation",
+  "synthetic_observation": {
+    "host": "192.0.2.20",
+    "ip": "192.0.2.20",
+    "mac": "02:00:00:00:00:20",
+    "observation_quality": {
+      "scan_completeness": "complete",
+      "requested_collectors": [
+        "discovery",
+        "tcp_services",
+        "os_detection",
+        "passive_neighbors"
+      ],
+      "completed_collectors": [
+        "discovery",
+        "tcp_services",
+        "os_detection",
+        "passive_neighbors"
+      ],
+      "failed_collectors": [],
+      "unavailable_collectors": [],
+      "inventory_complete": true
+    },
+    "hostname": "printer01",
+    "vendor": "HP",
+    "ports": [
+      9100,
+      631
+    ],
+    "http_titles": [
+      "HP LaserJet Printer"
+    ],
+    "service_hints": [
+      "embedded firmware"
+    ],
+    "os_hints": [
+      "embedded firmware"
+    ]
+  },
+  "design_notes": "Network multifunction printer with print-protocol and product evidence."
+}

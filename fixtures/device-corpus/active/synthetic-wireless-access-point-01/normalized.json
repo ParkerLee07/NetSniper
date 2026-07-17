@@ -1,0 +1,36 @@
+{
+  "schema_version": "netsniper-corpus-input-v1",
+  "fixture_id": "synthetic-wireless-access-point-01",
+  "mode": "classification",
+  "host_record": {
+    "host": "192.0.2.2",
+    "ip": "192.0.2.2",
+    "mac": "02:00:00:00:00:02",
+    "observation_quality": {
+      "scan_completeness": "complete",
+      "requested_collectors": [
+        "discovery",
+        "tcp_services",
+        "os_detection",
+        "passive_neighbors"
+      ],
+      "completed_collectors": [
+        "discovery",
+        "tcp_services",
+        "os_detection",
+        "passive_neighbors"
+      ],
+      "failed_collectors": [],
+      "unavailable_collectors": [],
+      "inventory_complete": true
+    },
+    "hostname": "ap01",
+    "vendor": "Ubiquiti",
+    "service_hints": [
+      "unifi"
+    ],
+    "os_hints": [
+      "network device"
+    ]
+  }
+}

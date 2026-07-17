@@ -1,0 +1,868 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/netsniper/v2.1/host-classification.schema.json",
+  "title": "NetSniper v2.1 host classification",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "classifier_version",
+    "taxonomy_version",
+    "evidence_profile_version",
+    "host_id",
+    "generated_at",
+    "identity",
+    "device_family",
+    "roles",
+    "platform",
+    "observation_quality",
+    "evidence",
+    "missing_evidence",
+    "legacy_projection"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "netsniper-host-classification-v2"
+    },
+    "classifier_version": {
+      "type": "string",
+      "minLength": 1
+    },
+    "taxonomy_version": {
+      "type": "string",
+      "minLength": 1
+    },
+    "evidence_profile_version": {
+      "type": "string",
+      "minLength": 1
+    },
+    "host_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "generated_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "identity": {
+      "$ref": "#/$defs/identity"
+    },
+    "device_family": {
+      "$ref": "#/$defs/family_result"
+    },
+    "roles": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/role_result"
+      }
+    },
+    "platform": {
+      "$ref": "#/$defs/platform_result"
+    },
+    "observation_quality": {
+      "$ref": "#/$defs/observation_quality"
+    },
+    "evidence": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/evidence"
+      }
+    },
+    "missing_evidence": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/missing_evidence"
+      }
+    },
+    "legacy_projection": {
+      "$ref": "#/$defs/legacy_projection"
+    }
+  },
+  "$defs": {
+    "confidence": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 100
+    },
+    "uncertainty_reasons": {
+      "type": "array",
+      "items": {
+        "enum": [
+          "no_classification_evidence",
+          "insufficient_evidence_diversity",
+          "port_only_evidence",
+          "vendor_only_evidence",
+          "hostname_only_evidence",
+          "collector_unavailable",
+          "collector_failed",
+          "partial_scan",
+          "strong_contradiction",
+          "candidate_scores_too_close",
+          "family_not_inferable_from_role",
+          "identity_instability",
+          "unsupported_signature",
+          "legacy_projection_only",
+          "embedded_admin_interface"
+        ]
+      },
+      "uniqueItems": true
+    },
+    "contradiction": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "contradiction_id",
+        "severity",
+        "reason",
+        "evidence_ids",
+        "penalty"
+      ],
+      "properties": {
+        "contradiction_id": {
+          "type": "string",
+          "pattern": "^[a-z0-9_-]+$"
+        },
+        "severity": {
+          "enum": [
+            "moderate",
+            "strong"
+          ]
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 1
+        },
+        "evidence_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true,
+          "minItems": 1
+        },
+        "penalty": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 100
+        }
+      }
+    },
+    "family_candidate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "label",
+        "confidence",
+        "decision"
+      ],
+      "properties": {
+        "label": {
+          "enum": [
+            "network_infrastructure",
+            "compute_host",
+            "client_endpoint",
+            "printer",
+            "surveillance_device",
+            "storage_appliance",
+            "voice_device",
+            "power_device",
+            "iot_embedded",
+            "unknown"
+          ]
+        },
+        "confidence": {
+          "$ref": "#/$defs/confidence"
+        },
+        "decision": {
+          "enum": [
+            "classified",
+            "possible",
+            "review",
+            "unknown"
+          ]
+        }
+      }
+    },
+    "role_candidate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "label",
+        "confidence",
+        "decision"
+      ],
+      "properties": {
+        "label": {
+          "enum": [
+            "gateway",
+            "wireless_access_point",
+            "managed_switch",
+            "security_gateway",
+            "domain_controller",
+            "dns_server",
+            "web_server",
+            "web_application_host",
+            "database_server",
+            "container_host",
+            "container_orchestrator",
+            "hypervisor",
+            "file_server",
+            "nas_service",
+            "print_service",
+            "camera",
+            "network_video_recorder",
+            "voip_endpoint",
+            "pbx",
+            "ups_monitor",
+            "mail_server",
+            "development_admin_interface"
+          ]
+        },
+        "confidence": {
+          "$ref": "#/$defs/confidence"
+        },
+        "decision": {
+          "enum": [
+            "classified",
+            "possible",
+            "review",
+            "unknown"
+          ]
+        }
+      }
+    },
+    "platform_candidate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "label",
+        "confidence",
+        "decision"
+      ],
+      "properties": {
+        "label": {
+          "enum": [
+            "windows",
+            "linux",
+            "macos",
+            "ios",
+            "android",
+            "network_os",
+            "embedded",
+            "unknown"
+          ]
+        },
+        "confidence": {
+          "$ref": "#/$defs/confidence"
+        },
+        "decision": {
+          "enum": [
+            "classified",
+            "possible",
+            "review",
+            "unknown"
+          ]
+        }
+      }
+    },
+    "family_result": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "label",
+        "confidence",
+        "confidence_band",
+        "decision",
+        "evidence_ids",
+        "contradictions",
+        "secondary_candidates",
+        "uncertainty_reasons",
+        "explanation"
+      ],
+      "properties": {
+        "label": {
+          "enum": [
+            "network_infrastructure",
+            "compute_host",
+            "client_endpoint",
+            "printer",
+            "surveillance_device",
+            "storage_appliance",
+            "voice_device",
+            "power_device",
+            "iot_embedded",
+            "unknown"
+          ]
+        },
+        "confidence": {
+          "$ref": "#/$defs/confidence"
+        },
+        "confidence_band": {
+          "enum": [
+            "none",
+            "weak",
+            "possible",
+            "strong",
+            "high"
+          ]
+        },
+        "decision": {
+          "enum": [
+            "classified",
+            "possible",
+            "review",
+            "unknown"
+          ]
+        },
+        "evidence_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true
+        },
+        "contradictions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/contradiction"
+          }
+        },
+        "secondary_candidates": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/family_candidate"
+          }
+        },
+        "uncertainty_reasons": {
+          "$ref": "#/$defs/uncertainty_reasons"
+        },
+        "explanation": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "role_result": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "label",
+        "confidence",
+        "confidence_band",
+        "decision",
+        "evidence_ids",
+        "contradictions",
+        "secondary_candidates",
+        "uncertainty_reasons",
+        "explanation"
+      ],
+      "properties": {
+        "label": {
+          "enum": [
+            "gateway",
+            "wireless_access_point",
+            "managed_switch",
+            "security_gateway",
+            "domain_controller",
+            "dns_server",
+            "web_server",
+            "web_application_host",
+            "database_server",
+            "container_host",
+            "container_orchestrator",
+            "hypervisor",
+            "file_server",
+            "nas_service",
+            "print_service",
+            "camera",
+            "network_video_recorder",
+            "voip_endpoint",
+            "pbx",
+            "ups_monitor",
+            "mail_server",
+            "development_admin_interface"
+          ]
+        },
+        "confidence": {
+          "$ref": "#/$defs/confidence"
+        },
+        "confidence_band": {
+          "enum": [
+            "none",
+            "weak",
+            "possible",
+            "strong",
+            "high"
+          ]
+        },
+        "decision": {
+          "enum": [
+            "classified",
+            "possible",
+            "review",
+            "unknown"
+          ]
+        },
+        "evidence_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true
+        },
+        "contradictions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/contradiction"
+          }
+        },
+        "secondary_candidates": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/role_candidate"
+          }
+        },
+        "uncertainty_reasons": {
+          "$ref": "#/$defs/uncertainty_reasons"
+        },
+        "explanation": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "platform_result": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "label",
+        "confidence",
+        "confidence_band",
+        "decision",
+        "evidence_ids",
+        "contradictions",
+        "secondary_candidates",
+        "uncertainty_reasons",
+        "explanation"
+      ],
+      "properties": {
+        "label": {
+          "enum": [
+            "windows",
+            "linux",
+            "macos",
+            "ios",
+            "android",
+            "network_os",
+            "embedded",
+            "unknown"
+          ]
+        },
+        "confidence": {
+          "$ref": "#/$defs/confidence"
+        },
+        "confidence_band": {
+          "enum": [
+            "none",
+            "weak",
+            "possible",
+            "strong",
+            "high"
+          ]
+        },
+        "decision": {
+          "enum": [
+            "classified",
+            "possible",
+            "review",
+            "unknown"
+          ]
+        },
+        "evidence_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true
+        },
+        "contradictions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/contradiction"
+          }
+        },
+        "secondary_candidates": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/platform_candidate"
+          }
+        },
+        "uncertainty_reasons": {
+          "$ref": "#/$defs/uncertainty_reasons"
+        },
+        "explanation": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "identity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "decision",
+        "confidence",
+        "observed_keys",
+        "evidence_ids",
+        "uncertainty_reasons"
+      ],
+      "properties": {
+        "decision": {
+          "enum": [
+            "stable",
+            "provisional",
+            "review",
+            "unknown"
+          ]
+        },
+        "confidence": {
+          "$ref": "#/$defs/confidence"
+        },
+        "observed_keys": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "kind",
+              "value",
+              "stable"
+            ],
+            "properties": {
+              "kind": {
+                "enum": [
+                  "ip",
+                  "mac",
+                  "hostname",
+                  "local_mac",
+                  "other"
+                ]
+              },
+              "value": {
+                "type": "string",
+                "minLength": 1
+              },
+              "stable": {
+                "type": "boolean"
+              }
+            }
+          }
+        },
+        "evidence_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true
+        },
+        "uncertainty_reasons": {
+          "$ref": "#/$defs/uncertainty_reasons"
+        }
+      }
+    },
+    "observation_quality": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "scan_completeness",
+        "coverage_score",
+        "requested_collectors",
+        "completed_collectors",
+        "failed_collectors",
+        "unavailable_collectors",
+        "inventory_complete",
+        "negative_evidence_allowed",
+        "reasons"
+      ],
+      "properties": {
+        "scan_completeness": {
+          "enum": [
+            "complete",
+            "partial",
+            "failed"
+          ]
+        },
+        "coverage_score": {
+          "$ref": "#/$defs/confidence"
+        },
+        "requested_collectors": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true
+        },
+        "completed_collectors": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true
+        },
+        "failed_collectors": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true
+        },
+        "unavailable_collectors": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true
+        },
+        "inventory_complete": {
+          "type": "boolean"
+        },
+        "negative_evidence_allowed": {
+          "type": "boolean"
+        },
+        "reasons": {
+          "type": "array",
+          "items": {
+            "enum": [
+              "not_requested",
+              "disabled_by_profile",
+              "operator_disabled",
+              "tool_missing",
+              "permission_denied",
+              "timeout",
+              "execution_error",
+              "unsupported_platform",
+              "unsupported_target",
+              "dependency_unavailable",
+              "no_results",
+              "partial_output"
+            ]
+          },
+          "uniqueItems": true
+        }
+      }
+    },
+    "evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "evidence_id",
+        "affected_axes",
+        "source_type",
+        "collector_id",
+        "reliability",
+        "effect",
+        "observed_at",
+        "summary",
+        "normalized_value",
+        "raw_reference"
+      ],
+      "properties": {
+        "evidence_id": {
+          "type": "string",
+          "pattern": "^[a-z0-9_-]+$"
+        },
+        "source_type": {
+          "enum": [
+            "service_fingerprint",
+            "protocol_response",
+            "product_fingerprint",
+            "port_presence",
+            "mac_vendor",
+            "hostname_pattern",
+            "tls_metadata",
+            "http_metadata",
+            "os_fingerprint",
+            "neighbor_table",
+            "dhcp_metadata",
+            "mdns",
+            "ssdp",
+            "snmp",
+            "lldp_cdp",
+            "operator_fixture",
+            "legacy_projection",
+            "other"
+          ]
+        },
+        "collector_id": {
+          "type": "string",
+          "pattern": "^[a-z0-9_]+$"
+        },
+        "reliability": {
+          "enum": [
+            "low",
+            "medium",
+            "high"
+          ]
+        },
+        "effect": {
+          "enum": [
+            "positive",
+            "negative",
+            "contradiction",
+            "context"
+          ]
+        },
+        "observed_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "summary": {
+          "type": "string",
+          "minLength": 1
+        },
+        "normalized_value": {
+          "type": "object"
+        },
+        "raw_reference": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "affected_axes": {
+          "type": "array",
+          "items": {
+            "enum": [
+              "identity",
+              "device_family",
+              "role",
+              "platform",
+              "observation"
+            ]
+          },
+          "uniqueItems": true,
+          "minItems": 1
+        }
+      }
+    },
+    "missing_evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "collector_id",
+        "status",
+        "reason_code",
+        "affected_axes",
+        "detail"
+      ],
+      "properties": {
+        "collector_id": {
+          "type": "string",
+          "pattern": "^[a-z0-9_]+$"
+        },
+        "status": {
+          "enum": [
+            "failed",
+            "unavailable",
+            "skipped"
+          ]
+        },
+        "reason_code": {
+          "enum": [
+            "not_requested",
+            "disabled_by_profile",
+            "operator_disabled",
+            "tool_missing",
+            "permission_denied",
+            "timeout",
+            "execution_error",
+            "unsupported_platform",
+            "unsupported_target",
+            "dependency_unavailable",
+            "no_results",
+            "partial_output"
+          ]
+        },
+        "affected_axes": {
+          "type": "array",
+          "items": {
+            "enum": [
+              "identity",
+              "device_family",
+              "role",
+              "platform",
+              "observation"
+            ]
+          },
+          "uniqueItems": true,
+          "minItems": 1
+        },
+        "detail": {
+          "type": "string"
+        }
+      }
+    },
+    "legacy_projection": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "primary_type",
+        "device_type",
+        "device_type_confidence",
+        "confidence",
+        "confidence_label",
+        "decision",
+        "secondary_candidates",
+        "contradictions",
+        "calibration_reason"
+      ],
+      "properties": {
+        "primary_type": {
+          "type": "string",
+          "minLength": 1
+        },
+        "device_type": {
+          "type": "string",
+          "minLength": 1
+        },
+        "device_type_confidence": {
+          "$ref": "#/$defs/confidence"
+        },
+        "confidence": {
+          "$ref": "#/$defs/confidence"
+        },
+        "confidence_label": {
+          "type": "string",
+          "minLength": 1
+        },
+        "decision": {
+          "enum": [
+            "classified",
+            "possible",
+            "unknown",
+            "review",
+            "contradiction_review"
+          ]
+        },
+        "secondary_candidates": {
+          "type": "array"
+        },
+        "contradictions": {
+          "type": "array"
+        },
+        "calibration_reason": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}

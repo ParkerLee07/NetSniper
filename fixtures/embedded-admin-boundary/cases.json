@@ -1,0 +1,249 @@
+{
+  "schema_version": "netsniper-embedded-admin-boundary-fixtures-v1",
+  "sanitized": true,
+  "cases": [
+    {
+      "case_id": "generic-http-only-remains-review",
+      "host_record": {
+        "host": "192.0.2.201",
+        "ports": [
+          {
+            "port": 80,
+            "protocol": "tcp",
+            "state": "open",
+            "service": "http"
+          }
+        ],
+        "observation_quality": {
+          "scan_completeness": "complete"
+        }
+      },
+      "expect": {
+        "web_server_decision": "review",
+        "web_server_minimum_confidence": 1,
+        "web_server_maximum_confidence": 39,
+        "required_reasons": [
+          "port_only_evidence"
+        ]
+      }
+    },
+    {
+      "case_id": "standalone-nginx-linux-classifies",
+      "host_record": {
+        "host": "192.0.2.202",
+        "hostname": "web-01.example.invalid",
+        "ports": [
+          {
+            "port": 80,
+            "protocol": "tcp",
+            "state": "open",
+            "service": "http",
+            "product": "nginx",
+            "version": "1.24"
+          }
+        ],
+        "os_hints": [
+          "Linux 6.x"
+        ],
+        "observation_quality": {
+          "scan_completeness": "complete"
+        }
+      },
+      "expect": {
+        "web_server_decision": "classified",
+        "web_server_minimum_confidence": 70,
+        "web_server_maximum_confidence": 100,
+        "forbidden_reasons": [
+          "embedded_admin_interface"
+        ],
+        "legacy_primary_type": "Web Server / Web Application Host",
+        "legacy_decision": "classified"
+      }
+    },
+    {
+      "case_id": "standalone-apache-openssh-classifies",
+      "host_record": {
+        "host": "192.0.2.203",
+        "ports": [
+          {
+            "port": 22,
+            "protocol": "tcp",
+            "state": "open",
+            "service": "ssh",
+            "product": "OpenSSH"
+          },
+          {
+            "port": 443,
+            "protocol": "tcp",
+            "state": "open",
+            "service": "https",
+            "product": "Apache httpd"
+          }
+        ],
+        "observation_quality": {
+          "scan_completeness": "complete"
+        }
+      },
+      "expect": {
+        "web_server_decision": "classified",
+        "web_server_minimum_confidence": 70,
+        "web_server_maximum_confidence": 100,
+        "forbidden_reasons": [
+          "embedded_admin_interface"
+        ]
+      }
+    },
+    {
+      "case_id": "printer-embedded-httpd-stays-admin-review",
+      "host_record": {
+        "host": "192.0.2.204",
+        "vendor": "Sanitized Printer Vendor",
+        "ports": [
+          {
+            "port": 80,
+            "protocol": "tcp",
+            "state": "open",
+            "service": "http",
+            "product": "Debut embedded httpd printer administration"
+          },
+          {
+            "port": 631,
+            "protocol": "tcp",
+            "state": "open",
+            "service": "ipp",
+            "http_title": "Network Printer Administration"
+          },
+          {
+            "port": 9100,
+            "protocol": "tcp",
+            "state": "open",
+            "service": "jetdirect"
+          }
+        ],
+        "os_hints": [
+          "embedded firmware"
+        ],
+        "observation_quality": {
+          "scan_completeness": "complete"
+        }
+      },
+      "expect": {
+        "web_server_decision": "review",
+        "web_server_minimum_confidence": 1,
+        "web_server_maximum_confidence": 39,
+        "required_reasons": [
+          "embedded_admin_interface"
+        ],
+        "required_family_label": "printer",
+        "required_role_label": "print_service",
+        "legacy_primary_type": "Network Printer / MFP"
+      }
+    },
+    {
+      "case_id": "smart-controller-httpd-stays-admin-review",
+      "host_record": {
+        "host": "192.0.2.205",
+        "ports": [
+          {
+            "port": 80,
+            "protocol": "tcp",
+            "state": "open",
+            "service": "http",
+            "product": "Sanitized smart home zigbee controller httpd"
+          }
+        ],
+        "os_hints": [
+          "embedded firmware"
+        ],
+        "observation_quality": {
+          "scan_completeness": "complete"
+        }
+      },
+      "expect": {
+        "web_server_decision": "review",
+        "web_server_minimum_confidence": 1,
+        "web_server_maximum_confidence": 39,
+        "required_reasons": [
+          "embedded_admin_interface"
+        ],
+        "forbidden_legacy_primary_type": "Web Server / Web Application Host"
+      }
+    },
+    {
+      "case_id": "camera-nginx-stays-camera",
+      "host_record": {
+        "host": "192.0.2.206",
+        "vendor": "Sanitized Camera Vendor",
+        "ports": [
+          {
+            "port": 80,
+            "protocol": "tcp",
+            "state": "open",
+            "service": "http",
+            "product": "nginx",
+            "http_title": "IP Camera Administration"
+          },
+          {
+            "port": 554,
+            "protocol": "tcp",
+            "state": "open",
+            "service": "rtsp",
+            "product": "ONVIF camera rtspd"
+          }
+        ],
+        "os_hints": [
+          "embedded firmware"
+        ],
+        "observation_quality": {
+          "scan_completeness": "complete"
+        }
+      },
+      "expect": {
+        "web_server_decision": "review",
+        "web_server_minimum_confidence": 1,
+        "web_server_maximum_confidence": 39,
+        "required_reasons": [
+          "embedded_admin_interface"
+        ],
+        "required_family_label": "surveillance_device",
+        "required_role_label": "camera",
+        "legacy_primary_type": "IP Camera / NVR"
+      }
+    },
+    {
+      "case_id": "tp-link-httpd-does-not-classify-web-server",
+      "host_record": {
+        "host": "192.0.2.207",
+        "vendor": "TP-Link",
+        "ports": [
+          {
+            "port": 80,
+            "protocol": "tcp",
+            "state": "open",
+            "service": "http",
+            "product": "TP-LINK HTTPD 1.0"
+          },
+          {
+            "port": 443,
+            "protocol": "tcp",
+            "state": "open",
+            "service": "https",
+            "product": "TP-LINK HTTPD 1.0"
+          }
+        ],
+        "observation_quality": {
+          "scan_completeness": "complete"
+        }
+      },
+      "expect": {
+        "web_server_decision": "review",
+        "web_server_minimum_confidence": 1,
+        "web_server_maximum_confidence": 39,
+        "required_reasons": [
+          "embedded_admin_interface"
+        ],
+        "forbidden_legacy_primary_type": "Web Server / Web Application Host"
+      }
+    }
+  ]
+}

@@ -1,0 +1,146 @@
+{
+  "schema_version": "netsniper-capability-manifest-v1",
+  "generated_at": "2026-07-15T15:10:00Z",
+  "run_id": "example-balanced-partial",
+  "sensor": {
+    "netsniper_version": "2.1.0-dev",
+    "source_commit": "92fa7df6dbfdbb377e93d381d4c0eeef40004d76",
+    "bundle_schema_version": "netsniper-run-v2",
+    "classifier_version": "netsniper-classifier-v2",
+    "taxonomy_version": "netsniper-device-taxonomy-v2",
+    "evidence_profile_version": "netsniper-evidence-profiles-v2",
+    "host_classification_schema_version": "netsniper-host-classification-v2"
+  },
+  "target": {
+    "requested_scope": "192.168.50.0/24",
+    "normalized_scope": "192.168.50.0/24",
+    "private_scope_enforced": true
+  },
+  "execution": {
+    "scan_profile": "balanced",
+    "status": "partial",
+    "started_at": "2026-07-15T15:05:00Z",
+    "completed_at": "2026-07-15T15:10:00Z",
+    "privilege_context": "unprivileged",
+    "discovery_methods": [
+      "icmp",
+      "tcp_connect"
+    ],
+    "partial_reasons": [
+      "permission_denied"
+    ],
+    "configuration_fingerprint": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+    "tools": [
+      {
+        "name": "nmap",
+        "version": "7.95"
+      },
+      {
+        "name": "jq",
+        "version": "1.7"
+      }
+    ]
+  },
+  "collectors": [
+    {
+      "collector_id": "discovery",
+      "requested": true,
+      "status": "completed",
+      "started_at": "2026-07-15T15:05:00Z",
+      "completed_at": "2026-07-15T15:06:00Z",
+      "tool_name": "nmap",
+      "tool_version": "7.95",
+      "artifact_refs": [
+        "discovery_xml"
+      ],
+      "message": ""
+    },
+    {
+      "collector_id": "tcp_services",
+      "requested": true,
+      "status": "completed",
+      "started_at": "2026-07-15T15:06:00Z",
+      "completed_at": "2026-07-15T15:09:00Z",
+      "tool_name": "nmap",
+      "tool_version": "7.95",
+      "artifact_refs": [
+        "services_xml"
+      ],
+      "message": ""
+    },
+    {
+      "collector_id": "os_detection",
+      "requested": true,
+      "status": "unavailable",
+      "reason_code": "permission_denied",
+      "started_at": null,
+      "completed_at": null,
+      "tool_name": "nmap",
+      "tool_version": "7.95",
+      "artifact_refs": [],
+      "message": "OS detection requires privileges not available to this run."
+    },
+    {
+      "collector_id": "passive_neighbors",
+      "requested": true,
+      "status": "completed",
+      "started_at": "2026-07-15T14:55:00Z",
+      "completed_at": "2026-07-15T14:55:30Z",
+      "tool_name": "ip",
+      "tool_version": "iproute2",
+      "artifact_refs": [
+        "neighbors_txt"
+      ],
+      "message": ""
+    }
+  ],
+  "inventory": {
+    "discovered_host_count": 3,
+    "emitted_host_count": 3,
+    "omitted_host_count": 0
+  },
+  "artifacts": [
+    {
+      "artifact_id": "discovery_xml",
+      "kind": "nmap_xml",
+      "path": "discovery.xml",
+      "sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "size_bytes": 2048,
+      "required": true,
+      "status": "present"
+    },
+    {
+      "artifact_id": "services_xml",
+      "kind": "nmap_xml",
+      "path": "services.xml",
+      "sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+      "size_bytes": 4096,
+      "required": true,
+      "status": "present"
+    },
+    {
+      "artifact_id": "os_detection_xml",
+      "kind": "nmap_xml",
+      "path": "os_detection.xml",
+      "sha256": null,
+      "size_bytes": null,
+      "required": false,
+      "status": "missing"
+    },
+    {
+      "artifact_id": "neighbors_txt",
+      "kind": "neighbor_table",
+      "path": "neighbors.txt",
+      "sha256": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+      "size_bytes": 512,
+      "required": false,
+      "status": "present"
+    }
+  ],
+  "integrity": {
+    "bundle_finalized": true,
+    "manifest_complete": true,
+    "host_inventory_preserved": true,
+    "hashes_verified": true
+  }
+}
