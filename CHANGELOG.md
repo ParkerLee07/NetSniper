@@ -1,5 +1,20 @@
 # Changelog
 
+## v2.1.1 - 2026-07-29
+### Fixed
+- Corrected the v2.1 finalization order so `bundle_quality.json` is included in the capability artifact inventory after the quality report is finalized.
+- Added fail-closed size and SHA-256 validation for every artifact referenced by the outer manifest.
+- Prevented DeltaAegis from receiving a nominally complete bundle whose quality report was not integrity-bound.
+
+### Validation
+- Added direct finalizer, one-byte tamper, and actual `archive_deltaaegis_bundle` runtime-path regression coverage.
+- Passed the complete v2.1 deterministic, observation-integrity, embedded-administration, and observed-behavior suites.
+- Passed the complete v1.9 and v2.0 compatibility suites.
+
+### Compatibility
+- Preserved `netsniper-status-v1`, `netsniper-run-v3`, v2 aliases, full-inventory output, and the `quick`, `balanced`, and `accurate` scan profiles.
+- Preserved conservative `unknown` and `review` classifications as valid non-terminal telemetry conditions.
+
 ## v2.1.0 - 2026-07-17
 
 ### Added
