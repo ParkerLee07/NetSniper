@@ -5,7 +5,7 @@
 # License: MIT
 
 # =========================
-# NETSNIPER ENGINE v2.1.0
+# NETSNIPER ENGINE v2.1.1
 # NETSNIPER_CLASSIFICATION_ENGINE_V150
 # Compatibility marker retained for v1.5 regression validators.
 # NETSNIPER_CLASSIFICATION_ENGINE_V160
@@ -106,7 +106,7 @@ CONFIG_FILE="$CONFIG_DIR/netsniper.conf"
 RUN_DIR="$BASE/runs"
 SOCK="/run/gvmd/gvmd.sock"
 
-SCANNER_VERSION="v2.1.0"
+SCANNER_VERSION="v2.1.1"
 SCAN_PROFILE="${NETSNIPER_SCAN_PROFILE:-balanced}"
 SCAN_PROFILE_RESOLVED_JSON=""
 SCAN_PROFILE_EFFECTIVE="balanced"
@@ -1794,6 +1794,17 @@ archive_deltaaegis_bundle() {
     fi
 
     mv "$manifest_quality_tmp" "$bundle_dir/manifest.json"
+
+    if [ ! -x "$BASE/tools/finalize_v2_1_bundle_integrity.py" ]; then
+        echo -e "${RED}[-] NetSniper v2.1 bundle-integrity finalizer is missing or not executable.${RESET}"
+        return 1
+    fi
+    if ! python3 "$BASE/tools/finalize_v2_1_bundle_integrity.py" \
+        --bundle-dir "$bundle_dir" \
+        >/dev/null; then
+        echo -e "${RED}[-] Final bundle-integrity validation failed; refusing to publish telemetry bundle.${RESET}"
+        return 1
+    fi
 
     LAST_BUNDLE_DIR="$bundle_dir"
     echo -e "${GREEN}[+] DeltaAegis telemetry bundle archived:${RESET}"

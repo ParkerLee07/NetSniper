@@ -137,7 +137,7 @@ def build_capability_manifest(
         collectors.append(record)
 
     artifacts: list[dict[str, Any]] = []
-    excluded = {"manifest.json", "bundle_quality.json", "capability_manifest.json"}
+    excluded = {"manifest.json", "capability_manifest.json"}
     for path in sorted(bundle_dir.iterdir()):
         if not path.is_file() or path.name in excluded or path.name.endswith(".tmp"):
             continue
@@ -156,6 +156,7 @@ def build_capability_manifest(
                     "hosts.txt",
                     "host_classifications.json",
                     "classification_quality.json",
+                    "bundle_quality.json",
                 },
                 "status": "present",
             }

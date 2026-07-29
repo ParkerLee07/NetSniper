@@ -43,7 +43,7 @@ def write(path: Path, text: str) -> None:
 
 def validate_source_boundaries() -> None:
     shell = (ROOT / "netsniper.sh").read_text(encoding="utf-8")
-    assert_true('SCANNER_VERSION="v2.1.0"' in shell, "scanner version is not v2.1.0")
+    assert_true('SCANNER_VERSION="v2.1.1"' in shell, "scanner version is not v2.1.1")
     assert_true("analyze_v2_1_gnmap.py" in shell, "live analysis does not delegate to v2.1 Python runtime")
     assert_true("generate_v2_1_run_artifacts.py" in shell, "bundle finalization does not invoke v2.1 generator")
     assert_true("NETSNIPER_ROUTE_CONTEXT_V1" in shell, "local route context is not captured")
@@ -376,7 +376,7 @@ def validate_bundle_generator(profiles: dict, capability_schema: dict, host_sche
             str(ROOT / "tools/generate_v2_1_run_artifacts.py"),
             "--bundle-dir", str(bundle),
             "--run-id", "validator-run",
-            "--scanner-version", "v2.1.0",
+            "--scanner-version", "v2.1.1",
             "--source-commit", "cdbfa8e966f96a26941c1ba6a219984ea00732e4",
             "--target", "192.0.2.0/24",
             "--requested-profile", "accurate",

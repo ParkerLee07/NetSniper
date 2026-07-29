@@ -17,23 +17,10 @@ jobs:
         run: shellcheck -x --severity=warning netsniper.sh
       - name: Validate Python syntax
         run: |
-          python3 -m py_compile \
-            netsniper_core/*.py \
-            tools/analyze_v2_1_gnmap.py \
-            tools/classify_v2_1_host.py \
-            tools/generate_v2_1_run_artifacts.py \
-            tools/replay_v2_1_corpus.py \
-            tools/validate_v2_1_corpus_activation.py \
-            tools/validate_v2_1_deltaaegis_enrichment.py \
-            tools/validate_v2_1_embedded_admin_boundary.py \
-            tools/validate_v2_1_empirical_calibration.py \
-            tools/validate_v2_1_observation_integrity.py \
-            tools/validate_v2_1_observed_behavior_corrections.py \
-            tools/validate_v2_1_release_metadata.py \
-            tools/validate_v2_1_stage1_2.py
-      - name: Run NetSniper v2.1.0 release gate
-        if: ${{ github.ref_name == 'main' || github.ref_name == 'feature/v2.1-evidence-calibration' || github.head_ref == 'main' || github.head_ref == 'feature/v2.1-evidence-calibration' }}
+          python3 -m py_compile             netsniper_core/*.py             tools/analyze_v2_1_gnmap.py             tools/classify_v2_1_host.py             tools/finalize_v2_1_bundle_integrity.py             tools/generate_v2_1_run_artifacts.py             tools/replay_v2_1_corpus.py             tools/validate_v2_1_bundle_integrity_hotfix.py             tools/validate_v2_1_corpus_activation.py             tools/validate_v2_1_deltaaegis_enrichment.py             tools/validate_v2_1_embedded_admin_boundary.py             tools/validate_v2_1_empirical_calibration.py             tools/validate_v2_1_observation_integrity.py             tools/validate_v2_1_observed_behavior_corrections.py             tools/validate_v2_1_release_metadata.py             tools/validate_v2_1_stage1_2.py
+      - name: Run NetSniper v2.1.1 release gate
+        if: ${{ github.ref_name == 'main' || github.ref_name == 'hotfix/v2.1.1-bundle-quality-integrity' || github.head_ref == 'main' || github.head_ref == 'hotfix/v2.1.1-bundle-quality-integrity' }}
         run: ./tools/validate_v2_1_release_gate.sh
       - name: Run NetSniper v2.1 behavioral and compatibility gate
-        if: ${{ github.ref_name != 'main' && github.ref_name != 'feature/v2.1-evidence-calibration' && github.head_ref != 'main' && github.head_ref != 'feature/v2.1-evidence-calibration' }}
+        if: ${{ github.ref_name != 'main' && github.ref_name != 'hotfix/v2.1.1-bundle-quality-integrity' && github.head_ref != 'main' && github.head_ref != 'hotfix/v2.1.1-bundle-quality-integrity' }}
         run: ./tools/validate_v2_1_stage1_2_all.sh

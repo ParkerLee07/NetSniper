@@ -6,15 +6,20 @@ NetSniper is a Bash-based network discovery and service-enumeration pipeline. It
 
 ## Current Release
 
-Current release: **NetSniper v2.1.0 — Evidence-Calibrated Device Intelligence**
+Current release: **NetSniper v2.1.1 — Bundle Integrity Hotfix**
 
-NetSniper v2.1.0 finalizes the evidence-calibration work developed on the v2.1
-branch. The release adds multi-axis classification contracts, a deterministic
-18-case development and regression corpus, observation-integrity safeguards,
-conservative embedded-administration and route-context boundaries, measurement-
-only empirical calibration infrastructure, and additive evidence context for
-DeltaAegis. It preserves the v2.0 telemetry contract and the v1.9 scan-profile
-behavior.
+NetSniper v2.1.1 corrects the v2.1 bundle-finalization sequence so
+`bundle_quality.json` is recorded as a required, size-bound, SHA-256-bound
+artifact before a telemetry bundle is published. The release preserves the
+v2.1 classification contracts, CLI/headless architecture, v2.0 telemetry
+compatibility, and v1.9 scan-profile behavior.
+
+## v2.1.1 Highlights
+- Integrity-binds `bundle_quality.json` in `capability_manifest.json`.
+- Adds a fail-closed post-quality finalization pass for every outer-manifest artifact.
+- Rejects missing, duplicated, size-mismatched, or SHA-256-mismatched bundle artifacts.
+- Adds direct, tamper, and actual `archive_deltaaegis_bundle` runtime regressions.
+- Preserves full inventory, conservative unknown/review classifications, and DeltaAegis compatibility.
 
 ## v2.1.0 Highlights
 
@@ -51,7 +56,7 @@ should treat `deltaaegis_ready: false` as a rejection or quarantine condition, n
 
 ## Classification Philosophy
 
-NetSniper v2.1.0 remains intentionally conservative.
+NetSniper v2.1.1 remains intentionally conservative.
 
 A weak or generic service should remain `possible` or `review_queue` instead of becoming a
 confident but unreliable classification. The goal is to produce explainable network intelligence
@@ -71,11 +76,11 @@ release gate from the clean committed feature branch:
     ./tools/validate_v2_1_release_gate.sh
 
 Rerun the same clean-tree gate after an approved merge and before creating or
-moving the `v2.1.0` tag or publishing the GitHub Release.
+moving the `v2.1.1` tag or publishing the GitHub Release.
 
 The v2.1 release gate checks:
 
-- finalized v2.1.0 scanner, README, CHANGELOG, checklist, and CI metadata;
+- finalized v2.1.1 scanner, README, CHANGELOG, maintenance checklist, and CI metadata;
 - Bash and Python syntax;
 - deterministic classification and corpus behavior;
 - observation and risk integrity;
