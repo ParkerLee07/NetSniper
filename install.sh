@@ -39,7 +39,7 @@ log "Checking required dependencies"
 
 missing=0
 
-for cmd in nmap jq base64; do
+for cmd in nmap jq base64 python3 sha256sum timeout; do
     if ! command -v "$cmd" >/dev/null 2>&1; then
         warn "Missing required dependency: $cmd"
         missing=1
@@ -50,7 +50,7 @@ if [[ "$missing" -eq 1 ]]; then
     echo
     echo "Install required packages with:"
     echo "  sudo apt update"
-    echo "  sudo apt install -y nmap jq coreutils"
+    echo "  sudo apt install -y nmap jq coreutils python3"
     exit 1
 fi
 
@@ -68,6 +68,8 @@ mkdir -p \
     "$BASE/analysis" \
     "$BASE/config" \
     "$BASE/runs" \
+    "$BASE/.runtime" \
+    "$BASE/.bundle-staging" \
     "$BIN_DIR"
 
 chmod +x "$BASE/netsniper.sh"
@@ -113,5 +115,7 @@ Runtime folders:
   $BASE/analysis
   $BASE/config
   $BASE/runs
+  $BASE/.runtime
+  $BASE/.bundle-staging
 
 EOF

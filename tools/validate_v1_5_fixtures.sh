@@ -9,14 +9,14 @@ cd "${REPO_DIR:-$HOME/NetSniper}" || {
 echo "[*] Validating NetSniper v1.5 classification fixtures..."
 
 test -f fixtures/classification-v1.5-fixtures.json
-test -f Docs/classification-v1.5-taxonomy.md
+test -f docs/classification-v1.5-taxonomy.md
 
 python3 - <<'PY'
 from pathlib import Path
 import json
 
 fixture_path = Path("fixtures/classification-v1.5-fixtures.json")
-taxonomy_path = Path("Docs/classification-v1.5-taxonomy.md")
+taxonomy_path = Path("docs/classification-v1.5-taxonomy.md")
 
 data = json.loads(fixture_path.read_text(encoding="utf-8"))
 taxonomy = taxonomy_path.read_text(encoding="utf-8")

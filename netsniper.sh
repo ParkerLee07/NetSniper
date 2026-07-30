@@ -5,7 +5,7 @@
 # License: MIT
 
 # =========================
-# NETSNIPER ENGINE v2.1.1
+# NETSNIPER ENGINE v2.2.0
 # NETSNIPER_CLASSIFICATION_ENGINE_V150
 # Compatibility marker retained for v1.5 regression validators.
 # NETSNIPER_CLASSIFICATION_ENGINE_V160
@@ -38,7 +38,7 @@ Options:
                            currently supports no; use the interactive menu for Greenbone.
   --json-status            Print a final machine-readable status object.
   --json-status-file <path> Write the final machine-readable status object to a file.
-  --profile <name>          Optional v2.0 scan profile: quick, balanced, accurate, or deep.
+  --profile <name>          Optional scan profile: quick, balanced, or accurate.
   --scan-profile <name>     Alias for --profile. Balanced remains the default.
   -h, --help               Show this help text.
 
@@ -55,9 +55,12 @@ case "${1:-}" in
         ;;
 esac
 
-command -v nmap >/dev/null 2>&1 || { echo "nmap required"; exit 1; }
-command -v jq >/dev/null 2>&1 || { echo "jq required"; exit 1; }
-command -v base64 >/dev/null 2>&1 || { echo "base64 required"; exit 1; }
+for required_command in nmap jq base64 python3 sha256sum timeout; do
+    command -v "$required_command" >/dev/null 2>&1 || {
+        echo "$required_command required" >&2
+        exit 1
+    }
+done
 command -v gvm-cli >/dev/null 2>&1 || echo "[!] gvm-cli not installed (Greenbone disabled)"
 
 # Colors
@@ -104,9 +107,13 @@ CONFIG_DIR="$BASE/config"
 
 CONFIG_FILE="$CONFIG_DIR/netsniper.conf"
 RUN_DIR="$BASE/runs"
+RUNTIME_ROOT="$BASE/.runtime"
+BUNDLE_STAGING_ROOT="$BASE/.bundle-staging"
+RUNTIME_WORKSPACE=""
+CURRENT_BUNDLE_STAGING=""
 SOCK="/run/gvmd/gvmd.sock"
 
-SCANNER_VERSION="v2.1.1"
+SCANNER_VERSION="v2.2.0"
 SCAN_PROFILE="${NETSNIPER_SCAN_PROFILE:-balanced}"
 SCAN_PROFILE_RESOLVED_JSON=""
 SCAN_PROFILE_EFFECTIVE="balanced"
@@ -134,7 +141,27 @@ JSON_STATUS=0
 HEADLESS_JSON_STATUS_FILE=""
 LAST_BUNDLE_DIR=""
 
+prepare_headless_workspace() {
+    local token
+    token="$(date -u +%Y%m%dT%H%M%S)-$$-$(python3 -c 'import secrets; print(secrets.token_hex(4))')"
+    RUNTIME_WORKSPACE="$RUNTIME_ROOT/$token"
+    DISCOVERY_DIR="$RUNTIME_WORKSPACE/discovery"
+    TARGET_DIR="$RUNTIME_WORKSPACE/targets"
+    SCAN_DIR="$RUNTIME_WORKSPACE/scans"
+    REPORT_DIR="$RUNTIME_WORKSPACE/reports"
+    ANALYSIS_DIR="$RUNTIME_WORKSPACE/analysis"
+}
 
+cleanup_headless_workspace() {
+    if [ -n "${RUNTIME_WORKSPACE:-}" ] && [ -d "$RUNTIME_WORKSPACE" ]; then
+        rm -rf -- "$RUNTIME_WORKSPACE"
+    fi
+    if [ -n "${CURRENT_BUNDLE_STAGING:-}" ]         && [ -d "$CURRENT_BUNDLE_STAGING" ]; then
+        rm -rf -- "$CURRENT_BUNDLE_STAGING"
+    fi
+    RUNTIME_WORKSPACE=""
+    CURRENT_BUNDLE_STAGING=""
+}
 
 resolve_selected_scan_profile() {
     local resolved_profile_json
@@ -156,7 +183,7 @@ resolve_selected_scan_profile() {
             SCAN_PROFILE_RUNTIME_STAGE="accurate_tcp_service_depth_os_udp_lite"
             ;;
         deep)
-            echo "[-] Scan profile 'deep' is planned but runtime execution is not enabled in NetSniper v2.1.0." >&2
+            echo "[-] Scan profile 'deep' is not supported in NetSniper v2.2.0." >&2
             echo "[-] Use quick, balanced, or accurate." >&2
             return 1
             ;;
@@ -169,34 +196,15 @@ resolve_selected_scan_profile() {
 
 validate_private_cidr() {
     local target="$1"
+    python3 "$BASE/tools/validate_v2_2_scope.py" --network "$target" >/dev/null
+}
 
-    command -v python3 >/dev/null 2>&1 || {
-        echo "python3 required for target validation" >&2
-        return 1
-    }
-
-    python3 - "$target" <<'PY'
-import ipaddress
-import sys
-
-target = sys.argv[1]
-
-try:
-    network = ipaddress.ip_network(target, strict=False)
-except ValueError:
-    sys.exit(1)
-
-if network.version != 4:
-    sys.exit(2)
-
-if not network.is_private:
-    sys.exit(3)
-
-if network.prefixlen < 16:
-    sys.exit(4)
-
-sys.exit(0)
-PY
+validate_discovered_scope() {
+    python3 "$BASE/tools/validate_v2_2_scope.py" \
+        --network "$NET" \
+        --hosts "$TARGET_DIR/hosts.txt" \
+        --rewrite-hosts \
+        >/dev/null
 }
 
 emit_headless_status() {
@@ -272,6 +280,7 @@ handle_headless_interrupt() {
     echo "" >&2
     echo "[-] Headless pipeline interrupted." >&2
     emit_headless_status "interrupted" "$rc" "${LAST_BUNDLE_DIR:-}" || true
+    cleanup_headless_workspace
     exit "$rc"
 }
 parse_cli_args() {
@@ -311,7 +320,7 @@ parse_cli_args() {
                 ;;
             --profile|--scan-profile)
                 if [ $# -lt 2 ]; then
-                    echo "[-] --profile requires quick, balanced, accurate, or deep." >&2
+                    echo "[-] --profile requires quick, balanced, or accurate." >&2
                     exit 2
                 fi
                 SCAN_PROFILE="$2"
@@ -361,7 +370,7 @@ parse_cli_args() {
                 echo "[!] Accurate profile enables TCP service-depth plus non-fatal OS and UDP-lite evidence." >&2
                 ;;
             deep)
-                echo "[-] Scan profile 'deep' is planned but runtime execution is not enabled in NetSniper v2.1.0." >&2
+                echo "[-] Scan profile 'deep' is not supported in NetSniper v2.2.0." >&2
                 echo "[-] Use --profile quick, --profile balanced, or --profile accurate until deep scan wiring is validated." >&2
                 emit_headless_status "failed" 2 ""
                 exit 2
@@ -381,7 +390,7 @@ parse_cli_args() {
         fi
 
         if [ "$HEADLESS_GREENBONE" = "yes" ]; then
-            echo "[-] Headless Greenbone launch is not enabled in NetSniper v2.1.0. Use --greenbone no." >&2
+            echo "[-] Headless Greenbone launch is not enabled in NetSniper v2.2.0. Use --greenbone no." >&2
             emit_headless_status "failed" 1 ""
             exit 1
         fi
@@ -392,6 +401,7 @@ run_headless_pipeline() {
     NET="$HEADLESS_TARGET"
     GREENBONE_USER=""
     GREENBONE_PASS=""
+    prepare_headless_workspace
 
     trap 'handle_headless_interrupt' INT TERM
 
@@ -402,37 +412,30 @@ run_headless_pipeline() {
     check_dirs
 
     local rc
-
     if run_full_pipeline; then
-        if [ -z "$LAST_BUNDLE_DIR" ]; then
-            LAST_BUNDLE_DIR=$(find "$RUN_DIR" -maxdepth 1 -mindepth 1 -type d -printf '%T@ %p
-' 2>/dev/null | sort -nr | awk 'NR == 1 {print $2}')
-        fi
-
         if [ -z "$LAST_BUNDLE_DIR" ] || [ ! -f "$LAST_BUNDLE_DIR/manifest.json" ]; then
             echo "[-] Pipeline completed but manifest.json was not found." >&2
             emit_headless_status "failed" 4 "${LAST_BUNDLE_DIR:-}"
+            cleanup_headless_workspace
             trap - INT TERM
             return 4
         fi
-
         echo "[+] Headless pipeline completed."
         echo "[+] Manifest: $LAST_BUNDLE_DIR/manifest.json"
         emit_headless_status "completed" 0 "$LAST_BUNDLE_DIR"
+        cleanup_headless_workspace
         trap - INT TERM
         return 0
     else
         rc=$?
-        echo "[-] Headless pipeline failed with return code $rc." >&2
-        emit_headless_status "failed" "$rc" "${LAST_BUNDLE_DIR:-}"
-        trap - INT TERM
-        return "$rc"
     fi
-}
 
-# =========================
-# FUNCTIONS
-# =========================
+    echo "[-] Headless pipeline failed with return code $rc." >&2
+    emit_headless_status "failed" "$rc" "${LAST_BUNDLE_DIR:-}"
+    cleanup_headless_workspace
+    trap - INT TERM
+    return "$rc"
+}
 
 init_workspace() {
     mkdir -p "$BASE"
@@ -442,6 +445,7 @@ init_workspace() {
     mkdir -p "$REPORT_DIR"
     mkdir -p "$ANALYSIS_DIR"
     mkdir -p "$CONFIG_DIR"
+    mkdir -p "$RUN_DIR" "$RUNTIME_ROOT" "$BUNDLE_STAGING_ROOT"
 
     echo "[+] NetSniper workspace initialized at: $BASE"
 }
@@ -477,7 +481,7 @@ boot_screen() {
     echo '   | \ | | ____|_   _/ ___|| \ | |_ _|  _ \| ____|  _ \ '
     echo '   |  \| |  _|   | | \___ \|  \| || || |_) |  _| | |_) |'
     echo '   | |\  | |___  | |  ___) | |\  || ||  __/| |___|  _ < '
-    echo '   |_| \_|_____| |_| |____/|_| \_|___|_|   |_____|_| \_\'
+    printf '%s\n' $'   |_| \\_|_____| |_| |____/|_| \\_|___|_|   |_____|_| \\_\\'
     echo -e "${RESET}"
 
     echo ""
@@ -508,89 +512,71 @@ gvm_call() {
         echo "[-] gvm-cli is not installed"
         return 1
     fi
-
     if [ -z "${GREENBONE_USER:-}" ] || [ -z "${GREENBONE_PASS:-}" ]; then
         echo "[-] Greenbone credentials are not configured"
         return 1
     fi
 
-    out=$(gvm-cli \
-        --gmp-username "$GREENBONE_USER" \
-        --gmp-password "$GREENBONE_PASS" \
-        socket \
-        --socketpath "$SOCK" \
-        --xml "$xml") || {
+    if ! out="$({
+        set -Eeuo pipefail
+        local_config="$(mktemp "${TMPDIR:-/tmp}/netsniper-gvm.XXXXXX")"
+        trap 'rm -f -- "$local_config"' EXIT
+        chmod 600 "$local_config"
+        cat > "$local_config" <<EOF
+[gmp]
+username=$GREENBONE_USER
+password=$GREENBONE_PASS
+EOF
+        gvm-cli \
+            --config "$local_config" \
+            socket \
+            --socketpath "$SOCK" \
+            --xml "$xml"
+    })"; then
         echo "[-] gvm-cli failed"
         return 1
-    }
+    fi
 
     echo "$out"
-}
-
-run_with_spinner() {
-    local cmd="$1"
-    local msg="$2"
-
-    eval "$cmd" &
-    PID=$!
-
-    spin='|/-\'
-    i=0
-
-    while kill -0 $PID 2>/dev/null; do
-        i=$(( (i+1) %4 ))
-        printf "\r[%c] %s" "${spin:$i:1}" "$msg"
-        sleep 0.1
-    done
-
-    wait $PID
-    printf "\r"
 }
 
 run_discovery() {
     echo -e "${RED}[1]${RESET} Discovering hosts on $NET..."
     mkdir -p "$DISCOVERY_DIR" "$TARGET_DIR"
 
-    # Remove previous outputs first so a failed scan cannot reuse stale evidence.
-    rm -f \
-        "$DISCOVERY_DIR/live.gnmap" \
-        "$DISCOVERY_DIR/live.nmap" \
-        "$DISCOVERY_DIR/live.xml" \
-        "$TARGET_DIR/hosts.txt"
+    local attempt rc
+    for attempt in 1 2; do
+        rm -f \
+            "$DISCOVERY_DIR/live.gnmap" \
+            "$DISCOVERY_DIR/live.nmap" \
+            "$DISCOVERY_DIR/live.xml" \
+            "$TARGET_DIR/hosts.txt"
 
-    # -oA preserves grepable, normal and XML discovery evidence.
-    nmap -PR -sn "$NET" -oA "$DISCOVERY_DIR/live" \
-        > /dev/null 2>&1 &
-    PID=$!
+        set +e
+        nmap -PR -sn "$NET" -oA "$DISCOVERY_DIR/live" > /dev/null 2>&1
+        rc=$?
+        set -e
 
-    spin='|/-\'
-    i=0
-    while kill -0 "$PID" 2>/dev/null; do
-        i=$(( (i+1) %4 ))
-        printf "\r[%c] Scanning network..." "${spin:$i:1}"
-        sleep 0.1
+        if [ "$rc" -eq 0 ] && [ -s "$DISCOVERY_DIR/live.gnmap" ]; then
+            awk '/Up$/{print $2}' "$DISCOVERY_DIR/live.gnmap" | sort -u > "$TARGET_DIR/hosts.txt"
+            if [ -s "$TARGET_DIR/hosts.txt" ]; then
+                if ! validate_discovered_scope; then
+                    echo -e "${RED}[-] Discovery emitted a host outside authorized scope; refusing to continue.${RESET}"
+                    return 1
+                fi
+                echo -e "${GREEN}[+] Discovery complete${RESET}"
+                return 0
+            fi
+        fi
+
+        if [ "$attempt" -eq 1 ]; then
+            echo -e "${YELLOW}[!] Discovery returned no usable hosts; retrying once with a clean private workspace.${RESET}" >&2
+            sleep 2
+        fi
     done
 
-    if ! wait "$PID"; then
-        printf "\r"
-        echo -e "${RED}[-] Discovery scan failed.${RESET}"
-        return 1
-    fi
-    printf "\r"
-
-    if [ ! -s "$DISCOVERY_DIR/live.gnmap" ]; then
-        echo -e "${RED}[-] Discovery output was not created.${RESET}"
-        return 1
-    fi
-
-    awk '/Up$/{print $2}' "$DISCOVERY_DIR/live.gnmap" > "$TARGET_DIR/hosts.txt"
-
-    if [ ! -s "$TARGET_DIR/hosts.txt" ]; then
-        echo -e "${YELLOW}[!] Discovery completed, but no live hosts were found.${RESET}"
-        return 1
-    fi
-
-    echo -e "${GREEN}[+] Discovery complete${RESET}"
+    echo -e "${YELLOW}[!] Discovery completed, but no live hosts were found after two attempts.${RESET}"
+    return 1
 }
 
 run_scan() {
@@ -648,14 +634,14 @@ run_scan() {
     fi
 
     for arg_index in "${!TCP_SCAN_ARGS[@]}"; do
-        if [ "${TCP_SCAN_ARGS[$arg_index]}" = '$TRUEAEGIS_PORTS' ]; then
-            TCP_SCAN_ARGS[$arg_index]="$TRUEAEGIS_PORTS"
+        if [ "${TCP_SCAN_ARGS[$arg_index]}" = "\$TRUEAEGIS_PORTS" ]; then
+            TCP_SCAN_ARGS[arg_index]="$TRUEAEGIS_PORTS"
         fi
     done
 
     echo "[*] Using scan profile: $SCAN_PROFILE_EFFECTIVE"
 
-    local scan_started_epoch scan_completed_epoch scan_rc
+    local scan_started_epoch scan_rc remaining_seconds optional_rc
     scan_started_epoch=$(date +%s)
 
     if [ "${PROFILE_RUNTIME_BUDGET_SECONDS:-0}" -gt 0 ] && command -v timeout >/dev/null 2>&1; then
@@ -676,7 +662,7 @@ run_scan() {
     fi
     PID=$!
 
-    spin='|/-\'
+    spin=$'|/-\\'
     i=0
     while kill -0 "$PID" 2>/dev/null; do
         i=$(( (i+1) %4 ))
@@ -688,14 +674,6 @@ run_scan() {
     wait "$PID"
     scan_rc=$?
     set -e
-
-    scan_completed_epoch=$(date +%s)
-    PROFILE_DURATION_SECONDS=$((scan_completed_epoch - scan_started_epoch))
-
-    if [ "${PROFILE_RUNTIME_BUDGET_SECONDS:-0}" -gt 0 ] \
-        && [ "${PROFILE_DURATION_SECONDS:-0}" -gt "${PROFILE_RUNTIME_BUDGET_SECONDS:-0}" ]; then
-        PROFILE_BUDGET_EXCEEDED=true
-    fi
 
     if [ "$scan_rc" -ne 0 ]; then
         printf "\r"
@@ -728,19 +706,25 @@ run_scan() {
             if [ "${#OS_DETECTION_ARGS[@]}" -gt 0 ]; then
                 echo "[*] Running non-fatal OS evidence pass for accurate profile..."
 
-                if nmap "${OS_DETECTION_ARGS[@]}" --osscan-limit \
-                    -iL "$TARGET_DIR/hosts.txt" \
-                    -oA "$SCAN_DIR/os_detection" \
-                    > /dev/null 2>&1; then
-
-                    if [ -s "$SCAN_DIR/os_detection.xml" ] \
-                        && grep -qE '<finished[^>]+exit="success"' "$SCAN_DIR/os_detection.xml"; then
-                        echo "[+] OS evidence pass complete"
-                    else
-                        echo "[!] OS evidence pass did not produce successful XML; continuing without OS evidence." >&2
-                    fi
+                remaining_seconds=$((PROFILE_RUNTIME_BUDGET_SECONDS - ($(date +%s) - scan_started_epoch)))
+                optional_rc=0
+                if [ "$remaining_seconds" -gt 0 ]; then
+                    timeout "${remaining_seconds}s" nmap "${OS_DETECTION_ARGS[@]}" --osscan-limit \
+                        -iL "$TARGET_DIR/hosts.txt" \
+                        -oA "$SCAN_DIR/os_detection" \
+                        > /dev/null 2>&1 || optional_rc=$?
                 else
-                    echo "[!] OS evidence pass failed or requires elevated privileges; continuing without OS evidence." >&2
+                    optional_rc=124
+                fi
+
+                if [ "$optional_rc" -eq 0 ] \
+                    && [ -s "$SCAN_DIR/os_detection.xml" ] \
+                    && grep -qE '<finished[^>]+exit="success"' "$SCAN_DIR/os_detection.xml"; then
+                    echo "[+] OS evidence pass complete"
+                else
+                    [ "$optional_rc" -eq 124 ] && PROFILE_BUDGET_EXCEEDED=true
+                    rm -f "$SCAN_DIR/os_detection.xml" "$SCAN_DIR/os_detection.gnmap" "$SCAN_DIR/os_detection.nmap"
+                    echo "[!] OS evidence pass unavailable or unsuccessful; continuing without OS evidence." >&2
                 fi
             fi
         fi
@@ -753,22 +737,34 @@ run_scan() {
             if [ "${#UDP_LITE_ARGS[@]}" -gt 0 ]; then
                 echo "[*] Running non-fatal UDP-lite evidence pass for accurate profile..."
 
-                if nmap "${UDP_LITE_ARGS[@]}" \
-                    -iL "$TARGET_DIR/hosts.txt" \
-                    -oA "$SCAN_DIR/udp_lite" \
-                    > /dev/null 2>&1; then
-
-                    if [ -s "$SCAN_DIR/udp_lite.xml" ] \
-                        && grep -qE '<finished[^>]+exit="success"' "$SCAN_DIR/udp_lite.xml"; then
-                        echo "[+] UDP-lite evidence pass complete"
-                    else
-                        echo "[!] UDP-lite evidence pass did not produce successful XML; continuing without UDP-lite evidence." >&2
-                    fi
+                remaining_seconds=$((PROFILE_RUNTIME_BUDGET_SECONDS - ($(date +%s) - scan_started_epoch)))
+                optional_rc=0
+                if [ "$remaining_seconds" -gt 0 ]; then
+                    timeout "${remaining_seconds}s" nmap "${UDP_LITE_ARGS[@]}" \
+                        -iL "$TARGET_DIR/hosts.txt" \
+                        -oA "$SCAN_DIR/udp_lite" \
+                        > /dev/null 2>&1 || optional_rc=$?
                 else
-                    echo "[!] UDP-lite evidence pass failed or requires elevated privileges; continuing without UDP-lite evidence." >&2
+                    optional_rc=124
+                fi
+
+                if [ "$optional_rc" -eq 0 ] \
+                    && [ -s "$SCAN_DIR/udp_lite.xml" ] \
+                    && grep -qE '<finished[^>]+exit="success"' "$SCAN_DIR/udp_lite.xml"; then
+                    echo "[+] UDP-lite evidence pass complete"
+                else
+                    [ "$optional_rc" -eq 124 ] && PROFILE_BUDGET_EXCEEDED=true
+                    rm -f "$SCAN_DIR/udp_lite.xml" "$SCAN_DIR/udp_lite.gnmap" "$SCAN_DIR/udp_lite.nmap"
+                    echo "[!] UDP-lite evidence pass unavailable or unsuccessful; continuing without UDP-lite evidence." >&2
                 fi
             fi
         fi
+    fi
+
+    PROFILE_DURATION_SECONDS=$(($(date +%s) - scan_started_epoch))
+    if [ "${PROFILE_RUNTIME_BUDGET_SECONDS:-0}" -gt 0 ] \
+        && [ "$PROFILE_DURATION_SECONDS" -ge "$PROFILE_RUNTIME_BUDGET_SECONDS" ]; then
+        PROFILE_BUDGET_EXCEEDED=true
     fi
 
     echo -e "${GREEN}[+] Scan complete${RESET}"
@@ -970,13 +966,10 @@ import_greenbone() {
     echo "[+] Task ID: $TASK_ID"
     echo "[*] Starting scan..."
 
-    gvm-cli \
-        --gmp-username "$GREENBONE_USER" \
-        --gmp-password "$GREENBONE_PASS" \
-        socket \
-        --socketpath "$SOCK" \
-        --xml "<start_task task_id='$TASK_ID'/>" \
-        >/dev/null
+    if ! gvm_call "<start_task task_id='$TASK_ID'/>" >/dev/null; then
+        echo "[-] Failed to start Greenbone task"
+        return 1
+    fi
 
     echo -e "${GREEN}[+] Scan launched successfully${RESET}"
 }
@@ -1488,12 +1481,17 @@ PY
 
 # NETSNIPER_MANIFEST_V2
 archive_deltaaegis_bundle() {
-    local run_id bundle_dir manifest_tmp analysis_json analysis_txt
+    local run_id bundle_dir publish_dir manifest_tmp analysis_json analysis_txt
     local archived_at neighbors_captured_at discovered_count relevant_count service_hosts_up
     local profile_ports_json profile_hash profile_fingerprint profile_contract nmap_version discovery_interface
     local service_started_epoch service_completed_epoch service_started_at service_completed_at
     local run_started_at run_completed_at duration_seconds network_scope
     local os_detection_available udp_lite_available
+
+    if ! validate_discovered_scope; then
+        echo -e "${RED}[-] Host inventory violates the authorized network scope; refusing to archive telemetry.${RESET}"
+        return 1
+    fi
 
     if [ ! -s "$DISCOVERY_DIR/live.xml" ]; then
         echo -e "${RED}[-] Discovery XML is missing; refusing to archive telemetry.${RESET}"
@@ -1515,13 +1513,15 @@ archive_deltaaegis_bundle() {
         return 1
     fi
 
-    run_id=$(date +%Y%m%d-%H%M%S)
-    bundle_dir="$RUN_DIR/$run_id"
-    if [ -e "$bundle_dir" ]; then
-        run_id="${run_id}-$$"
-        bundle_dir="$RUN_DIR/$run_id"
+    run_id="$(date +%Y%m%d-%H%M%S)-$(python3 -c 'import secrets; print(secrets.token_hex(4))')"
+    publish_dir="$RUN_DIR/$run_id"
+    bundle_dir="$BUNDLE_STAGING_ROOT/$run_id"
+    if [ -e "$publish_dir" ] || [ -e "$bundle_dir" ]; then
+        echo -e "${RED}[-] Collision-resistant run identifier already exists; refusing to overwrite telemetry.${RESET}"
+        return 1
     fi
     mkdir -p "$bundle_dir"
+    CURRENT_BUNDLE_STAGING="$bundle_dir"
 
     cp "$DISCOVERY_DIR/live.xml" "$bundle_dir/discovery.xml"
     [ -f "$DISCOVERY_DIR/live.gnmap" ] && cp "$DISCOVERY_DIR/live.gnmap" "$bundle_dir/discovery.gnmap"
@@ -1530,14 +1530,16 @@ archive_deltaaegis_bundle() {
     [ -f "$SCAN_DIR/fast_scan.gnmap" ] && cp "$SCAN_DIR/fast_scan.gnmap" "$bundle_dir/services.gnmap"
     [ -f "$SCAN_DIR/fast_scan.nmap" ] && cp "$SCAN_DIR/fast_scan.nmap" "$bundle_dir/services.nmap"
     os_detection_available=false
-    if [ -s "$SCAN_DIR/os_detection.xml" ]; then
+    if [ -s "$SCAN_DIR/os_detection.xml" ] \
+        && grep -qE '<finished[^>]+exit="success"' "$SCAN_DIR/os_detection.xml"; then
         cp "$SCAN_DIR/os_detection.xml" "$bundle_dir/os_detection.xml"
         [ -f "$SCAN_DIR/os_detection.gnmap" ] && cp "$SCAN_DIR/os_detection.gnmap" "$bundle_dir/os_detection.gnmap"
         [ -f "$SCAN_DIR/os_detection.nmap" ] && cp "$SCAN_DIR/os_detection.nmap" "$bundle_dir/os_detection.nmap"
         os_detection_available=true
     fi
     udp_lite_available=false
-    if [ -s "$SCAN_DIR/udp_lite.xml" ]; then
+    if [ -s "$SCAN_DIR/udp_lite.xml" ] \
+        && grep -qE '<finished[^>]+exit="success"' "$SCAN_DIR/udp_lite.xml"; then
         cp "$SCAN_DIR/udp_lite.xml" "$bundle_dir/udp_lite.xml"
         [ -f "$SCAN_DIR/udp_lite.gnmap" ] && cp "$SCAN_DIR/udp_lite.gnmap" "$bundle_dir/udp_lite.gnmap"
         [ -f "$SCAN_DIR/udp_lite.nmap" ] && cp "$SCAN_DIR/udp_lite.nmap" "$bundle_dir/udp_lite.nmap"
@@ -1683,7 +1685,7 @@ archive_deltaaegis_bundle() {
         --arg effective_profile "$SCAN_PROFILE_EFFECTIVE" \
         --arg profile_contract "$profile_contract" \
         --arg profile_fingerprint "$profile_fingerprint" \
-        --arg run_dir "$bundle_dir" \
+        --arg run_dir "$publish_dir" \
         --arg started_at "$run_started_at" \
         --arg completed_at "$run_completed_at" \
         --argjson duration_seconds "$duration_seconds" \
@@ -1806,9 +1808,19 @@ archive_deltaaegis_bundle() {
         return 1
     fi
 
-    LAST_BUNDLE_DIR="$bundle_dir"
+    if [ -e "$publish_dir" ]; then
+        echo -e "${RED}[-] Final run directory appeared before publication; refusing to overwrite it.${RESET}"
+        return 1
+    fi
+    if ! mv "$bundle_dir" "$publish_dir"; then
+        echo -e "${RED}[-] Atomic bundle publication failed.${RESET}"
+        return 1
+    fi
+    CURRENT_BUNDLE_STAGING=""
+
+    LAST_BUNDLE_DIR="$publish_dir"
     echo -e "${GREEN}[+] DeltaAegis telemetry bundle archived:${RESET}"
-    echo "$bundle_dir"
+    echo "$publish_dir"
 }
 
 run_full_pipeline() {
@@ -1838,11 +1850,15 @@ run_full_pipeline() {
 
 show_targets() {
     echo -e "${BLUE}[*] High Risk Targets:${RESET}"
-    cat "$TARGET_DIR/high_risk.txt" 2>/dev/null
+    if [ ! -f "$TARGET_DIR/high_risk.txt" ]; then
+        echo "[!] No high-risk target file exists. Run discovery, scanning, and extraction first."
+        return 0
+    fi
+    cat "$TARGET_DIR/high_risk.txt"
 }
 
 analyze_hosts() {
-    echo -e "${PURPLE}[*] Running NetSniper v2.1 authoritative exposure and classification analysis...${RESET}"
+    echo -e "${PURPLE}[*] Running NetSniper v2.2 authoritative exposure and classification analysis...${RESET}"
 
     local input timestamp analysis_file json_file
     input="$SCAN_DIR/fast_scan.gnmap"
@@ -2025,7 +2041,10 @@ EOF
 
 # Allows validators to source this file without launching the interactive menu.
 if [ "${NETSNIPER_TEST_MODE:-0}" = "1" ]; then
-    return 0 2>/dev/null || exit 0
+    if [ "${BASH_SOURCE[0]}" != "$0" ]; then
+        return 0
+    fi
+    exit 0
 fi
 
 parse_cli_args "$@"
@@ -2045,7 +2064,7 @@ load_config
 while true; do
     echo ""
     echo "================================"
-    echo "        NETSNIPER v2.1-dev"
+    echo "        NETSNIPER v2.2.0"
     echo "        Profile: $SCAN_PROFILE_EFFECTIVE"
     echo "================================"
     echo "  1) Discover Hosts"
@@ -2063,14 +2082,14 @@ while true; do
     read -r -p "netsniper> " opt
 
     case $opt in
-        1) run_discovery ;;
-        2) run_scan ;;
-        3) extract_high_risk ;;
-        4) import_greenbone ;;
-        5) run_full_pipeline ;;
-        6) show_targets ;;
-        7) generate_report ;;
-        8) analyze_hosts ;;
+        1) run_discovery || WARN "Discovery did not complete." ;;
+        2) run_scan || WARN "Scan did not complete." ;;
+        3) extract_high_risk || WARN "Target extraction did not complete." ;;
+        4) import_greenbone || WARN "Greenbone import did not complete." ;;
+        5) run_full_pipeline || WARN "Pipeline did not complete." ;;
+        6) show_targets || WARN "Targets could not be displayed." ;;
+        7) generate_report || WARN "Report generation did not complete." ;;
+        8) analyze_hosts || WARN "Analysis did not complete." ;;
         9) configure_scan_profile && save_config ;;
         0) echo "Goodbye"; exit 0 ;;
         *) echo "Invalid option" ;;

@@ -17,10 +17,33 @@ jobs:
         run: shellcheck -x --severity=warning netsniper.sh
       - name: Validate Python syntax
         run: |
-          python3 -m py_compile             netsniper_core/*.py             tools/analyze_v2_1_gnmap.py             tools/classify_v2_1_host.py             tools/finalize_v2_1_bundle_integrity.py             tools/generate_v2_1_run_artifacts.py             tools/replay_v2_1_corpus.py             tools/validate_v2_1_bundle_integrity_hotfix.py             tools/validate_v2_1_corpus_activation.py             tools/validate_v2_1_deltaaegis_enrichment.py             tools/validate_v2_1_embedded_admin_boundary.py             tools/validate_v2_1_empirical_calibration.py             tools/validate_v2_1_observation_integrity.py             tools/validate_v2_1_observed_behavior_corrections.py             tools/validate_v2_1_release_metadata.py             tools/validate_v2_1_stage1_2.py
+          python3 -m py_compile \
+            netsniper_core/*.py \
+            tools/analyze_v2_1_gnmap.py \
+            tools/classify_v2_1_host.py \
+            tools/finalize_v2_1_bundle_integrity.py \
+            tools/generate_v2_1_run_artifacts.py \
+            tools/replay_v2_1_corpus.py \
+            tools/validate_v2_1_bundle_integrity_hotfix.py \
+            tools/validate_v2_1_corpus_activation.py \
+            tools/validate_v2_1_deltaaegis_enrichment.py \
+            tools/validate_v2_1_embedded_admin_boundary.py \
+            tools/validate_v2_1_empirical_calibration.py \
+            tools/validate_v2_1_observation_integrity.py \
+            tools/validate_v2_1_observed_behavior_corrections.py \
+            tools/validate_v2_1_release_metadata.py \
+            tools/validate_v2_1_stage1_2.py \
+            tools/validate_v2_2_scope.py
+      - name: Run NetSniper v2.2 candidate gate
+        if: ${{ github.ref_name == 'feature/v2.2-runtime-integrity' || github.head_ref == 'feature/v2.2-runtime-integrity' }}
+        env:
+          DELTA_AEGIS_CHECKOUT: ${{ github.workspace }}/DeltaAegis
+        run: |
+          git clone --depth 1 --branch hotfix/v1.0.2-scan-orchestration https://github.com/ParkerLee07/DeltaAegis.git "$DELTA_AEGIS_CHECKOUT"
+          DELTAAEGIS_ROOT="$DELTA_AEGIS_CHECKOUT" ./tools/validate_v2_2_candidate_all.sh
       - name: Run NetSniper v2.1.1 release gate
-        if: ${{ github.ref_name == 'main' || github.ref_name == 'hotfix/v2.1.1-bundle-quality-integrity' || github.head_ref == 'main' || github.head_ref == 'hotfix/v2.1.1-bundle-quality-integrity' }}
+        if: ${{ (github.ref_name == 'main' || github.ref_name == 'hotfix/v2.1.1-bundle-quality-integrity' || github.head_ref == 'main' || github.head_ref == 'hotfix/v2.1.1-bundle-quality-integrity') && github.ref_name != 'feature/v2.2-runtime-integrity' && github.head_ref != 'feature/v2.2-runtime-integrity' }}
         run: ./tools/validate_v2_1_release_gate.sh
       - name: Run NetSniper v2.1 behavioral and compatibility gate
-        if: ${{ github.ref_name != 'main' && github.ref_name != 'hotfix/v2.1.1-bundle-quality-integrity' && github.head_ref != 'main' && github.head_ref != 'hotfix/v2.1.1-bundle-quality-integrity' }}
+        if: ${{ github.ref_name != 'main' && github.ref_name != 'hotfix/v2.1.1-bundle-quality-integrity' && github.ref_name != 'feature/v2.2-runtime-integrity' && github.head_ref != 'main' && github.head_ref != 'hotfix/v2.1.1-bundle-quality-integrity' && github.head_ref != 'feature/v2.2-runtime-integrity' }}
         run: ./tools/validate_v2_1_stage1_2_all.sh

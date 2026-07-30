@@ -8,12 +8,12 @@ cd "${REPO_DIR:-$HOME/NetSniper}" || {
 
 echo "[*] Validating NetSniper v1.5 classification taxonomy..."
 
-test -f Docs/classification-v1.5-taxonomy.md
+test -f docs/classification-v1.5-taxonomy.md
 
 python3 - <<'PY'
 from pathlib import Path
 
-path = Path("Docs/classification-v1.5-taxonomy.md")
+path = Path("docs/classification-v1.5-taxonomy.md")
 text = path.read_text(encoding="utf-8")
 
 required = [

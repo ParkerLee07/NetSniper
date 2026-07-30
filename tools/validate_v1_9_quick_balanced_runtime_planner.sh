@@ -53,7 +53,7 @@ if ./netsniper.sh \
     fail "deep profile unexpectedly executed before runtime wiring"
 fi
 
-grep -Fq "Scan profile 'deep' is planned but runtime execution is not enabled" \
+grep -Fq "Scan profile 'deep' is not supported" \
     /tmp/netsniper-deep-runtime-block.out \
     || fail "deep block message missing"
 

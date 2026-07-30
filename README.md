@@ -8,11 +8,18 @@ NetSniper is a Bash-based network discovery and service-enumeration pipeline. It
 
 Current release: **NetSniper v2.1.1 — Bundle Integrity Hotfix**
 
+Development candidate: **NetSniper v2.2.0 — Runtime Isolation and Integration Safety** (not yet released)
+
 NetSniper v2.1.1 corrects the v2.1 bundle-finalization sequence so
 `bundle_quality.json` is recorded as a required, size-bound, SHA-256-bound
 artifact before a telemetry bundle is published. The release preserves the
 v2.1 classification contracts, CLI/headless architecture, v2.0 telemetry
 compatibility, and v1.9 scan-profile behavior.
+
+
+## v2.2.0 Development Candidate
+
+NetSniper v2.2.0 is a compatibility-preserving reliability update. It adds private per-run workspaces, exact RFC1918 and host containment checks, atomic bundle publication, safe optional evidence handling, full-profile duration accounting, dependency validation, and defensive interactive/Greenbone handling. The `netsniper-run-v3`, capability-manifest v1, and host-classification v2 contracts remain unchanged for DeltaAegis compatibility.
 
 ## v2.1.1 Highlights
 - Integrity-binds `bundle_quality.json` in `capability_manifest.json`.

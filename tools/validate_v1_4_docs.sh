@@ -37,7 +37,7 @@ checks = {
         "tools/validate_v1_4_analysis.sh",
         "tools/validate_v1_4_bundle.sh",
     ],
-    "Docs/deltaaegis-integration.md": [
+    "docs/deltaaegis-integration.md": [
         "NetSniper v1.4.0 DeltaAegis Classification Contract",
         "netsniper-classification-v1",
         "Per-host classification object",
