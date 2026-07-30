@@ -47,14 +47,43 @@ jobs:
         if: env.VALIDATION_BRANCH == 'feature/v2.2-runtime-integrity' || env.VALIDATION_BRANCH == 'main'
         env:
           DELTA_AEGIS_CHECKOUT: ${{ github.workspace }}/DeltaAegis
+          DELTA_AEGIS_URL: https://github.com/ParkerLee07/DeltaAegis.git
+          DELTA_AEGIS_CANDIDATE_COMMIT: 865ae545f8a3fe25befe3a6c7cd9aefef22f1b78
+          DELTA_AEGIS_CANDIDATE_TREE: d5b1954b5839a2d12d6e31d659afa2f8d142cf84
+          DELTA_AEGIS_V1_0_1_TAG_OBJECT: c8854767a6c3b332700bfb6b802337ccf201c687
+          DELTA_AEGIS_V1_0_1_COMMIT: 8cfc923d832e1eae3162c03020b5854e1cc047a8
         run: |
           if [ "$VALIDATION_BRANCH" = "main" ]; then
             DELTA_AEGIS_REF="main"
+            DELTA_AEGIS_EXPECTED_COMMIT="$(
+              git ls-remote "$DELTA_AEGIS_URL" refs/heads/main |
+                awk 'NR == 1 {print $1}'
+            )"
           else
             DELTA_AEGIS_REF="hotfix/v1.0.2-scan-orchestration"
+            DELTA_AEGIS_EXPECTED_COMMIT="$DELTA_AEGIS_CANDIDATE_COMMIT"
           fi
-          git clone --depth 1 --branch "$DELTA_AEGIS_REF" https://github.com/ParkerLee07/DeltaAegis.git "$DELTA_AEGIS_CHECKOUT"
-          DELTAAEGIS_ROOT="$DELTA_AEGIS_CHECKOUT" ./tools/validate_v2_2_candidate_all.sh
+          test -n "$DELTA_AEGIS_EXPECTED_COMMIT"
+          git clone \
+            --branch "$DELTA_AEGIS_REF" \
+            "$DELTA_AEGIS_URL" \
+            "$DELTA_AEGIS_CHECKOUT"
+          test "$(git -C "$DELTA_AEGIS_CHECKOUT" rev-parse HEAD)" = \
+            "$DELTA_AEGIS_EXPECTED_COMMIT"
+          if [ "$VALIDATION_BRANCH" != "main" ]; then
+            test "$(git -C "$DELTA_AEGIS_CHECKOUT" rev-parse HEAD^{tree})" = \
+              "$DELTA_AEGIS_CANDIDATE_TREE"
+          fi
+          git -C "$DELTA_AEGIS_CHECKOUT" fetch --force --tags origin
+          test "$(git -C "$DELTA_AEGIS_CHECKOUT" cat-file -t v1.0.1)" = "tag"
+          test "$(git -C "$DELTA_AEGIS_CHECKOUT" rev-parse v1.0.1)" = \
+            "$DELTA_AEGIS_V1_0_1_TAG_OBJECT"
+          test "$(git -C "$DELTA_AEGIS_CHECKOUT" rev-parse 'v1.0.1^{}')" = \
+            "$DELTA_AEGIS_V1_0_1_COMMIT"
+          git -C "$DELTA_AEGIS_CHECKOUT" archive \
+            --format=tar v1.0.1 >/dev/null
+          DELTAAEGIS_ROOT="$DELTA_AEGIS_CHECKOUT" \
+            ./tools/validate_v2_2_candidate_all.sh
       - name: Run NetSniper v2.1.1 release gate
         if: env.VALIDATION_BRANCH == 'hotfix/v2.1.1-bundle-quality-integrity'
         run: ./tools/validate_v2_1_release_gate.sh
