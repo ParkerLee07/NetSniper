@@ -1,5 +1,4 @@
 # Runtime credentials
-config/
 *.conf
 *.env
 .env

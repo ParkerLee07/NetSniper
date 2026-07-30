@@ -1,5 +1,19 @@
 # Changelog
 
+## v2.2.0 - Unreleased
+
+### Fixed
+- Isolated each headless invocation in a private runtime workspace to eliminate shared discovery, target, scan, report, and analysis races.
+- Added clean discovery retry, exact RFC1918 authorization, and host-by-host scope containment.
+- Added collision-resistant run IDs and atomic publication from a hidden staging directory.
+- Excluded unsuccessful optional OS/UDP XML and applied accurate-profile duration/budget accounting across all passes.
+- Ignored malformed neighbor MAC evidence safely and removed case-insensitive path collisions.
+- Removed Greenbone passwords from process arguments, completed installer dependency checks, contained interactive errors, and removed stale/unsupported UI paths.
+
+### Compatibility
+- Preserves `netsniper-run-v3`, `netsniper-capability-manifest-v1`, and `netsniper-host-classification-v2` for DeltaAegis compatibility.
+- This candidate must pass the coordinated DeltaAegis compatibility gate before any repository push.
+
 ## v2.1.1 - 2026-07-29
 ### Fixed
 - Corrected the v2.1 finalization order so `bundle_quality.json` is included in the capability artifact inventory after the quality report is finalized.

@@ -94,7 +94,7 @@ def validate_shell_archive_path() -> None:
 
         write_text(
             targets / "hosts.txt",
-            "192.0.2.10\n",
+            "192.168.250.10\n",
         )
         write_text(
             targets / "high_risk.txt",
@@ -104,7 +104,7 @@ def validate_shell_archive_path() -> None:
             targets / "analysis_20260729-000000.json",
             [
                 {
-                    "host": "192.0.2.10",
+                    "host": "192.168.250.10",
                     "ports": [
                         {
                             "port": 22,
@@ -139,7 +139,7 @@ def validate_shell_archive_path() -> None:
                 "        exit 0\n"
                 "        ;;\n"
                 "    route)\n"
-                "        echo '192.0.2.0/24 dev eth0 scope link'\n"
+                "        echo '192.168.250.0/24 dev eth0 scope link'\n"
                 "        ;;\n"
                 "esac\n"
                 "exit 0\n"
@@ -161,7 +161,7 @@ DISCOVERY_DIR={shlex.quote(str(discovery))}
 SCAN_DIR={shlex.quote(str(scans))}
 TARGET_DIR={shlex.quote(str(targets))}
 RUN_DIR={shlex.quote(str(runs))}
-NET="192.0.2.0/24"
+NET="192.168.250.0/24"
 SCAN_PROFILE="balanced"
 SCAN_PROFILE_EFFECTIVE="balanced"
 SCAN_PROFILE_RUNTIME_STAGE="v1_8_compatible_tcp"
@@ -283,22 +283,22 @@ def main() -> int:
 
         write_json(
             bundle / "analysis.json",
-            [{"host": "192.0.2.10", "ports": []}],
+            [{"host": "192.168.250.10", "ports": []}],
         )
         write_json(
             bundle / "analysis.enriched.json",
-            [{"host": "192.0.2.10", "ports": []}],
+            [{"host": "192.168.250.10", "ports": []}],
         )
         write_json(
             bundle / "host_classifications.json",
-            [{"host": "192.0.2.10", "classification": "unknown"}],
+            [{"host": "192.168.250.10", "classification": "unknown"}],
         )
         write_json(
             bundle / "classification_quality.json",
             {"false_confidence_candidate_count": 0},
         )
         write_text(bundle / "classification_quality.md", "# Quality\n")
-        write_text(bundle / "hosts.txt", "192.0.2.10\n")
+        write_text(bundle / "hosts.txt", "192.168.250.10\n")
         write_text(bundle / "neighbors.txt", "")
         write_text(
             bundle / "discovery.xml",
@@ -314,7 +314,7 @@ def main() -> int:
             run_id="validator-run",
             scanner_version="v2.1.1",
             source_commit="0" * 40,
-            target="192.0.2.0/24",
+            target="192.168.250.0/24",
             requested_profile="balanced",
             effective_profile="balanced",
             started_at="2026-07-29T00:00:00Z",
@@ -344,8 +344,8 @@ def main() -> int:
             "legacy_schema_version": "netsniper-run-v2",
             "scan_id": "validator-run",
             "scanner_version": "v2.1.1",
-            "target": "192.0.2.0/24",
-            "network_scope": "192.0.2.0/24",
+            "target": "192.168.250.0/24",
+            "network_scope": "192.168.250.0/24",
             "requested_profile": "balanced",
             "effective_profile": "balanced",
             "scan_profile_requested": "balanced",

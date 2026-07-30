@@ -44,8 +44,16 @@ def _neighbor_map(path: Path) -> dict[str, dict[str, Any]]:
             if index + 1 < len(parts):
                 mac = parts[index + 1]
         if mac:
-            first_octet = int(mac.split(":", 1)[0], 16)
-            output[ip] = {"ip": ip, "host": ip, "mac": mac, "local_mac": bool(first_octet & 0x02)}
+            normalized = mac.strip().lower()
+            if not re.fullmatch(r"[0-9a-f]{2}(?::[0-9a-f]{2}){5}", normalized):
+                continue
+            first_octet = int(normalized.split(":", 1)[0], 16)
+            output[ip] = {
+                "ip": ip,
+                "host": ip,
+                "mac": normalized,
+                "local_mac": bool(first_octet & 0x02),
+            }
     return output
 
 

@@ -15,8 +15,8 @@ cd "$(dirname "$0")/.." || exit 1
 bash -n netsniper.sh \
     || fail "netsniper.sh has a syntax error"
 
-grep -Eq 'SCANNER_VERSION="v(2\.0\.0(-dev)?|2\.1\.0(-dev)?|2\.1\.1)"' netsniper.sh \
-    || fail "scanner version is not v2.0.0-dev, v2.0.0, v2.1.0-dev, v2.1.0, or v2.1.1"
+grep -Eq 'SCANNER_VERSION="v(2\.0\.0(-dev)?|2\.1\.0(-dev)?|2\.1\.1|2\.2\.0)"' netsniper.sh \
+    || fail "scanner version is not v2.0.0-dev, v2.0.0, v2.1.0-dev, v2.1.0, or v2.1.1, or v2.2.0"
 
 grep -Fq 'netsniper-run-v3' netsniper.sh \
     || fail "manifest v3 schema marker missing"
@@ -71,7 +71,7 @@ jq -e '
   .schema_version == "netsniper-run-v3"
   and .manifest_contract == "netsniper-run-v3"
   and .legacy_schema_version == "netsniper-run-v2"
-  and (.scanner_version == "v2.0.0-dev" or .scanner_version == "v2.0.0" or .scanner_version == "v2.1.0-dev" or .scanner_version == "v2.1.0" or .scanner_version == "v2.1.1")
+  and (.scanner_version == "v2.0.0-dev" or .scanner_version == "v2.0.0" or .scanner_version == "v2.1.0-dev" or .scanner_version == "v2.1.0" or .scanner_version == "v2.1.1" or .scanner_version == "v2.2.0")
   and .target == "192.168.56.0/30"
   and .network_scope == .target
   and .scan_profile == "FAST_MONITORED_TCP"
