@@ -184,21 +184,75 @@ pass "concurrent headless scans remain isolated"
 
 rm -rf "$TMP/repo/runs"
 mkdir -p "$TMP/repo/runs"
+publication_marker="$TMP/publication-artifact-generation.started"
 python3 - "$TMP/repo/tools/generate_v2_1_run_artifacts.py" <<'PY'
 from pathlib import Path
 import sys
-p=Path(sys.argv[1]); t=p.read_text(); anchor='from __future__ import annotations\n'; assert t.count(anchor)==1
-p.write_text(t.replace(anchor, anchor+'\nimport time\ntime.sleep(3)\n',1))
+p = Path(sys.argv[1])
+t = p.read_text(encoding="utf-8")
+anchor = "import os\n"
+injected = (
+    "import time\n"
+    "from pathlib import Path as _NetSniperPublicationMarkerPath\n"
+    "_NetSniperPublicationMarkerPath(\n"
+    "    os.environ[\"NETSNIPER_PUBLICATION_MARKER\"]\n"
+    ").write_text(\"artifact generation paused\\n\", encoding=\"utf-8\")\n"
+    "time.sleep(3)\n"
+)
+assert t.count(anchor) == 1
+p.write_text(t.replace(anchor, anchor + injected, 1), encoding="utf-8")
 PY
-FAKE_DISCOVERY_SLEEP=0 FAKE_SERVICE_SLEEP=0 run_scan publication 192.168.80.0/24 balanced & pub_pid=$!
-partial=0
-for _ in $(seq 1 60); do
-    if ! kill -0 "$pub_pid" 2>/dev/null; then break; fi
-    if find "$TMP/repo/runs" -mindepth 2 -maxdepth 2 -name manifest.json -print -quit | grep -q .; then partial=1; break; fi
+run_scan publication 192.168.80.0/24 balanced \
+    NETSNIPER_PUBLICATION_MARKER="$publication_marker" \
+    FAKE_DISCOVERY_SLEEP=0 \
+    FAKE_SERVICE_SLEEP=0 &
+pub_pid=$!
+marker_seen=0
+for _ in $(seq 1 300); do
+    if [ -f "$publication_marker" ]; then
+        marker_seen=1
+        break
+    fi
+    if ! kill -0 "$pub_pid" 2>/dev/null; then
+        break
+    fi
+    sleep 0.05
+done
+if [ "$marker_seen" -ne 1 ]; then
+    wait "$pub_pid" || true
+    fail "atomic-publication test did not reach the unfinished artifact-generation phase"
+fi
+premature=0
+for _ in $(seq 1 10); do
+    if find "$TMP/repo/runs" -mindepth 2 -maxdepth 2 -name manifest.json -print -quit | grep -q .; then
+        premature=1
+        break
+    fi
     sleep 0.1
 done
 wait "$pub_pid"
-[ "$partial" -eq 0 ] || fail "partial bundle became visible before finalization"
+[ "$premature" -eq 0 ] || fail "bundle became visible while artifact generation was unfinished"
+mapfile -t published_manifests < <(
+    find "$TMP/repo/runs" -mindepth 2 -maxdepth 2 -name manifest.json -print | LC_ALL=C sort
+)
+[ "${#published_manifests[@]}" -eq 1 ] || fail "atomic publication did not expose exactly one final bundle"
+published_dir="$(dirname -- "${published_manifests[0]}")"
+for required in \
+    manifest.json \
+    bundle_quality.json \
+    capability_manifest.json \
+    host_classifications.json \
+    analysis.json \
+    analysis.enriched.json \
+    hosts.txt
+do
+    [ -s "$published_dir/$required" ] || fail "atomically published bundle is incomplete: $required"
+done
+jq -e '.scanner_version == "v2.2.0" and .quality.deltaaegis_ready == true' \
+    "$published_dir/manifest.json" >/dev/null \
+    || fail "atomically published manifest is not final and ready"
+[ -z "$(find "$TMP/repo/.bundle-staging" -mindepth 1 -maxdepth 1 -type d -print -quit)" ] \
+    || fail "bundle staging directory leaked after publication"
 pass "atomic bundle publication"
 
 NETSNIPER_TEST_MODE=1 PATH="$TMP/fakebin:$PATH" bash -c 'set -Eeuo pipefail; source "$1"; show_targets; echo survived' bash "$TMP/repo/netsniper.sh" | grep -Fq survived || fail "interactive missing-stage containment"

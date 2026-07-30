@@ -7,8 +7,17 @@ on:
 jobs:
   validation:
     runs-on: ubuntu-latest
+    env:
+      VALIDATION_BRANCH: ${{ github.head_ref || github.ref_name }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+      - name: Attach validation branch context
+        run: |
+          test -n "$VALIDATION_BRANCH"
+          git checkout -B "$VALIDATION_BRANCH" HEAD
       - name: Install validation dependencies
         run: sudo apt-get update && sudo apt-get install -y shellcheck jq iproute2 nmap
       - name: Validate Bash syntax
@@ -35,15 +44,20 @@ jobs:
             tools/validate_v2_1_stage1_2.py \
             tools/validate_v2_2_scope.py
       - name: Run NetSniper v2.2 candidate gate
-        if: ${{ github.ref_name == 'feature/v2.2-runtime-integrity' || github.head_ref == 'feature/v2.2-runtime-integrity' }}
+        if: env.VALIDATION_BRANCH == 'feature/v2.2-runtime-integrity' || env.VALIDATION_BRANCH == 'main'
         env:
           DELTA_AEGIS_CHECKOUT: ${{ github.workspace }}/DeltaAegis
         run: |
-          git clone --depth 1 --branch hotfix/v1.0.2-scan-orchestration https://github.com/ParkerLee07/DeltaAegis.git "$DELTA_AEGIS_CHECKOUT"
+          if [ "$VALIDATION_BRANCH" = "main" ]; then
+            DELTA_AEGIS_REF="main"
+          else
+            DELTA_AEGIS_REF="hotfix/v1.0.2-scan-orchestration"
+          fi
+          git clone --depth 1 --branch "$DELTA_AEGIS_REF" https://github.com/ParkerLee07/DeltaAegis.git "$DELTA_AEGIS_CHECKOUT"
           DELTAAEGIS_ROOT="$DELTA_AEGIS_CHECKOUT" ./tools/validate_v2_2_candidate_all.sh
       - name: Run NetSniper v2.1.1 release gate
-        if: ${{ (github.ref_name == 'main' || github.ref_name == 'hotfix/v2.1.1-bundle-quality-integrity' || github.head_ref == 'main' || github.head_ref == 'hotfix/v2.1.1-bundle-quality-integrity') && github.ref_name != 'feature/v2.2-runtime-integrity' && github.head_ref != 'feature/v2.2-runtime-integrity' }}
+        if: env.VALIDATION_BRANCH == 'hotfix/v2.1.1-bundle-quality-integrity'
         run: ./tools/validate_v2_1_release_gate.sh
       - name: Run NetSniper v2.1 behavioral and compatibility gate
-        if: ${{ github.ref_name != 'main' && github.ref_name != 'hotfix/v2.1.1-bundle-quality-integrity' && github.ref_name != 'feature/v2.2-runtime-integrity' && github.head_ref != 'main' && github.head_ref != 'hotfix/v2.1.1-bundle-quality-integrity' && github.head_ref != 'feature/v2.2-runtime-integrity' }}
+        if: env.VALIDATION_BRANCH != 'main' && env.VALIDATION_BRANCH != 'hotfix/v2.1.1-bundle-quality-integrity' && env.VALIDATION_BRANCH != 'feature/v2.2-runtime-integrity'
         run: ./tools/validate_v2_1_stage1_2_all.sh
